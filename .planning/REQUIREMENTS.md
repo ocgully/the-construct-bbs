@@ -87,18 +87,18 @@
 
 ### Architecture
 
-- [ ] **ARCH-01**: All user-facing services implemented as pluggable modules with common interface
-- [ ] **ARCH-02**: Service registry — data-driven enable/disable via configuration
-- [ ] **ARCH-03**: Services isolated and encapsulated — no cross-service state leakage
-- [ ] **ARCH-04**: New services addable without modifying core BBS code
+- [x] **ARCH-01**: All user-facing services implemented as pluggable modules with common interface
+- [x] **ARCH-02**: Service registry — data-driven enable/disable via configuration
+- [x] **ARCH-03**: Services isolated and encapsulated — no cross-service state leakage
+- [x] **ARCH-04**: New services addable without modifying core BBS code
 
 ### User Experience
 
-- [ ] **UX-01**: xterm.js browser terminal with CP437 font for authentic ANSI rendering
-- [ ] **UX-02**: Mobile-responsive terminal — adapts to phone screens and touch keyboards
+- [x] **UX-01**: xterm.js browser terminal with CP437 font for authentic ANSI rendering
+- [x] **UX-02**: Mobile-responsive terminal — adapts to phone screens and touch keyboards
 - [ ] **UX-03**: Authentic ANSI art throughout — menus, splash screens, game UI (Wildcat-era quality)
-- [ ] **UX-04**: Paginated output with [More] prompts (no infinite scrolling)
-- [ ] **UX-05**: Keyboard-driven navigation (no mouse dependency)
+- [x] **UX-04**: Paginated output with [More] prompts (no infinite scrolling)
+- [x] **UX-05**: Keyboard-driven navigation (no mouse dependency)
 
 ### Easter Eggs
 
@@ -201,15 +201,15 @@
 | NEWS-01 | Phase 7 | Pending |
 | NEWS-02 | Phase 7 | Pending |
 | NEWS-03 | Phase 7 | Pending |
-| ARCH-01 | Phase 1 | Pending |
-| ARCH-02 | Phase 1 | Pending |
-| ARCH-03 | Phase 1 | Pending |
-| ARCH-04 | Phase 1 | Pending |
-| UX-01 | Phase 1 | Pending |
-| UX-02 | Phase 1 | Pending |
+| ARCH-01 | Phase 1 | Complete |
+| ARCH-02 | Phase 1 | Complete |
+| ARCH-03 | Phase 1 | Complete |
+| ARCH-04 | Phase 1 | Complete |
+| UX-01 | Phase 1 | Complete |
+| UX-02 | Phase 1 | Complete |
 | UX-03 | Phase 3 | Pending |
-| UX-04 | Phase 1 | Pending |
-| UX-05 | Phase 1 | Pending |
+| UX-04 | Phase 1 | Complete |
+| UX-05 | Phase 1 | Complete |
 | EGGS-01 | Phase 14 | Pending |
 | EGGS-02 | Phase 14 | Pending |
 | EGGS-03 | Phase 14 | Pending |

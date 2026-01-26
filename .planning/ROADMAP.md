@@ -12,7 +12,7 @@ The Construct delivers an authentic BBS experience through a browser terminal, b
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Terminal Foundation** - ANSI rendering, WebSocket I/O, service architecture
+- [x] **Phase 1: Terminal Foundation** - ANSI rendering, WebSocket I/O, service architecture
 - [ ] **Phase 2: Authentication & Connection** - User accounts, login/logout, connection experience
 - [ ] **Phase 3: Navigation System** - Wildcat-style menus with ANSI art and hotkeys
 - [ ] **Phase 4: Time Limits & User Lists** - Daily time caps, session timers, who's online
@@ -42,11 +42,11 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 5 plans
 
 Plans:
-- [ ] 01-01-PLAN.md -- Rust backend scaffolding, config system, service trait + registry
-- [ ] 01-02-PLAN.md -- Terminal output engine (AnsiWriter, CP437 conversion, paging)
-- [ ] 01-03-PLAN.md -- Frontend terminal (xterm.js, CRT effects, mobile, WebSocket client)
-- [ ] 01-04-PLAN.md -- Backend WebSocket handler, session management, service routing
-- [ ] 01-05-PLAN.md -- Integration, ANSI art welcome screen, visual verification
+- [x] 01-01-PLAN.md -- Rust backend scaffolding, config system, service trait + registry
+- [x] 01-02-PLAN.md -- Terminal output engine (AnsiWriter, CP437 conversion, paging)
+- [x] 01-03-PLAN.md -- Frontend terminal (xterm.js, CRT effects, mobile, WebSocket client)
+- [x] 01-04-PLAN.md -- Backend WebSocket handler, session management, service routing
+- [x] 01-05-PLAN.md -- Integration, ANSI art welcome screen, visual verification
 
 ### Phase 2: Authentication & Connection
 **Goal**: Users can create accounts, log in securely, and experience authentic BBS connection sequence
@@ -257,7 +257,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Terminal Foundation | 0/5 | Planned | - |
+| 1. Terminal Foundation | 5/5 | Complete | 2026-01-26 |
 | 2. Authentication & Connection | 0/TBD | Not started | - |
 | 3. Navigation System | 0/TBD | Not started | - |
 | 4. Time Limits & User Lists | 0/TBD | Not started | - |
