@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 Phase: 1 of 14 (Terminal Foundation)
 Plan: 2 of 5 in current phase
 Status: In progress
-Last activity: 2026-01-26 — Completed 01-03-PLAN.md (Browser Terminal Frontend)
+Last activity: 2026-01-26 — Completed 01-01-PLAN.md (Rust Backend Foundation)
 
 Progress: [██░░░░░░░░] 14%
 
@@ -20,17 +20,17 @@ Progress: [██░░░░░░░░] 14%
 
 **Velocity:**
 - Total plans completed: 2
-- Average duration: 4 min
-- Total execution time: 0.15 hours
+- Average duration: 5 min
+- Total execution time: 0.27 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01    | 2     | 9min  | 4.5min   |
+| 01    | 2     | 10min | 5min     |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 6min
+- Last 5 plans: 3min, 7min
 - Trend: Consistent execution speed
 
 *Updated after each plan completion*
@@ -44,6 +44,10 @@ Recent decisions affecting current work:
 
 | Phase-Plan | Decision | Impact |
 |------------|----------|--------|
+| 01-01 | Service trait plugin architecture with Arc<dyn Service> | All BBS features use consistent plugin interface |
+| 01-01 | Config-driven service registry | Services enabled/disabled via config.toml without code changes |
+| 01-01 | SessionIO trait abstraction | Decouples service logic from transport layer |
+| 01-01 | TOML configuration format | Human-readable sysop configuration with type safety |
 | 01-02 | Use authentic CGA 16-color palette with Brown (not "dark yellow") | Sets standard for all terminal color theming |
 | 01-02 | CRLF (\r\n) line endings for all terminal output | Required for correct terminal behavior and Windows compatibility |
 | 01-02 | Implement DECSET 2026 synchronized rendering | Prevents screen tearing during ANSI art rendering |
@@ -69,8 +73,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-26T15:34:48Z
-Stopped at: Completed 01-03-PLAN.md (Browser Terminal Frontend)
+Last session: 2026-01-26T15:36:13Z
+Stopped at: Completed 01-01-PLAN.md (Rust Backend Foundation)
 Resume file: None
 
 ---
