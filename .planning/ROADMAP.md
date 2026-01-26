@@ -39,10 +39,14 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Terminal displays paginated output with [More] prompts (no infinite scrolling)
   4. All user input is keyboard-driven without mouse dependency
   5. Service architecture supports pluggable modules that can be enabled/disabled via configuration
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] TBD during planning
+- [ ] 01-01-PLAN.md -- Rust backend scaffolding, config system, service trait + registry
+- [ ] 01-02-PLAN.md -- Terminal output engine (AnsiWriter, CP437 conversion, paging)
+- [ ] 01-03-PLAN.md -- Frontend terminal (xterm.js, CRT effects, mobile, WebSocket client)
+- [ ] 01-04-PLAN.md -- Backend WebSocket handler, session management, service routing
+- [ ] 01-05-PLAN.md -- Integration, ANSI art welcome screen, visual verification
 
 ### Phase 2: Authentication & Connection
 **Goal**: Users can create accounts, log in securely, and experience authentic BBS connection sequence
@@ -249,11 +253,11 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10 → 11 → 12 → 13 → 14
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 -> 14
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Terminal Foundation | 0/TBD | Not started | - |
+| 1. Terminal Foundation | 0/5 | Planned | - |
 | 2. Authentication & Connection | 0/TBD | Not started | - |
 | 3. Navigation System | 0/TBD | Not started | - |
 | 4. Time Limits & User Lists | 0/TBD | Not started | - |
