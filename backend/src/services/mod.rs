@@ -19,6 +19,7 @@ pub trait Service: Send + Sync {
 pub trait SessionIO {
     fn write(&mut self, data: &str);
     fn writeln(&mut self, data: &str);
+    fn queue_paginated(&mut self, data: &str);
 }
 
 /// Actions a service can return after handling input

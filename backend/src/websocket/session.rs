@@ -5,7 +5,7 @@ use std::time::Duration;
 use crate::{
     AppState,
     services::{ServiceAction, SessionIO, welcome_art},
-    terminal::{AnsiWriter, Color},
+    terminal::{AnsiWriter, Color, Pager, Page, more_prompt, clear_more_prompt},
 };
 
 /// Per-connection session state
@@ -20,6 +20,10 @@ pub struct Session {
     state: Arc<AppState>,
     current_service: Option<String>,
     output_buffer: AnsiWriter,
+    pager: Pager,
+    pending_pages: Option<Vec<Page>>,
+    page_index: usize,
+    pagination_buffer: Option<String>,
 }
 
 impl Session {
@@ -30,15 +34,86 @@ impl Session {
             state,
             current_service: None,
             output_buffer: AnsiWriter::new(),
+            pager: Pager::new(25), // Standard terminal height
+            pending_pages: None,
+            page_index: 0,
+            pagination_buffer: None,
         }
     }
 
     /// Send the buffered output to the WebSocket
     async fn flush_output(&mut self) {
+        // Check if there's paginated content to send
+        if let Some(content) = self.pagination_buffer.take() {
+            self.send_paginated(&content).await;
+            return;
+        }
+
+        // Send normal buffered output
         if !self.output_buffer.is_empty() {
             let content = self.output_buffer.flush();
             // Ignore send errors (client disconnected)
             let _ = self.tx.send(content).await;
+        }
+    }
+
+    /// Send paginated output with [More] prompts
+    ///
+    /// Splits text into pages and sends first page with [More] prompt.
+    /// Subsequent pages are sent when user presses any key.
+    pub async fn send_paginated(&mut self, text: &str) {
+        let pages = self.pager.paginate(text);
+
+        if pages.is_empty() {
+            return;
+        }
+
+        // If only one page, send without pagination
+        if pages.len() == 1 {
+            let _ = self.tx.send(pages[0].to_ansi()).await;
+            return;
+        }
+
+        // Send first page
+        let first_page = &pages[0];
+        let mut output = first_page.to_ansi();
+        output.push_str("\r\n");
+        output.push_str(&more_prompt());
+        let _ = self.tx.send(output).await;
+
+        // Store remaining pages for subsequent keypresses
+        self.pending_pages = Some(pages);
+        self.page_index = 1; // Start at second page
+    }
+
+    /// Send the next page in a paginated sequence
+    /// Called when user presses any key during pagination
+    async fn send_next_page(&mut self) {
+        if let Some(pages) = &self.pending_pages {
+            if self.page_index < pages.len() {
+                let page = &pages[self.page_index];
+
+                // Clear the [More] prompt
+                let mut output = clear_more_prompt(80); // Standard terminal width
+
+                // Add the page content
+                output.push_str(&page.to_ansi());
+
+                // If not the last page, add another [More] prompt
+                if !page.is_last {
+                    output.push_str("\r\n");
+                    output.push_str(&more_prompt());
+                }
+
+                let _ = self.tx.send(output).await;
+                self.page_index += 1;
+
+                // If this was the last page, clear pagination state
+                if page.is_last {
+                    self.pending_pages = None;
+                    self.page_index = 0;
+                }
+            }
         }
     }
 
@@ -68,6 +143,12 @@ impl Session {
 
         // Ignore empty input and escape sequences (e.g. from mouse scroll)
         if trimmed.is_empty() || trimmed.starts_with('\x1b') {
+            return;
+        }
+
+        // If we're in paging mode, any keypress advances to next page
+        if self.pending_pages.is_some() {
+            self.send_next_page().await;
             return;
         }
 
@@ -219,5 +300,9 @@ impl SessionIO for Session {
 
     fn writeln(&mut self, data: &str) {
         self.output_buffer.writeln(data);
+    }
+
+    fn queue_paginated(&mut self, data: &str) {
+        self.pagination_buffer = Some(data.to_string());
     }
 }
