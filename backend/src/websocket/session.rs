@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use crate::{
     AppState,
-    services::{Service, ServiceAction, ServiceError, SessionIO, welcome_art},
+    services::{ServiceAction, SessionIO, welcome_art},
     terminal::{AnsiWriter, Color},
 };
 
@@ -44,14 +44,20 @@ impl Session {
 
     /// Called when client connects - send welcome screen
     pub async fn on_connect(&mut self) {
-        let services = self.state.registry.list();
+        let services: Vec<(String, String)> = self.state.registry.list()
+            .iter()
+            .map(|(n, d)| (n.to_string(), d.to_string()))
+            .collect();
         let welcome = welcome_art::render_welcome(&services);
         let _ = self.tx.send(welcome).await;
     }
 
     /// Show the main menu again
     async fn show_main_menu(&mut self) {
-        let services = self.state.registry.list();
+        let services: Vec<(String, String)> = self.state.registry.list()
+            .iter()
+            .map(|(n, d)| (n.to_string(), d.to_string()))
+            .collect();
         let menu = welcome_art::render_main_menu(&services);
         let _ = self.tx.send(menu).await;
     }
@@ -62,7 +68,8 @@ impl Session {
 
         if let Some(service_name) = &self.current_service {
             // Currently in a service - route input to it
-            if let Some(service) = self.state.registry.get(service_name) {
+            let service = self.state.registry.get(service_name).cloned();
+            if let Some(service) = service {
                 match service.handle_input(self, trimmed) {
                     Ok(ServiceAction::Continue) => {
                         // Service handled input, continue
@@ -111,13 +118,16 @@ impl Session {
             }
 
             // Try to parse as service number or name
-            let services = self.state.registry.list();
+            let services: Vec<(String, String)> = self.state.registry.list()
+                .iter()
+                .map(|(n, d)| (n.to_string(), d.to_string()))
+                .collect();
 
             // Try number first
             if let Ok(num) = trimmed.parse::<usize>() {
                 if num > 0 && num <= services.len() {
-                    let (service_name, _) = services[num - 1];
-                    self.enter_service(service_name).await;
+                    let service_name = services[num - 1].0.clone();
+                    self.enter_service(&service_name).await;
                     return;
                 }
             }
@@ -142,7 +152,8 @@ impl Session {
 
     /// Enter a service (with authentic BBS "loading door" delay)
     async fn enter_service(&mut self, service_name: &str) {
-        if let Some(service) = self.state.registry.get(service_name) {
+        let service = self.state.registry.get(service_name).cloned();
+        if let Some(service) = service {
             // Show "Entering door..." message
             self.output_buffer.writeln("");
             self.output_buffer.set_fg(Color::Yellow);
@@ -184,7 +195,8 @@ impl Session {
     pub async fn on_disconnect(&mut self) {
         // If in a service, call on_exit
         if let Some(service_name) = &self.current_service {
-            if let Some(service) = self.state.registry.get(service_name) {
+            let service = self.state.registry.get(service_name).cloned();
+            if let Some(service) = service {
                 service.on_exit(self);
                 self.flush_output().await;
             }

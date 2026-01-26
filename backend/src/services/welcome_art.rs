@@ -1,4 +1,4 @@
-use crate::terminal::{AnsiWriter, Color, cp437_to_utf8};
+use crate::terminal::{AnsiWriter, Color};
 
 /// Render the ANSI art welcome screen with CP437 box-drawing and CGA colors
 ///

@@ -5,6 +5,7 @@ use axum::{
     extract::{ws::WebSocket, State, WebSocketUpgrade},
     response::Response,
 };
+use futures_util::{SinkExt, StreamExt};
 use tokio::sync::mpsc;
 use std::sync::Arc;
 
@@ -55,7 +56,7 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
 
     // Main receive loop
     let mut recv_task = tokio::spawn(async move {
-        while let Some(msg) = ws_receiver.recv().await {
+        while let Some(msg) = ws_receiver.next().await {
             match msg {
                 Ok(axum::extract::ws::Message::Text(text)) => {
                     // Handle user input

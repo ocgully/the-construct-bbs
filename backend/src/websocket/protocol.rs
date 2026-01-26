@@ -35,8 +35,18 @@ impl AnsiBuffer {
 
                 // Check if this byte terminates the escape sequence
                 if self.is_sequence_terminator(byte) {
-                    // Complete sequence - flush buffer to current chunk
-                    current_chunk.extend_from_slice(&self.buffer);
+                    // Complete sequence - flush current text first, then the escape sequence
+                    if !current_chunk.is_empty() {
+                        if let Ok(s) = String::from_utf8(current_chunk.clone()) {
+                            results.push(s);
+                        }
+                        current_chunk.clear();
+                    }
+
+                    // Push the complete escape sequence as its own result
+                    if let Ok(s) = String::from_utf8(self.buffer.clone()) {
+                        results.push(s);
+                    }
                     self.buffer.clear();
                     self.in_escape = false;
                 }

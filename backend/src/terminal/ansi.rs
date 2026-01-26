@@ -176,7 +176,7 @@ impl Default for AnsiWriter {
 
 /// Convert CP437 bytes to UTF-8 string
 pub fn cp437_to_utf8(bytes: &[u8]) -> String {
-    String::from_cp437(bytes, &CP437_CONTROL)
+    String::from_cp437(bytes.to_vec(), &CP437_CONTROL)
 }
 
 #[cfg(test)]
