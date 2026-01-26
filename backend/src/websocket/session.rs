@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use crate::{
     AppState,
-    services::{Service, ServiceAction, ServiceError, SessionIO},
+    services::{Service, ServiceAction, ServiceError, SessionIO, welcome_art},
     terminal::{AnsiWriter, Color},
 };
 
@@ -44,95 +44,16 @@ impl Session {
 
     /// Called when client connects - send welcome screen
     pub async fn on_connect(&mut self) {
-        self.output_buffer.begin_sync();
-        self.output_buffer.clear_screen();
-
-        // Title banner
-        self.output_buffer.set_fg(Color::LightCyan);
-        self.output_buffer.bold();
-        self.output_buffer.writeln("╔════════════════════════════════════════════╗");
-        self.output_buffer.writeln("║         THE CONSTRUCT BBS                  ║");
-        self.output_buffer.writeln("╚════════════════════════════════════════════╝");
-        self.output_buffer.reset_color();
-
-        self.output_buffer.writeln("");
-
-        self.output_buffer.set_fg(Color::LightGray);
-        self.output_buffer.writeln("Terminal Foundation v0.1");
-        self.output_buffer.writeln("");
-
-        // List available services
         let services = self.state.registry.list();
-        if services.is_empty() {
-            self.output_buffer.set_fg(Color::Yellow);
-            self.output_buffer.writeln("No services available.");
-        } else {
-            self.output_buffer.set_fg(Color::Yellow);
-            self.output_buffer.writeln("Available Services:");
-            self.output_buffer.writeln("");
-
-            for (idx, (name, description)) in services.iter().enumerate() {
-                self.output_buffer.set_fg(Color::LightGreen);
-                self.output_buffer.write_str(&format!("  [{}] ", idx + 1));
-                self.output_buffer.set_fg(Color::White);
-                self.output_buffer.write_str(name);
-                self.output_buffer.set_fg(Color::LightGray);
-                self.output_buffer.writeln(&format!(" - {}", description));
-            }
-
-            self.output_buffer.writeln("");
-        }
-
-        // Show prompt
-        self.output_buffer.set_fg(Color::LightCyan);
-        self.output_buffer.write_str("Enter service number or 'quit' to disconnect: ");
-        self.output_buffer.reset_color();
-
-        self.output_buffer.end_sync();
-
-        self.flush_output().await;
+        let welcome = welcome_art::render_welcome(&services);
+        let _ = self.tx.send(welcome).await;
     }
 
     /// Show the main menu again
     async fn show_main_menu(&mut self) {
-        self.output_buffer.begin_sync();
-        self.output_buffer.clear_screen();
-
-        // Title
-        self.output_buffer.set_fg(Color::LightCyan);
-        self.output_buffer.writeln("╔═══════════════════════════════════════════╗");
-        self.output_buffer.writeln("║         THE CONSTRUCT BBS                 ║");
-        self.output_buffer.writeln("╚═══════════════════════════════════════════╝");
-        self.output_buffer.reset_color();
-        self.output_buffer.writeln("");
-
-        // List services
         let services = self.state.registry.list();
-        if !services.is_empty() {
-            self.output_buffer.set_fg(Color::Yellow);
-            self.output_buffer.writeln("Available Services:");
-            self.output_buffer.writeln("");
-
-            for (idx, (name, description)) in services.iter().enumerate() {
-                self.output_buffer.set_fg(Color::LightGreen);
-                self.output_buffer.write_str(&format!("  [{}] ", idx + 1));
-                self.output_buffer.set_fg(Color::White);
-                self.output_buffer.write_str(name);
-                self.output_buffer.set_fg(Color::LightGray);
-                self.output_buffer.writeln(&format!(" - {}", description));
-            }
-
-            self.output_buffer.writeln("");
-        }
-
-        // Prompt
-        self.output_buffer.set_fg(Color::LightCyan);
-        self.output_buffer.write_str("Enter service number or 'quit' to disconnect: ");
-        self.output_buffer.reset_color();
-
-        self.output_buffer.end_sync();
-
-        self.flush_output().await;
+        let menu = welcome_art::render_main_menu(&services);
+        let _ = self.tx.send(menu).await;
     }
 
     /// Handle user input

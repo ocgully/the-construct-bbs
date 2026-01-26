@@ -7,6 +7,7 @@ use axum::{
     routing::get,
     Router,
 };
+use tower_http::services::ServeDir;
 use std::sync::Arc;
 use config::Config;
 use services::ServiceRegistry;
@@ -39,6 +40,7 @@ async fn main() {
     let app = Router::new()
         .route("/health", get(health_check))
         .route("/ws", get(websocket::ws_handler))
+        .fallback_service(ServeDir::new("../frontend/dist"))
         .with_state(state);
 
     let addr = format!("{}:{}", host, port);
