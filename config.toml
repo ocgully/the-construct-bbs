@@ -1,0 +1,12 @@
+[server]
+host = "127.0.0.1"
+port = 3000
+
+[terminal]
+cols = 80
+rows = 24
+
+[[services]]
+name = "example"
+enabled = true
+description = "Example service for testing"
