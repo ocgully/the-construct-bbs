@@ -1,6 +1,7 @@
 mod config;
 mod services;
 mod terminal;
+mod websocket;
 
 use axum::{
     routing::get,
@@ -11,9 +12,9 @@ use config::Config;
 use services::ServiceRegistry;
 
 #[derive(Clone)]
-struct AppState {
-    config: Config,
-    registry: ServiceRegistry,
+pub(crate) struct AppState {
+    pub(crate) config: Config,
+    pub(crate) registry: ServiceRegistry,
 }
 
 #[tokio::main]
@@ -37,6 +38,7 @@ async fn main() {
 
     let app = Router::new()
         .route("/health", get(health_check))
+        .route("/ws", get(websocket::ws_handler))
         .with_state(state);
 
     let addr = format!("{}:{}", host, port);
