@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 1 of 14 (Terminal Foundation)
-Plan: 2 of 5 in current phase
+Plan: 4 of 5 in current phase
 Status: In progress
-Last activity: 2026-01-26 — Completed 01-01-PLAN.md (Rust Backend Foundation)
+Last activity: 2026-01-26 — Completed 01-04-PLAN.md (WebSocket Session Layer)
 
-Progress: [██░░░░░░░░] 14%
+Progress: [████░░░░░░] 80% of Phase 1
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
+- Total plans completed: 4
 - Average duration: 5 min
-- Total execution time: 0.27 hours
+- Total execution time: 0.6 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01    | 2     | 10min | 5min     |
+| 01    | 4     | 20min | 5min     |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 7min
-- Trend: Consistent execution speed
+- Last 5 plans: 3min, 7min, 7min, 3min
+- Trend: Consistently fast execution (3-7min range)
 
 *Updated after each plan completion*
 
@@ -54,6 +54,9 @@ Recent decisions affecting current work:
 | 01-03 | CSS-based CRT effects instead of npm package | More maintainable, better browser compatibility for retro aesthetic |
 | 01-03 | Default CRT level to FULL | Maximum atmospheric immersion for authentic BBS experience |
 | 01-03 | No scrollback buffer (scrollback: 0) | Authentic BBS experience forcing engagement with paging |
+| 01-04 | Split socket architecture with mpsc channel | Separates receive/send loops preventing deadlocks, allows async session output |
+| 01-04 | AnsiBuffer prevents partial escape sequences | Protects xterm.js from rendering artifacts by buffering incomplete sequences |
+| 01-04 | 800ms 'Entering door...' delay | Authentic BBS loading experience matching historical feel |
 
 ### Pending Todos
 
@@ -73,8 +76,8 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-01-26T15:36:13Z
-Stopped at: Completed 01-01-PLAN.md (Rust Backend Foundation)
+Last session: 2026-01-26T15:44:03Z
+Stopped at: Completed 01-04-PLAN.md (WebSocket Session Layer)
 Resume file: None
 
 ---
