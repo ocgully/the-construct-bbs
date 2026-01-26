@@ -31,7 +31,7 @@ export async function initTerminal(container: HTMLElement): Promise<Terminal> {
   const terminal = new Terminal({
     cols: 80,
     rows: 24,
-    fontFamily: "'PerfectDOSVGA437', 'Courier New', monospace",
+    fontFamily: "'IBM Plex Mono', 'Courier New', 'Courier', monospace",
     fontSize: 16,
     theme: {
       background: CGA_PALETTE.black,

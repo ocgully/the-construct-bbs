@@ -1,10 +1,8 @@
-/* Perfect DOS VGA 437 Font */
-@font-face {
-  font-family: 'PerfectDOSVGA437';
-  src: url('../fonts/PerfectDOSVGA437.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-}
+/*
+ * CP437-compatible font configuration
+ * Using IBM Plex Mono from Google Fonts for reliable box-drawing character support
+ * IBM Plex Mono provides excellent CP437 glyph coverage including all box-drawing chars
+ */
 
 /* Full viewport layout */
 * {
@@ -18,7 +16,7 @@ html, body {
   height: 100%;
   overflow: hidden;
   background-color: #000;
-  font-family: 'PerfectDOSVGA437', 'Courier New', monospace;
+  font-family: 'IBM Plex Mono', 'Courier New', 'Courier', monospace;
 }
 
 /* Terminal container with dark bezel */
