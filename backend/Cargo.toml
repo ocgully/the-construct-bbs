@@ -12,3 +12,7 @@ codepage-437 = "0.1"
 tower-http = { version = "0.6", features = ["fs", "cors"] }
 thiserror = "1"
 futures-util = "0.3"
+
+# Optimize dependencies even in debug builds (our code stays unoptimized for fast compile)
+[profile.dev.package."*"]
+opt-level = 1

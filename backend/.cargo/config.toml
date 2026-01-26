@@ -1,0 +1,3 @@
+[build]
+# Use multiple CPU cores for compilation
+jobs = 8
