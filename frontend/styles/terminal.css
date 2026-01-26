@@ -1,0 +1,174 @@
+/* Perfect DOS VGA 437 Font */
+@font-face {
+  font-family: 'PerfectDOSVGA437';
+  src: url('../fonts/PerfectDOSVGA437.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Full viewport layout */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #000;
+  font-family: 'PerfectDOSVGA437', 'Courier New', monospace;
+}
+
+/* Terminal container with dark bezel */
+.terminal-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #000;
+  padding: 20px;
+}
+
+/* Terminal wrapper with bezel effect */
+.terminal-wrapper {
+  position: relative;
+  border: 2px solid #1a1a1a;
+  border-radius: 4px;
+  box-shadow:
+    0 0 20px rgba(0, 0, 0, 0.9),
+    inset 0 0 10px rgba(0, 0, 0, 0.5),
+    0 0 40px rgba(0, 255, 255, 0.1);
+  background-color: #000;
+  overflow: hidden;
+}
+
+/* xterm.js element */
+.xterm {
+  padding: 10px;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+.xterm-viewport {
+  overflow: hidden !important;
+}
+
+/* Disable scrollback */
+.xterm-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+/* CRT Effect Levels */
+
+/* Clean - No CRT effects */
+.crt-clean .terminal-wrapper {
+  /* No effects */
+}
+
+/* Subtle - Light scanlines and glow */
+.crt-subtle .terminal-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.1) 0px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+.crt-subtle .xterm-screen {
+  text-shadow: 0 0 2px rgba(0, 255, 255, 0.2);
+}
+
+/* Full - Full CRT experience with scanlines, glow, curvature, flicker */
+.crt-full .terminal-wrapper {
+  border-radius: 8px;
+  animation: flicker 0.15s infinite alternate;
+}
+
+.crt-full .terminal-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.2) 0px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+.crt-full .xterm-screen {
+  text-shadow:
+    0 0 3px rgba(0, 255, 255, 0.4),
+    0 0 6px rgba(0, 255, 255, 0.2);
+}
+
+@keyframes flicker {
+  0% {
+    opacity: 0.98;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.99;
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .terminal-container {
+    padding: 10px;
+  }
+
+  .terminal-wrapper {
+    width: 100%;
+    height: 100%;
+    border-width: 1px;
+  }
+
+  .xterm {
+    padding: 5px;
+  }
+}
+
+/* Portrait orientation specific */
+@media (orientation: portrait) and (max-width: 768px) {
+  .terminal-container {
+    padding: 5px;
+  }
+
+  .xterm {
+    font-size: 10px;
+  }
+}
+
+/* Prevent text selection and touch callout on mobile */
+.terminal-wrapper,
+.xterm,
+.xterm-screen {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
