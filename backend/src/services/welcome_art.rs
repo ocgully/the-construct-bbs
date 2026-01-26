@@ -181,7 +181,7 @@ pub fn render_welcome(services: &[(String, String)]) -> String {
     
     // Prompt
     w.set_fg(Color::LightCyan);
-    w.write_str("Enter service number or 'quit' to disconnect: ");
+    w.write_str("Enter service number or (q)uit to disconnect: ");
     w.reset_color();
     
     w.show_cursor();
@@ -244,7 +244,7 @@ pub fn render_main_menu(services: &[(String, String)]) -> String {
     
     // Prompt
     w.set_fg(Color::LightCyan);
-    w.write_str("Enter service number or 'quit' to disconnect: ");
+    w.write_str("Enter service number or (q)uit to disconnect: ");
     w.reset_color();
     
     w.end_sync();

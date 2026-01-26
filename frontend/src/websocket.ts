@@ -55,8 +55,13 @@ export function connectWebSocket(terminal: Terminal): WebSocket {
   ws = connect();
 
   // Wire terminal input to WebSocket
+  // Filter out mouse/scroll escape sequences — only send printable input and basic control chars
   terminal.onData((data) => {
     if (ws.readyState === WebSocket.OPEN) {
+      // Ignore mouse reporting sequences (ESC [ M ..., ESC [ < ...)
+      if (data.startsWith('\x1b[M') || data.startsWith('\x1b[<')) {
+        return;
+      }
       ws.send(data);
     }
   });

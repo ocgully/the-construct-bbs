@@ -66,6 +66,11 @@ impl Session {
     pub async fn handle_input(&mut self, input: &str) {
         let trimmed = input.trim();
 
+        // Ignore empty input and escape sequences (e.g. from mouse scroll)
+        if trimmed.is_empty() || trimmed.starts_with('\x1b') {
+            return;
+        }
+
         if let Some(service_name) = &self.current_service {
             // Currently in a service - route input to it
             let service = self.state.registry.get(service_name).cloned();
@@ -144,7 +149,7 @@ impl Session {
             self.output_buffer.set_fg(Color::LightRed);
             self.output_buffer.writeln(&format!("Unknown command: {}", trimmed));
             self.output_buffer.set_fg(Color::LightCyan);
-            self.output_buffer.write_str("Enter service number or 'quit' to disconnect: ");
+            self.output_buffer.write_str("Enter service number or (q)uit to disconnect: ");
             self.output_buffer.reset_color();
             self.flush_output().await;
         }
