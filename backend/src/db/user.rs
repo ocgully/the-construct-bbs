@@ -83,7 +83,7 @@ pub async fn find_user_by_id(pool: &SqlitePool, id: i64) -> Result<Option<User>,
 
 pub async fn update_last_login(pool: &SqlitePool, user_id: i64) -> Result<(), sqlx::Error> {
     sqlx::query(
-        "UPDATE users SET last_login = datetime('now'), total_logins = total_logins + 1 WHERE id = ?",
+        "UPDATE users SET last_login = datetime('now', '-5 hours'), total_logins = total_logins + 1 WHERE id = ?",
     )
     .bind(user_id)
     .execute(pool)
@@ -120,6 +120,36 @@ pub async fn email_exists(pool: &SqlitePool, email: &str) -> Result<bool, sqlx::
         .fetch_one(pool)
         .await?;
     Ok(row.0 > 0)
+}
+
+/// Update a specific profile field for a user.
+///
+/// Supported fields: real_name, location, signature, bio.
+/// Returns an error if the field name is not recognized.
+pub async fn update_user_field(
+    pool: &SqlitePool,
+    user_id: i64,
+    field: &str,
+    value: &str,
+) -> Result<(), sqlx::Error> {
+    let query = match field {
+        "real_name" => "UPDATE users SET real_name = ? WHERE id = ?",
+        "location" => "UPDATE users SET location = ? WHERE id = ?",
+        "signature" => "UPDATE users SET signature = ? WHERE id = ?",
+        "bio" => "UPDATE users SET bio = ? WHERE id = ?",
+        _ => {
+            return Err(sqlx::Error::Protocol(format!(
+                "Unknown profile field: {}",
+                field
+            )));
+        }
+    };
+    sqlx::query(query)
+        .bind(value)
+        .bind(user_id)
+        .execute(pool)
+        .await?;
+    Ok(())
 }
 
 pub async fn delete_user(pool: &SqlitePool, user_id: i64) -> Result<(), sqlx::Error> {

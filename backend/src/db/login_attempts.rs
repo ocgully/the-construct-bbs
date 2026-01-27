@@ -26,7 +26,7 @@ pub async fn get_recent_failures(
     let row: (i64,) = sqlx::query_as(
         "SELECT COUNT(*) FROM login_attempts \
          WHERE handle = ? AND success = 0 \
-         AND datetime(attempted_at) > datetime('now', ?)",
+         AND datetime(attempted_at) > datetime('now', '-5 hours', ?)",
     )
     .bind(handle)
     .bind(&modifier)

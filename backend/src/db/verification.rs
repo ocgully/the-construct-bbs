@@ -22,7 +22,7 @@ pub async fn store_verification_code(
     let expiry_modifier = format!("+{} hours", expiry_hours);
     sqlx::query(
         "INSERT INTO verification_codes (email, code, code_type, expires_at) \
-         VALUES (?, ?, ?, datetime('now', ?))",
+         VALUES (?, ?, ?, datetime('now', '-5 hours', ?))",
     )
     .bind(email)
     .bind(code)
@@ -51,7 +51,7 @@ pub async fn validate_verification_code(
     let row: Option<(i64,)> = sqlx::query_as(
         "SELECT id FROM verification_codes \
          WHERE email = ? AND code = ? AND code_type = ? \
-         AND used = 0 AND datetime(expires_at) > datetime('now')",
+         AND used = 0 AND datetime(expires_at) > datetime('now', '-5 hours')",
     )
     .bind(email)
     .bind(code)
@@ -86,7 +86,7 @@ pub async fn validate_verification_code(
 /// Returns the number of rows deleted.
 pub async fn cleanup_expired_codes(pool: &SqlitePool) -> Result<u64, sqlx::Error> {
     let result =
-        sqlx::query("DELETE FROM verification_codes WHERE datetime(expires_at) <= datetime('now')")
+        sqlx::query("DELETE FROM verification_codes WHERE datetime(expires_at) <= datetime('now', '-5 hours')")
             .execute(pool)
             .await?;
     Ok(result.rows_affected())
@@ -231,10 +231,10 @@ mod tests {
     async fn expired_code_fails_validation() {
         let pool = setup_test_db().await;
 
-        // Insert a code that is already expired (0 hours expiry, then manually set past time)
+        // Insert a code that is already expired (well before EST comparison point)
         sqlx::query(
             "INSERT INTO verification_codes (email, code, code_type, expires_at) \
-             VALUES (?, ?, ?, datetime('now', '-1 hour'))",
+             VALUES (?, ?, ?, datetime('now', '-6 hours'))",
         )
         .bind("user@example.com")
         .bind("123456")
@@ -254,10 +254,10 @@ mod tests {
     async fn cleanup_removes_expired_codes() {
         let pool = setup_test_db().await;
 
-        // Insert an expired code
+        // Insert an expired code (well before EST comparison point)
         sqlx::query(
             "INSERT INTO verification_codes (email, code, code_type, expires_at) \
-             VALUES (?, ?, ?, datetime('now', '-1 hour'))",
+             VALUES (?, ?, ?, datetime('now', '-6 hours'))",
         )
         .bind("expired@example.com")
         .bind("111111")

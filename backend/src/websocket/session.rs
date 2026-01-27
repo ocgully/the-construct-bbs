@@ -4,13 +4,14 @@ use std::time::Duration;
 
 use crate::{
     AppState,
+    auth::session::create_session,
     connection::ceremony,
-    db::user::{find_user_by_id, update_user_time},
+    db::user::{find_user_by_id, update_last_login, update_user_field, update_user_time},
     services::{
         ServiceAction, SessionIO,
         goodbye::render_goodbye,
         login::{LoginFlow, LoginResult, render_login_header, render_welcome_back},
-        profile::render_profile_card,
+        profile::{render_profile_card, render_profile_edit_menu_string},
         registration::{RegistrationFlow, RegistrationResult, render_registration_header},
         welcome_art,
     },
@@ -292,6 +293,20 @@ impl Session {
                             // Valid token -- resume session
                             match find_user_by_id(pool, user_id).await {
                                 Ok(Some(user)) => {
+                                    // Check for duplicate session (Issue 10)
+                                    if self.state.node_manager.is_user_connected(user.id).await {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.bold();
+                                        w.writeln("");
+                                        w.writeln("Already connected from another session. Disconnecting...");
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                        tokio::time::sleep(Duration::from_secs(2)).await;
+                                        self.disconnecting = true;
+                                        return;
+                                    }
+
                                     // Assign a node for this reconnecting user
                                     match self.state.node_manager.assign_node(
                                         user.id,
@@ -409,6 +424,20 @@ impl Session {
                         user_level,
                         last_login,
                     } => {
+                        // Check for duplicate session (Issue 10)
+                        if self.state.node_manager.is_user_connected(user_id).await {
+                            let mut w = AnsiWriter::new();
+                            w.set_fg(Color::LightRed);
+                            w.bold();
+                            w.writeln("");
+                            w.writeln("Already connected from another session. Disconnecting...");
+                            w.reset_color();
+                            let _ = tx.send(w.flush()).await;
+                            tokio::time::sleep(Duration::from_secs(2)).await;
+                            self.disconnecting = true;
+                            return;
+                        }
+
                         // Update node_manager with real user info
                         if let Some(node_id) = self.node_id {
                             self.state.node_manager.release_node(node_id).await;
@@ -554,29 +583,119 @@ impl Session {
                         let _ = tx.send(w.flush()).await;
                         self.send_registration_prompt().await;
                     }
-                    RegistrationResult::Complete(_user_id) => {
+                    RegistrationResult::Complete(user_id) => {
                         let mut w = AnsiWriter::new();
                         w.set_fg(Color::LightGreen);
                         w.bold();
                         w.writeln("");
-                        w.writeln("Registration complete! You can now log in.");
+                        w.writeln("Registration complete! Logging you in...");
                         w.reset_color();
                         let _ = tx.send(w.flush()).await;
 
                         tokio::time::sleep(Duration::from_secs(1)).await;
 
-                        let (active, max) = self.state.node_manager.get_status().await;
-                        let header = render_login_header(
-                            &self.state.config.connection.tagline,
-                            active,
-                            max,
-                        );
-                        let _ = tx.send(header).await;
+                        // Auto-login: look up user, create session, authenticate
+                        let pool = &self.state.db_pool;
+                        match find_user_by_id(pool, user_id).await {
+                            Ok(Some(user)) => {
+                                // Update last_login
+                                let _ = update_last_login(pool, user_id).await;
 
-                        let login_flow = LoginFlow::new();
-                        let prompt = login_flow.current_prompt().to_string();
-                        self.auth_state = AuthState::Login(login_flow);
-                        self.send_prompt(&prompt, false).await;
+                                // Create session token
+                                let token = match create_session(
+                                    pool,
+                                    user_id,
+                                    self.node_id.map(|n| n as i32),
+                                    self.state.config.auth.session_duration_hours,
+                                ).await {
+                                    Ok(t) => t,
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("Session error: {}", e));
+                                        w.reset_color();
+                                        let _ = tx.send(w.flush()).await;
+                                        // Fall back to login flow
+                                        let login_flow = LoginFlow::new();
+                                        let prompt = login_flow.current_prompt().to_string();
+                                        self.auth_state = AuthState::Login(login_flow);
+                                        self.send_prompt(&prompt, false).await;
+                                        return;
+                                    }
+                                };
+
+                                // Send session token to frontend as JSON
+                                let token_msg = serde_json::json!({
+                                    "type": "session",
+                                    "token": &token
+                                });
+                                let _ = tx.send(
+                                    serde_json::to_string(&token_msg).unwrap()
+                                ).await;
+
+                                // Update node_manager with real user info
+                                if let Some(node_id) = self.node_id {
+                                    self.state.node_manager.release_node(node_id).await;
+                                    match self.state.node_manager
+                                        .assign_node(user_id, user.handle.clone())
+                                        .await
+                                    {
+                                        Ok(new_node_id) => {
+                                            self.node_id = Some(new_node_id);
+                                        }
+                                        Err(_) => {
+                                            self.node_id = None;
+                                        }
+                                    }
+                                }
+
+                                // Determine user level
+                                let user_level = if self.state.config.auth.sysop_handles
+                                    .iter()
+                                    .any(|h| h.eq_ignore_ascii_case(&user.handle))
+                                {
+                                    "Sysop".to_string()
+                                } else {
+                                    user.user_level.clone()
+                                };
+
+                                // Show welcome message
+                                let welcome = render_welcome_back(
+                                    &user.handle,
+                                    user.last_login.as_deref(),
+                                    1, // First login
+                                );
+                                let _ = tx.send(welcome).await;
+
+                                // Transition to Authenticated
+                                self.auth_state = AuthState::Authenticated {
+                                    user_id,
+                                    handle: user.handle.clone(),
+                                    token,
+                                    user_level,
+                                    login_time: std::time::Instant::now(),
+                                };
+
+                                println!("User {} auto-logged in after registration", user.handle);
+
+                                // Brief pause then show main menu
+                                tokio::time::sleep(Duration::from_secs(1)).await;
+                                self.show_main_menu().await;
+                            }
+                            _ => {
+                                // Fallback: send to login flow
+                                let mut w = AnsiWriter::new();
+                                w.set_fg(Color::LightRed);
+                                w.writeln("Error loading user. Please log in manually.");
+                                w.reset_color();
+                                let _ = tx.send(w.flush()).await;
+
+                                let login_flow = LoginFlow::new();
+                                let prompt = login_flow.current_prompt().to_string();
+                                self.auth_state = AuthState::Login(login_flow);
+                                self.send_prompt(&prompt, false).await;
+                            }
+                        }
                         return;
                     }
                     RegistrationResult::Failed(msg) => {
@@ -634,10 +753,15 @@ impl Session {
         }
 
         if let Some(service_name) = &self.current_service {
-            // Profile view: any key returns to main menu
+            // Profile edit mode: accumulate input, save on Enter
+            if service_name.starts_with("__profile_edit_") {
+                self.handle_profile_edit_input(input).await;
+                return;
+            }
+
+            // Profile menu: handle 1/2/3/4/q
             if service_name == "__profile__" {
-                self.current_service = None;
-                self.show_main_menu().await;
+                self.handle_profile_menu_input(input).await;
                 return;
             }
 
@@ -744,7 +868,7 @@ impl Session {
                 return;
             }
 
-            // Profile command: show user's profile card
+            // Profile command: show user's profile card with edit menu
             if trimmed.eq_ignore_ascii_case("profile") || trimmed.eq_ignore_ascii_case("p") {
                 if let AuthState::Authenticated { user_id, .. } = &self.auth_state {
                     let user_id = *user_id;
@@ -753,18 +877,10 @@ impl Session {
                             let card = render_profile_card(&user, true);
                             let _ = self.tx.send(card).await;
 
-                            // Show prompt to return to menu
-                            let mut w = AnsiWriter::new();
-                            w.writeln("");
-                            w.set_fg(Color::LightCyan);
-                            w.write_str("Press any key to return to menu...");
-                            w.reset_color();
-                            let _ = self.tx.send(w.flush()).await;
+                            // Show profile edit menu
+                            let menu = render_profile_edit_menu_string();
+                            let _ = self.tx.send(menu).await;
 
-                            // Set up a one-shot "return to menu" by using pending_pages
-                            // as a signal -- next input will show menu
-                            // Actually, just show menu on next input via a flag approach.
-                            // Simplest: use current_service = Some("__profile__") as marker
                             self.current_service = Some("__profile__".to_string());
                         }
                         _ => {
@@ -808,6 +924,131 @@ impl Session {
             self.output_buffer.write_str("Enter service number or (q)uit to disconnect: ");
             self.output_buffer.reset_color();
             self.flush_output().await;
+        }
+    }
+
+    /// Handle input on the profile edit menu (1-4 to edit fields, Q to return).
+    async fn handle_profile_menu_input(&mut self, input: &str) {
+        let trimmed = input.trim();
+        if trimmed.is_empty() || trimmed.starts_with('\x1b') {
+            return;
+        }
+
+        match trimmed {
+            "q" | "Q" => {
+                self.current_service = None;
+                self.show_main_menu().await;
+            }
+            "1" => {
+                self.current_service = Some("__profile_edit_real_name__".to_string());
+                self.pagination_buffer = Some(String::new());
+                send_colored_prompt(&self.tx, "Enter new real name: ", false).await;
+            }
+            "2" => {
+                self.current_service = Some("__profile_edit_location__".to_string());
+                self.pagination_buffer = Some(String::new());
+                send_colored_prompt(&self.tx, "Enter new location: ", false).await;
+            }
+            "3" => {
+                self.current_service = Some("__profile_edit_signature__".to_string());
+                self.pagination_buffer = Some(String::new());
+                send_colored_prompt(&self.tx, "Enter new signature: ", false).await;
+            }
+            "4" => {
+                self.current_service = Some("__profile_edit_bio__".to_string());
+                self.pagination_buffer = Some(String::new());
+                send_colored_prompt(&self.tx, "Enter new bio: ", false).await;
+            }
+            _ => {
+                // Invalid selection
+                let mut w = AnsiWriter::new();
+                w.set_fg(Color::LightRed);
+                w.writeln("Invalid selection.");
+                w.reset_color();
+                let _ = self.tx.send(w.flush()).await;
+            }
+        }
+    }
+
+    /// Handle character-by-character input during profile field editing.
+    async fn handle_profile_edit_input(&mut self, input: &str) {
+        let tx = self.tx.clone();
+
+        for ch in input.chars() {
+            if ch == '\r' || ch == '\n' {
+                // Enter pressed: save the field
+                let field_name = {
+                    let svc = self.current_service.as_deref().unwrap_or("");
+                    match svc {
+                        "__profile_edit_real_name__" => Some("real_name"),
+                        "__profile_edit_location__" => Some("location"),
+                        "__profile_edit_signature__" => Some("signature"),
+                        "__profile_edit_bio__" => Some("bio"),
+                        _ => None,
+                    }
+                };
+
+                let edit_input = self.pagination_buffer.take().unwrap_or_default();
+
+                let _ = tx.send("\r\n".to_string()).await;
+
+                if let (Some(field), AuthState::Authenticated { user_id, .. }) =
+                    (field_name, &self.auth_state)
+                {
+                    let user_id = *user_id;
+                    match update_user_field(
+                        &self.state.db_pool,
+                        user_id,
+                        field,
+                        &edit_input,
+                    ).await {
+                        Ok(()) => {
+                            let mut w = AnsiWriter::new();
+                            w.set_fg(Color::LightGreen);
+                            w.writeln("Profile updated!");
+                            w.reset_color();
+                            let _ = tx.send(w.flush()).await;
+                        }
+                        Err(e) => {
+                            let mut w = AnsiWriter::new();
+                            w.set_fg(Color::LightRed);
+                            w.writeln(&format!("Error updating profile: {}", e));
+                            w.reset_color();
+                            let _ = tx.send(w.flush()).await;
+                        }
+                    }
+
+                    // Re-show updated profile card + edit menu
+                    tokio::time::sleep(Duration::from_millis(500)).await;
+                    match find_user_by_id(&self.state.db_pool, user_id).await {
+                        Ok(Some(user)) => {
+                            let card = render_profile_card(&user, true);
+                            let _ = tx.send(card).await;
+                            let menu = render_profile_edit_menu_string();
+                            let _ = tx.send(menu).await;
+                        }
+                        _ => {}
+                    }
+                    self.current_service = Some("__profile__".to_string());
+                }
+                return;
+            } else if ch == '\x7f' || ch == '\x08' {
+                // Backspace
+                if let Some(buf) = &mut self.pagination_buffer {
+                    if buf.pop().is_some() {
+                        let _ = tx.send("\x08 \x08".to_string()).await;
+                    }
+                }
+            } else if !ch.is_control() {
+                // Printable character: accumulate and echo
+                if self.pagination_buffer.is_none() {
+                    self.pagination_buffer = Some(String::new());
+                }
+                if let Some(buf) = &mut self.pagination_buffer {
+                    buf.push(ch);
+                }
+                let _ = tx.send(ch.to_string()).await;
+            }
         }
     }
 

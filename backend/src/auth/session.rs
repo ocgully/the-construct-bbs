@@ -17,7 +17,7 @@ pub async fn create_session(
 
     sqlx::query(
         "INSERT INTO sessions (token, user_id, node_id, expires_at) \
-         VALUES (?, ?, ?, datetime('now', ?))",
+         VALUES (?, ?, ?, datetime('now', '-5 hours', ?))",
     )
     .bind(&token)
     .bind(user_id)
@@ -37,7 +37,7 @@ pub async fn validate_session(
 ) -> Result<Option<i64>, sqlx::Error> {
     let row: Option<(i64,)> = sqlx::query_as(
         "SELECT user_id FROM sessions \
-         WHERE token = ? AND datetime(expires_at) > datetime('now')",
+         WHERE token = ? AND datetime(expires_at) > datetime('now', '-5 hours')",
     )
     .bind(token)
     .fetch_optional(pool)
@@ -45,7 +45,7 @@ pub async fn validate_session(
 
     if let Some((user_id,)) = row {
         // Update last activity timestamp
-        sqlx::query("UPDATE sessions SET last_activity = datetime('now') WHERE token = ?")
+        sqlx::query("UPDATE sessions SET last_activity = datetime('now', '-5 hours') WHERE token = ?")
             .bind(token)
             .execute(pool)
             .await?;
@@ -75,7 +75,7 @@ pub async fn delete_user_sessions(pool: &SqlitePool, user_id: i64) -> Result<(),
 
 /// Remove all expired sessions. Returns number of rows deleted.
 pub async fn cleanup_expired_sessions(pool: &SqlitePool) -> Result<u64, sqlx::Error> {
-    let result = sqlx::query("DELETE FROM sessions WHERE datetime(expires_at) < datetime('now')")
+    let result = sqlx::query("DELETE FROM sessions WHERE datetime(expires_at) < datetime('now', '-5 hours')")
         .execute(pool)
         .await?;
     Ok(result.rows_affected())
@@ -89,7 +89,7 @@ pub async fn get_active_session_for_user(
 ) -> Result<Option<String>, sqlx::Error> {
     let row: Option<(String,)> = sqlx::query_as(
         "SELECT token FROM sessions \
-         WHERE user_id = ? AND datetime(expires_at) > datetime('now') \
+         WHERE user_id = ? AND datetime(expires_at) > datetime('now', '-5 hours') \
          LIMIT 1",
     )
     .bind(user_id)

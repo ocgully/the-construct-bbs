@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
     signature TEXT,
     bio TEXT,
     user_level TEXT NOT NULL DEFAULT 'User',
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now', '-5 hours')),
     last_login TEXT,
     total_logins INTEGER NOT NULL DEFAULT 0,
     total_time_minutes INTEGER NOT NULL DEFAULT 0,
@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS sessions (
     token TEXT PRIMARY KEY,
     user_id INTEGER NOT NULL,
     node_id INTEGER,
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    last_activity TEXT NOT NULL DEFAULT (datetime('now')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now', '-5 hours')),
+    last_activity TEXT NOT NULL DEFAULT (datetime('now', '-5 hours')),
     expires_at TEXT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS verification_codes (
     email TEXT NOT NULL,
     code TEXT NOT NULL,
     code_type TEXT NOT NULL DEFAULT 'registration',
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now', '-5 hours')),
     expires_at TEXT NOT NULL,
     used INTEGER NOT NULL DEFAULT 0
 );
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS login_attempts (
     id INTEGER PRIMARY KEY,
     handle TEXT NOT NULL,
     ip_address TEXT,
-    attempted_at TEXT NOT NULL DEFAULT (datetime('now')),
+    attempted_at TEXT NOT NULL DEFAULT (datetime('now', '-5 hours')),
     success INTEGER NOT NULL DEFAULT 0
 );
 

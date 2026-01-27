@@ -445,6 +445,13 @@ pub fn render_profile_card(user: &User, _is_own_profile: bool) -> String {
     w.flush()
 }
 
+/// Render the profile edit menu and return it as a string (for direct sending).
+pub fn render_profile_edit_menu_string() -> String {
+    let mut w = AnsiWriter::new();
+    render_profile_edit_menu(&mut w);
+    w.flush()
+}
+
 /// Render the profile edit menu (prep for future profile editing).
 pub fn render_profile_edit_menu(writer: &mut AnsiWriter) {
     writer.writeln("");
