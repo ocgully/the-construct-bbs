@@ -5,34 +5,34 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** The feeling of dialing into an exclusive, underground system — artificial scarcity, ANSI art, and social games that only work because everyone's sharing the same constrained space.
-**Current focus:** Phase 2 - Authentication & Connection
+**Current focus:** Phase 2 - Authentication & Connection (COMPLETE)
 
 ## Current Position
 
 Phase: 2 of 14 (Authentication & Connection)
-Plan: 4 of 5 in current phase
-Status: In progress
-Last activity: 2026-01-27 -- Completed 02-04-PLAN.md (Registration Flow and Email Verification)
+Plan: 5 of 5 in current phase
+Status: Phase complete
+Last activity: 2026-01-27 -- Completed 02-05-PLAN.md (Login Flow and Session Persistence)
 
-Progress: [████████░░] 100% of Phase 1 (5/5), 80% of Phase 2 (4/5)
+Progress: [██████████] 100% of Phase 1 (5/5), 100% of Phase 2 (5/5)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
+- Total plans completed: 10
 - Average duration: 6 min
-- Total execution time: 1.2 hours
+- Total execution time: 1.3 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan | Status |
 |-------|-------|-------|----------|--------|
 | 01    | 5     | 24min | 5min     | Complete |
-| 02    | 4     | 24min | 6min     | In progress |
+| 02    | 5     | 33min | 7min     | Complete |
 
 **Recent Trend:**
-- Last 5 plans: 4min, 7min, 4min, 5min, 8min
-- Trend: Consistently fast execution (3-8min range)
+- Last 5 plans: 7min, 4min, 5min, 8min, 9min
+- Trend: Consistently fast execution (4-9min range)
 
 *Updated after each plan completion*
 
@@ -78,6 +78,10 @@ Recent decisions affecting current work:
 | 02-04 | Character-by-character echo via handle_char with input_buffer | Terminal has no local echo; server echoes with * for passwords |
 | 02-04 | SMTP fallback to console logging when not configured | Dev mode works without external SMTP server |
 | 02-04 | 6-digit zero-padded verification code with configurable expiry | Matches context spec; expiry from AuthConfig |
+| 02-05 | Free function for prompt sending (avoids borrow checker conflicts) | LoginFlow borrows self.auth_state; free function takes &tx directly |
+| 02-05 | Ceremony deferred to handle_input (not on_connect) | Must receive auth token first to decide: resume or fresh ceremony |
+| 02-05 | Session deleted on disconnect | Prevents stale sessions blocking duplicate-session detection |
+| 02-05 | Clone tx sender in login/registration handlers | mpsc::Sender is cheap to clone; avoids all borrow conflicts cleanly |
 
 ### Pending Todos
 
@@ -103,25 +107,32 @@ All 5 plans executed successfully:
 - 01-04: WebSocket session layer (connection handling, ANSI buffering)
 - 01-05: Integration and visual verification (ANSI art, serving, verification)
 
-## Phase 2 Progress
+## Phase 2 Completion Summary
 
-**Authentication & Connection Phase: IN PROGRESS**
+**Authentication & Connection Phase: COMPLETE**
 
-Plans completed:
+All 5 plans executed successfully:
 - 02-01: Database layer and config extensions (SQLite + SQLx pool, schema, User CRUD, config)
 - 02-02: Auth core and node manager (Argon2id hashing, session CRUD, validation, NodeManager)
 - 02-03: Connection ceremony and modem audio (typewriter text, splash screen, line-busy, Web Audio)
 - 02-04: Registration flow and email verification (state machine, lettre SMTP, character echo)
+- 02-05: Login flow and session persistence (LoginFlow, AuthState, token in localStorage)
 
-Plans remaining:
-- 02-05: Login flow and session management
+Full auth lifecycle implemented:
+1. Connect -> frontend sends auth token
+2. Valid token -> resume session (skip ceremony, show welcome-back, main menu)
+3. No/invalid token -> ceremony -> login header -> handle prompt
+4. Login: handle -> password (masked) -> welcome-back -> main menu
+5. Registration: "new" -> handle -> email -> password -> verification code -> login
+6. Session persists across page refresh via localStorage
+7. Duplicate sessions blocked, lockout after N failed attempts
 
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed 02-04-PLAN.md (Registration Flow and Email Verification)
+Stopped at: Completed 02-05-PLAN.md (Login Flow and Session Persistence) -- Phase 2 COMPLETE
 Resume file: None
-Next action: Phase 2, Plan 05 - Login flow and session management (final plan in Phase 2)
+Next action: Phase 3 (Message Boards)
 
 ---
 *State initialized: 2026-01-26*

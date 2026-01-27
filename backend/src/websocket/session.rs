@@ -356,7 +356,7 @@ impl Session {
         for ch in input.chars() {
             if ch == '\r' || ch == '\n' {
                 // Enter pressed: take accumulated input and process
-                let (line, result) = {
+                let (_line, result) = {
                     let flow = match &mut self.auth_state {
                         AuthState::Login(f) => f,
                         _ => return,
