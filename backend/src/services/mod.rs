@@ -1,5 +1,6 @@
 pub mod registry;
 pub mod example;
+pub mod registration;
 pub mod welcome_art;
 
 pub use registry::ServiceRegistry;
