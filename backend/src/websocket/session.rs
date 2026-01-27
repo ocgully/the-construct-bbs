@@ -14,7 +14,6 @@ use crate::{
         login::{LoginFlow, LoginResult, render_login_header, render_welcome_back},
         profile::{render_profile_card, render_profile_edit_menu_string},
         registration::{RegistrationFlow, RegistrationResult, render_registration_header},
-        welcome_art,
     },
     terminal::{AnsiWriter, Color, Pager, Page, more_prompt, clear_more_prompt},
 };
