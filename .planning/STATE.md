@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 3 of 14 (Navigation System)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-01-27 -- Completed 03-01-PLAN.md (Menu Configuration Schema)
+Last activity: 2026-01-27 -- Completed 03-02-PLAN.md (Menu State Machine & Rendering)
 
-Progress: [████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 33% of Phase 3 (1/3)
+Progress: [████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 67% of Phase 3 (2/3)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 13
+- Total plans completed: 14
 - Average duration: 6 min
 - Total execution time: 1.6 hours
 
@@ -29,11 +29,11 @@ Progress: [████████████] 100% of Phase 1 (5/5), 100% of 
 |-------|-------|-------|----------|--------|
 | 01    | 5     | 24min | 5min     | Complete |
 | 02    | 7     | 45min | 6min     | Complete (incl. integration) |
-| 03    | 1     | 4min  | 4min     | In progress |
+| 03    | 2     | 7min  | 4min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 8min, 9min, 4min, 8min, 4min
-- Trend: Consistently fast execution (4-9min range)
+- Last 5 plans: 9min, 4min, 8min, 4min, 3min
+- Trend: Consistently fast execution (3-9min range)
 
 *Updated after each plan completion*
 
@@ -93,6 +93,10 @@ Recent decisions affecting current work:
 | 03-01 | All menu fields use #[serde(default)] for graceful config loading | Menu section entirely optional in config.toml |
 | 03-01 | 26 Stoic quotes embedded for MOTD rotation (not configurable text files) | Thematic consistency with "The Construct" atmosphere |
 | 03-01 | Future service items commented out in config.toml with phase annotations | Sysop visibility into planned features |
+| 03-02 | Q key dual behavior: BackToMain in submenu, ExecuteCommand(quit) at main | Submenus give Q precedence for consistent Back behavior |
+| 03-02 | drain_buffer stops at LaunchService/ExecuteCommand | Preserves remaining buffer for next menu, prevents over-consumption |
+| 03-02 | Adaptive column layout threshold at 7 items | Main menu switches to two columns when >7 items for balance |
+| 03-02 | MOTD quote called in render function (not passed as parameter) | Keeps quote random on each menu redraw |
 
 ### Pending Todos
 
@@ -145,22 +149,22 @@ Full auth lifecycle implemented:
 
 ## Phase 3 Progress Summary
 
-**Navigation System Phase: IN PROGRESS (1/3 plans complete)**
+**Navigation System Phase: IN PROGRESS (2/3 plans complete)**
 
 Plans completed:
 - 03-01: Menu configuration schema (MenuItem enum, MenuConfig, TOML definitions, Stoic quotes)
+- 03-02: Menu state machine and rendering (MenuSession, TypeAheadBuffer, ANSI rendering)
 
 Plans remaining:
-- 03-02: Menu rendering (ANSI art headers, item display, MOTD)
-- 03-03: Navigation logic (input handling, state machine, command stacking)
+- 03-03: Navigation logic integration (wire MenuSession into WebSocket session handling)
 
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed 03-01-PLAN.md (Menu Configuration Schema) -- Phase 3 plan 1 of 3
+Stopped at: Completed 03-02-PLAN.md (Menu State Machine & Rendering) -- Phase 3 plan 2 of 3
 Resume file: None
-Next action: Phase 3 Plan 02 (Menu Rendering)
+Next action: Phase 3 Plan 03 (Navigation Logic Integration)
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-27 (02-07 integration)*
+*Last updated: 2026-01-27 (03-02 menu state machine and rendering)*
