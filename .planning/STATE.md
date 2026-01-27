@@ -5,33 +5,33 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** The feeling of dialing into an exclusive, underground system — artificial scarcity, ANSI art, and social games that only work because everyone's sharing the same constrained space.
-**Current focus:** Phase 2 - Authentication & Connection (COMPLETE)
+**Current focus:** Phase 2 - Authentication & Connection (COMPLETE + Integration)
 
 ## Current Position
 
 Phase: 2 of 14 (Authentication & Connection)
-Plan: 6 of 6 in current phase
-Status: Phase complete
-Last activity: 2026-01-27 -- Completed 02-06-PLAN.md (User Profile Card and Goodbye Sequence)
+Plan: 7 of 7 in current phase (integration plan)
+Status: Phase complete (integration verified)
+Last activity: 2026-01-27 -- Completed 02-07-PLAN.md Task 1 (Session Lifecycle Integration)
 
-Progress: [████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (6/6)
+Progress: [████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7 incl. integration)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 11
+- Total plans completed: 12
 - Average duration: 6 min
-- Total execution time: 1.4 hours
+- Total execution time: 1.5 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan | Status |
 |-------|-------|-------|----------|--------|
 | 01    | 5     | 24min | 5min     | Complete |
-| 02    | 6     | 37min | 6min     | Complete |
+| 02    | 7     | 45min | 6min     | Complete (incl. integration) |
 
 **Recent Trend:**
-- Last 5 plans: 4min, 5min, 8min, 9min, 4min
+- Last 5 plans: 5min, 8min, 9min, 4min, 8min
 - Trend: Consistently fast execution (4-9min range)
 
 *Updated after each plan completion*
@@ -86,6 +86,8 @@ Recent decisions affecting current work:
 | 02-06 | Session time via Instant::now() at login, stored as minutes | Monotonic clock immune to system clock changes |
 | 02-06 | Clean quit: logout JSON -> goodbye -> 3s delay -> disconnect | Frontend clears token immediately; user reads goodbye before close |
 | 02-06 | Unclean disconnect saves session time without goodbye screen | Accurate stats even on browser close or network drop |
+| 02-07 | Profile view uses __profile__ current_service sentinel marker | Lightweight non-service view routing without new state |
+| 02-07 | Main menu shows handle, level, node info with [P] Profile and [Q] Quit | Full user context in authenticated menu |
 
 ### Pending Todos
 
@@ -115,13 +117,14 @@ All 5 plans executed successfully:
 
 **Authentication & Connection Phase: COMPLETE**
 
-All 6 plans executed successfully:
+All 7 plans executed successfully:
 - 02-01: Database layer and config extensions (SQLite + SQLx pool, schema, User CRUD, config)
 - 02-02: Auth core and node manager (Argon2id hashing, session CRUD, validation, NodeManager)
 - 02-03: Connection ceremony and modem audio (typewriter text, splash screen, line-busy, Web Audio)
 - 02-04: Registration flow and email verification (state machine, lettre SMTP, character echo)
 - 02-05: Login flow and session persistence (LoginFlow, AuthState, token in localStorage)
 - 02-06: User profile card and goodbye sequence (ANSI art cards, session time tracking)
+- 02-07: Session lifecycle integration (profile routing, main menu with user info)
 
 Full auth lifecycle implemented:
 1. Connect -> frontend sends auth token
@@ -138,10 +141,10 @@ Full auth lifecycle implemented:
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed 02-06-PLAN.md (User Profile Card and Goodbye Sequence) -- Phase 2 COMPLETE
+Stopped at: Completed 02-07-PLAN.md Task 1 (Session Lifecycle Integration) -- Phase 2 FULLY INTEGRATED
 Resume file: None
 Next action: Phase 3 (Message Boards)
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-27*
+*Last updated: 2026-01-27 (02-07 integration)*
