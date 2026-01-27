@@ -10,3 +10,20 @@ rows = 24
 name = "example"
 enabled = true
 description = "Example service for testing"
+
+[auth]
+max_login_attempts = 5
+lockout_minutes = 15
+session_duration_hours = 24
+verification_code_expiry_hours = 24
+sysop_handles = ["Sysop"]
+
+[connection]
+max_nodes = 16
+baud_simulation_cps = 960
+line_busy_mode = "disconnect"
+idle_timeout_minutes = 15
+idle_warning_bell = true
+ceremony_skippable = false
+tagline = "Welcome to The Construct BBS"
+show_last_callers = true

@@ -1,4 +1,5 @@
 mod config;
+mod db;
 mod services;
 mod terminal;
 mod websocket;
@@ -11,11 +12,13 @@ use tower_http::services::ServeDir;
 use std::sync::Arc;
 use config::Config;
 use services::ServiceRegistry;
+use sqlx::SqlitePool;
 
 #[derive(Clone)]
 pub(crate) struct AppState {
     pub(crate) config: Config,
     pub(crate) registry: ServiceRegistry,
+    pub(crate) db_pool: SqlitePool,
 }
 
 #[tokio::main]
@@ -32,9 +35,16 @@ async fn main() {
     let registry = ServiceRegistry::from_config(&config);
     println!("Loaded {} service(s)", registry.list().len());
 
+    // Initialize database
+    let db_pool = db::pool::init_pool("sqlite:bbs.db?mode=rwc")
+        .await
+        .expect("Failed to initialize database");
+    println!("Database initialized");
+
     let state = Arc::new(AppState {
         config,
         registry,
+        db_pool,
     });
 
     let app = Router::new()
