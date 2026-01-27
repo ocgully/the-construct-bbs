@@ -80,10 +80,12 @@ Plans:
   2. User can navigate hierarchical menu structure with breadcrumbs
   3. User can use hotkeys for rapid menu traversal
   4. All menu screens display authentic ANSI art headers and borders
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] TBD during planning
+- [ ] 03-01-PLAN.md -- Menu config schema, TOML menu definitions, and Stoic quotes module
+- [ ] 03-02-PLAN.md -- Menu state machine, type-ahead buffer, and ANSI rendering
+- [ ] 03-03-PLAN.md -- Session integration, legacy cleanup, and end-to-end verification
 
 ### Phase 4: Time Limits & User Lists
 **Goal**: BBS enforces daily time limits and displays active/recent users
@@ -265,7 +267,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 |-------|----------------|--------|-----------|
 | 1. Terminal Foundation | 5/5 | Complete | 2026-01-26 |
 | 2. Authentication & Connection | 0/7 | Not started | - |
-| 3. Navigation System | 0/TBD | Not started | - |
+| 3. Navigation System | 0/3 | Not started | - |
 | 4. Time Limits & User Lists | 0/TBD | Not started | - |
 | 5. Email System | 0/TBD | Not started | - |
 | 6. Chat & Real-Time Communication | 0/TBD | Not started | - |
@@ -280,4 +282,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
 ---
 *Roadmap created: 2026-01-26*
-*Last updated: 2026-01-26*
+*Last updated: 2026-01-27*
