@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 2 of 14 (Authentication & Connection)
-Plan: 2 of 5 in current phase
+Plan: 3 of 5 in current phase
 Status: In progress
-Last activity: 2026-01-27 -- Completed 02-02-PLAN.md (Auth Core and Node Manager)
+Last activity: 2026-01-27 -- Completed 02-03-PLAN.md (Connection Ceremony and Modem Audio)
 
-Progress: [██████░░░░] 100% of Phase 1 (5/5), 40% of Phase 2 (2/5)
+Progress: [███████░░░] 100% of Phase 1 (5/5), 60% of Phase 2 (3/5)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
+- Total plans completed: 8
 - Average duration: 5 min
-- Total execution time: 1.0 hours
+- Total execution time: 1.1 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan | Status |
 |-------|-------|-------|----------|--------|
 | 01    | 5     | 24min | 5min     | Complete |
-| 02    | 2     | 11min | 6min     | In progress |
+| 02    | 3     | 16min | 5min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 7min, 3min, 4min, 7min, 4min
+- Last 5 plans: 3min, 4min, 7min, 4min, 5min
 - Trend: Consistently fast execution (3-7min range)
 
 *Updated after each plan completion*
@@ -70,6 +70,10 @@ Recent decisions affecting current work:
 | 02-02 | verify_password returns Ok(false) on mismatch, not Err | Cleaner API for login flows |
 | 02-02 | tokio::sync::RwLock for NodeManager (not std) | Async-safe concurrent access to node state |
 | 02-02 | First-available node assignment from 1..=max_nodes | BBS line numbering convention, fills gaps on disconnect |
+| 02-03 | Ceremony writes directly to tx channel (bypasses output_buffer) | Typewriter pacing requires real-time delay control |
+| 02-03 | Eager node assignment during ceremony with placeholder info | Accurate node counts during ceremony; updated after login |
+| 02-03 | on_connect returns bool for line-busy disconnect flow | Clean session teardown when all nodes full |
+| 02-03 | Frontend connect prompt doubles as AudioContext user gesture | Browser autoplay policy compliance with atmospheric UX |
 
 ### Pending Todos
 
@@ -102,18 +106,18 @@ All 5 plans executed successfully:
 Plans completed:
 - 02-01: Database layer and config extensions (SQLite + SQLx pool, schema, User CRUD, config)
 - 02-02: Auth core and node manager (Argon2id hashing, session CRUD, validation, NodeManager)
+- 02-03: Connection ceremony and modem audio (typewriter text, splash screen, line-busy, Web Audio)
 
 Plans remaining:
-- 02-03: Session management
 - 02-04: Registration flow
-- 02-05: Connection ceremony
+- 02-05: Login flow and session management
 
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed 02-02-PLAN.md (Auth Core and Node Manager)
+Stopped at: Completed 02-03-PLAN.md (Connection Ceremony and Modem Audio)
 Resume file: None
-Next action: Phase 2, Plan 03 - Session Management
+Next action: Phase 2, Plan 04 - Registration flow (parallel with 02-03, may already be done)
 
 ---
 *State initialized: 2026-01-26*
