@@ -17,10 +17,13 @@ export function connectWebSocket(terminal: Terminal): WebSocket {
 
     ws.onopen = () => {
       console.log('WebSocket connected');
+      // Clear the "Press any key to dial in..." prompt
       terminal.clear();
-      terminal.writeln('Connected to The Construct BBS');
-      terminal.writeln('');
       reconnectDelay = INITIAL_RECONNECT_DELAY;
+
+      // Send auth token if available (enables session resumption in Plan 05)
+      const storedToken = localStorage.getItem('bbs_session_token');
+      ws.send(JSON.stringify({ type: 'auth', token: storedToken }));
     };
 
     ws.onmessage = (event) => {
@@ -55,7 +58,7 @@ export function connectWebSocket(terminal: Terminal): WebSocket {
   ws = connect();
 
   // Wire terminal input to WebSocket
-  // Filter out mouse/scroll escape sequences — only send printable input and basic control chars
+  // Filter out mouse/scroll escape sequences -- only send printable input and basic control chars
   terminal.onData((data) => {
     if (ws.readyState === WebSocket.OPEN) {
       // Ignore mouse reporting sequences (ESC [ M ..., ESC [ < ...)

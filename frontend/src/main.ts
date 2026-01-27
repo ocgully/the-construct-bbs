@@ -3,6 +3,7 @@ import { initTerminal, fitAddon } from './terminal';
 import { connectWebSocket } from './websocket';
 import { CRTController, CRTLevel } from './crt-effects';
 import { setupMobile, isMobile } from './mobile';
+import { loadModemSound, playModemSound } from './audio';
 
 // Main initialization
 document.addEventListener('DOMContentLoaded', async () => {
@@ -18,9 +19,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize terminal
     const terminal = await initTerminal(wrapper);
 
-    // Show connecting message
-    terminal.writeln('Connecting to The Construct BBS...');
-    terminal.writeln('');
+    // Preload modem sound early (before user gesture)
+    loadModemSound();
 
     // Initialize CRT controller
     const crtController = new CRTController(container);
@@ -45,10 +45,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.log('Mobile mode active');
     }
 
-    // Connect WebSocket
-    connectWebSocket(terminal);
+    // Show connect prompt -- user must press a key to "pick up the phone"
+    // This serves double duty: user gesture for AudioContext AND atmospheric moment
+    terminal.writeln('\x1b[96m\x1b[1m');
+    terminal.writeln('  The Construct BBS');
+    terminal.writeln('\x1b[0m');
+    terminal.writeln('\x1b[93m  Press any key to dial in...\x1b[0m');
+    terminal.writeln('');
 
-    console.log('Terminal initialized and connected');
+    // Wait for a single keypress, then play modem sound and connect
+    const disposable = terminal.onData(() => {
+      disposable.dispose();
+
+      // Play modem sound (user gesture satisfies autoplay policy)
+      playModemSound();
+
+      // Connect to the BBS
+      connectWebSocket(terminal);
+    });
+
+    console.log('Terminal initialized, awaiting user input to connect');
   } catch (error) {
     console.error('Failed to initialize terminal:', error);
   }
