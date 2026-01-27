@@ -25,7 +25,7 @@ The feeling of dialing into an exclusive, underground system — artificial scar
 - [ ] Acrophobia clone — real-time multiplayer rounds with timed submissions and voting
 - [ ] Legend of the Red Dragon clone — daily turns, combat, inn, PvP
 - [ ] Usurper clone — medieval RPG, darker tone than LORD
-- [ ] Legend of Kyrandia clone — adventure/puzzle game
+- [ ] Kyrandia clone — MUD (Multi-User Dungeon)
 - [ ] Drug Wars clone — buy/sell commodities across locations, random events
 - [ ] Max concurrent user cap (real enforced limit — "line busy" when full)
 - [ ] Daily per-user time limits (real enforced)
@@ -51,7 +51,7 @@ The feeling of dialing into an exclusive, underground system — artificial scar
 - Door games (LORD, Usurper, Trade Wars, Drug Wars) were the social glue of BBS culture — faithful mechanical clones are more important than pixel-perfect visual replicas
 - Acrophobia is a party game (random acronym, players submit backronyms, vote on best) — needs real-time multiplayer with enough players to be fun
 - The "line busy" experience and time limits aren't just nostalgia — they create genuine scarcity that makes the space feel alive and exclusive
-- Legend of Kyrandia is the outlier — an adventure/puzzle game rather than RPG/trading, requiring different game engine patterns
+- Kyrandia is a MUD (Multi-User Dungeon) — distinct from the single-player door games, requiring persistent world state, real-time multi-user interaction, and room-based exploration
 
 ## Constraints
 

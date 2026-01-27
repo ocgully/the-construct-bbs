@@ -48,7 +48,7 @@
 - [ ] **GAME-01**: Acrophobia clone — real-time multiplayer rounds with timed acronym submissions and voting
 - [ ] **GAME-02**: Legend of the Red Dragon clone — daily turns, forest combat, inn, PvP, dragon boss progression
 - [ ] **GAME-03**: Usurper clone — medieval RPG with kingdom management, quests, class system, daily turns
-- [ ] **GAME-04**: Legend of Kyrandia clone — adventure/puzzle game with inventory, exploration, story progression
+- [ ] **GAME-04**: Kyrandia clone — MUD (Multi-User Dungeon) with persistent world, real-time multi-user exploration, combat, and social interaction
 - [ ] **GAME-05**: Drug Wars clone — buy/sell commodities across locations, random events, loan shark, 30-day limit
 - [ ] **GAME-06**: All door games accessible from main menu as pluggable services
 - [ ] **GAME-07**: Game state persists between sessions (save/resume)

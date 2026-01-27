@@ -36,7 +36,7 @@ Features that set a BBS apart. Not expected, but highly valued. These create com
 | **Door Game: LORD** | Iconic daily-turn RPG | High | Forest encounters, inn, skills, PvP, daily turns |
 | **Door Game: Usurper** | Medieval fantasy RPG, LORD competitor | High | Kingdom building, quests, character progression |
 | **Door Game: Drug Wars** | Trading/economics simulation | Medium | Commodity markets, risk/reward, loan sharks |
-| **Door Game: Legend of Kyrandia** | Adventure/puzzle game | High | Inventory, puzzles, exploration, story |
+| **Door Game: Kyrandia (MUD)** | Multi-User Dungeon | High | Persistent world, rooms, combat, social |
 | **Door Game: Acrophobia** | Party word game (multiplayer) | Medium-High | Real-time acronym challenges, scoring |
 | **QWK Mail Packets** | Offline mail reader support | Medium | Packet generation, batch downloads |
 | **ANSI Editor Integration** | In-system art creation | High | TheDraw-style editor, CP437 support |
@@ -113,7 +113,7 @@ Door games are complex sub-systems requiring detailed mechanics.
 
 **Complexity:** Medium (simpler than RPGs, but market simulation + events)
 
-### Legend of Kyrandia
+### Kyrandia (MUD)
 
 **Core Loop:**
 - Exploration: rooms, directions, mapping
@@ -335,7 +335,7 @@ Defer to **post-MVP** (Phase 2+):
 
 - **LORD** - High complexity, phase 2 priority
 - **Usurper** - Similar to LORD, phase 3
-- **Legend of Kyrandia** - Content-heavy, phase 3-4
+- **Kyrandia (MUD)** - Content-heavy, phase 3-4
 - **Acrophobia** - Requires critical mass of users, phase 3
 - **QWK Mail Packets** - Niche feature, phase 4
 - **ANSI Editor** - Nice-to-have, phase 4
@@ -359,7 +359,7 @@ Defer to **post-MVP** (Phase 2+):
 | Drug Wars (door) | Medium | 7-10 days | Auth, state machine |
 | LORD (door) | High | 15-20 days | Auth, complex state machine, combat |
 | Usurper (door) | High | 20-25 days | Similar to LORD + kingdom sim |
-| Kyrandia (door) | High | 25-30 days | Story scripting, puzzle engine |
+| Kyrandia (MUD) | High | 25-30 days | World engine, room system, MUD framework |
 | Acrophobia (door) | Medium-High | 10-12 days | Real-time multiplayer, voting |
 | Sysop Tools | High | 10-15 days | All features (admin panel) |
 
@@ -382,7 +382,7 @@ Defer to **post-MVP** (Phase 2+):
 - Voting booths, bulletins enhancements
 
 **Phase 4: Advanced Features**
-- Legend of Kyrandia (content-heavy)
+- Kyrandia (MUD) (content-heavy)
 - ANSI editor
 - QWK mail packets
 - Event calendar

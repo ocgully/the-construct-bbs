@@ -51,7 +51,7 @@ The stack emphasizes type safety, async-first design, and proven WebSocket/termi
 - File tagging (batch download queue)
 
 **Defer (v2+):**
-- Legend of Kyrandia (content-heavy adventure game — Phase 4)
+- Kyrandia (MUD) (Multi-User Dungeon — Phase 4)
 - Acrophobia (multiplayer party game, needs user critical mass — Phase 3)
 - ANSI editor integration (TheDraw-style editor — Phase 4)
 - External protocols (ZMODEM/XMODEM — Phase 4, niche)

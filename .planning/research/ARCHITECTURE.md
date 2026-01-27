@@ -596,7 +596,7 @@ impl Service for RealTimeMultiplayer {
 }
 ```
 
-**Adventure Game (Kyrandia):**
+**MUD (Kyrandia):**
 ```rust
 pub struct AdventureGameState {
     location: LocationId,

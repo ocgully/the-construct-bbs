@@ -23,7 +23,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 9: Second Door Game (LORD)** - Complex RPG with combat, PvP, dragon boss
 - [ ] **Phase 10: Third Door Game (Usurper)** - Medieval RPG, darker theme
 - [ ] **Phase 11: Multiplayer Door Game (Acrophobia)** - Real-time party game
-- [ ] **Phase 12: Adventure Door Game (Kyrandia)** - Puzzle/adventure game
+- [ ] **Phase 12: MUD Door Game (Kyrandia)** - Multi-User Dungeon
 - [ ] **Phase 13: Sysop Administration** - Admin panel, user management, system config
 - [ ] **Phase 14: Easter Eggs & Polish** - Hidden lore, secret commands, final polish
 
@@ -211,15 +211,15 @@ Plans:
 Plans:
 - [ ] TBD during planning
 
-### Phase 12: Adventure Door Game (Kyrandia)
-**Goal**: Users can play Legend of Kyrandia adventure/puzzle game
+### Phase 12: MUD Door Game (Kyrandia)
+**Goal**: Users can play Kyrandia MUD (Multi-User Dungeon)
 **Depends on**: Phase 11
 **Requirements**: GAME-04
 **Success Criteria** (what must be TRUE):
-  1. User can launch Kyrandia from main menu
-  2. User can explore game world with inventory system
-  3. User can solve puzzles to advance story
-  4. User experiences adventure/puzzle gameplay distinct from RPG games
+  1. User can launch Kyrandia MUD from main menu
+  2. User can explore persistent world with room-based navigation
+  3. User can interact with other players in real-time
+  4. User can engage in MUD-style combat and social interaction
   5. User game state persists between sessions
 **Plans**: TBD
 
@@ -274,7 +274,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 9. Second Door Game (LORD) | 0/TBD | Not started | - |
 | 10. Third Door Game (Usurper) | 0/TBD | Not started | - |
 | 11. Multiplayer Door Game (Acrophobia) | 0/TBD | Not started | - |
-| 12. Adventure Door Game (Kyrandia) | 0/TBD | Not started | - |
+| 12. MUD Door Game (Kyrandia) | 0/TBD | Not started | - |
 | 13. Sysop Administration | 0/TBD | Not started | - |
 | 14. Easter Eggs & Polish | 0/TBD | Not started | - |
 
