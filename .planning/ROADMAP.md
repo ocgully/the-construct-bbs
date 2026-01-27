@@ -60,10 +60,16 @@ Plans:
   5. User receives "line busy" rejection when max concurrent users reached
   6. User sees goodbye screen with session stats on logout
   7. User profile displays name, join date, location, signature with tracked stats
-**Plans**: TBD
+**Plans**: 7 plans
 
 Plans:
-- [ ] TBD during planning
+- [ ] 02-01-PLAN.md -- Database foundation (SQLx, schema, User CRUD) and config extensions
+- [ ] 02-02-PLAN.md -- Auth core (Argon2 password hashing, session tokens, validation, profanity filter) and NodeManager
+- [ ] 02-03-PLAN.md -- Connection ceremony (modem audio, typewriter text, ANSI splash, line-busy rejection)
+- [ ] 02-04-PLAN.md -- Registration service (interactive terminal prompts, email verification, handle validation)
+- [ ] 02-05-PLAN.md -- Login flow (handle/password prompts, session token persistence, session resumption)
+- [ ] 02-06-PLAN.md -- User profile ANSI card and goodbye sequence with session stats
+- [ ] 02-07-PLAN.md -- Flow integration, end-to-end wiring, and human verification
 
 ### Phase 3: Navigation System
 **Goal**: Users can navigate BBS using Wildcat-style numbered/lettered menus with ANSI art
@@ -258,7 +264,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Terminal Foundation | 5/5 | Complete | 2026-01-26 |
-| 2. Authentication & Connection | 0/TBD | Not started | - |
+| 2. Authentication & Connection | 0/7 | Not started | - |
 | 3. Navigation System | 0/TBD | Not started | - |
 | 4. Time Limits & User Lists | 0/TBD | Not started | - |
 | 5. Email System | 0/TBD | Not started | - |
