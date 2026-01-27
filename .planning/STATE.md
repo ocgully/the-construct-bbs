@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** The feeling of dialing into an exclusive, underground system — artificial scarcity, ANSI art, and social games that only work because everyone's sharing the same constrained space.
-**Current focus:** Phase 2 - Authentication & Connection (COMPLETE + Integration)
+**Current focus:** Phase 3 - Navigation System (IN PROGRESS)
 
 ## Current Position
 
-Phase: 2 of 14 (Authentication & Connection)
-Plan: 7 of 7 in current phase (integration plan)
-Status: Phase complete (integration verified)
-Last activity: 2026-01-27 -- Completed 02-07-PLAN.md Task 1 (Session Lifecycle Integration)
+Phase: 3 of 14 (Navigation System)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-01-27 -- Completed 03-01-PLAN.md (Menu Configuration Schema)
 
-Progress: [████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7 incl. integration)
+Progress: [████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 33% of Phase 3 (1/3)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12
+- Total plans completed: 13
 - Average duration: 6 min
-- Total execution time: 1.5 hours
+- Total execution time: 1.6 hours
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [████████████] 100% of Phase 1 (5/5), 100% of 
 |-------|-------|-------|----------|--------|
 | 01    | 5     | 24min | 5min     | Complete |
 | 02    | 7     | 45min | 6min     | Complete (incl. integration) |
+| 03    | 1     | 4min  | 4min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 5min, 8min, 9min, 4min, 8min
+- Last 5 plans: 8min, 9min, 4min, 8min, 4min
 - Trend: Consistently fast execution (4-9min range)
 
 *Updated after each plan completion*
@@ -88,6 +89,10 @@ Recent decisions affecting current work:
 | 02-06 | Unclean disconnect saves session time without goodbye screen | Accurate stats even on browser close or network drop |
 | 02-07 | Profile view uses __profile__ current_service sentinel marker | Lightweight non-service view routing without new state |
 | 02-07 | Main menu shows handle, level, node info with [P] Profile and [Q] Quit | Full user context in authenticated menu |
+| 03-01 | MenuItem enum uses internally-tagged serde with type/hotkey/name/order/min_level | Clean TOML syntax for menu configuration |
+| 03-01 | All menu fields use #[serde(default)] for graceful config loading | Menu section entirely optional in config.toml |
+| 03-01 | 26 Stoic quotes embedded for MOTD rotation (not configurable text files) | Thematic consistency with "The Construct" atmosphere |
+| 03-01 | Future service items commented out in config.toml with phase annotations | Sysop visibility into planned features |
 
 ### Pending Todos
 
@@ -138,12 +143,23 @@ Full auth lifecycle implemented:
 9. Goodbye sequence shows session stats with NO CARRIER disconnect
 10. Session time tracked on both clean quit and unclean disconnect
 
+## Phase 3 Progress Summary
+
+**Navigation System Phase: IN PROGRESS (1/3 plans complete)**
+
+Plans completed:
+- 03-01: Menu configuration schema (MenuItem enum, MenuConfig, TOML definitions, Stoic quotes)
+
+Plans remaining:
+- 03-02: Menu rendering (ANSI art headers, item display, MOTD)
+- 03-03: Navigation logic (input handling, state machine, command stacking)
+
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed 02-07-PLAN.md Task 1 (Session Lifecycle Integration) -- Phase 2 FULLY INTEGRATED
+Stopped at: Completed 03-01-PLAN.md (Menu Configuration Schema) -- Phase 3 plan 1 of 3
 Resume file: None
-Next action: Phase 3 (Message Boards)
+Next action: Phase 3 Plan 02 (Menu Rendering)
 
 ---
 *State initialized: 2026-01-26*
