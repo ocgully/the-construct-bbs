@@ -210,6 +210,7 @@ fn strip_ansi_len(s: &str) -> usize {
 
 /// Build the ANSI art splash screen as a vector of pre-formatted lines.
 /// Uses CP437 box-drawing and CGA colors for authentic BBS atmosphere.
+/// Features a large Matrix-themed ASCII art logo for "THE CONSTRUCT".
 fn build_splash_art() -> Vec<String> {
     let mut lines = Vec::new();
 
@@ -221,6 +222,34 @@ fn build_splash_art() -> Vec<String> {
             w.reset_color();
             w.flush()
         }};
+    }
+
+    // Helper: bordered empty row
+    macro_rules! empty_row {
+        () => {
+            lines.push(line!(|w: &mut AnsiWriter| {
+                w.set_fg(Color::LightCyan);
+                w.bold();
+                w.write_cp437(&[0xBA]); // ║
+                w.write_str(&" ".repeat(78));
+                w.write_cp437(&[0xBA]); // ║
+            }));
+        };
+    }
+
+    // Helper: bordered row with content (content must be exactly 78 visible chars)
+    macro_rules! box_row {
+        ($body:expr) => {
+            lines.push(line!(|w: &mut AnsiWriter| {
+                w.set_fg(Color::LightCyan);
+                w.bold();
+                w.write_cp437(&[0xBA]); // ║
+                $body(w);
+                w.set_fg(Color::LightCyan);
+                w.bold();
+                w.write_cp437(&[0xBA]); // ║
+            }));
+        };
     }
 
     // Blank line at top
@@ -238,60 +267,130 @@ fn build_splash_art() -> Vec<String> {
     }));
 
     // Empty row inside box
-    lines.push(line!(|w: &mut AnsiWriter| {
-        w.set_fg(Color::LightCyan);
-        w.bold();
-        w.write_cp437(&[0xBA]); // ║
-        w.write_str(&" ".repeat(78));
-        w.write_cp437(&[0xBA]); // ║
-    }));
+    empty_row!();
 
-    // Title: THE CONSTRUCT
-    lines.push(line!(|w: &mut AnsiWriter| {
-        w.set_fg(Color::LightCyan);
-        w.bold();
-        w.write_cp437(&[0xBA]); // ║
-        w.set_fg(Color::White);
-        w.bold();
-        w.write_str("              "); // 14 spaces
-        w.write_cp437(&[0xDB, 0xDB]); // ██
-        w.write_str(" THE CONSTRUCT BBS ");
-        w.write_cp437(&[0xDB, 0xDB]); // ██
-        // Pad to 78 chars: 14 + 2 + 19 + 2 = 37, need 41 more
-        w.write_str(&" ".repeat(41));
-        w.set_fg(Color::LightCyan);
-        w.write_cp437(&[0xBA]); // ║
-    }));
+    // ---- ASCII Art Logo: THE CONSTRUCT (6 lines) ----
+    // Each logo line: 4 spaces + 3 rain + 2 spaces + content + padding + 2 spaces + 3 rain + 4 spaces
+    // Frame: " ░▒▓  " (6) + content + "  ▓▒░ " (6) = content fits in 66 chars
+    //
+    // THE CONSTRUCT in block chars with matrix rain borders
+    // Line layout inside 78-char box:
+    //   4sp + rain(3) + 2sp = 9 left margin
+    //   2sp + rain(3) + 4sp = 9 right margin
+    //   Content area = 78 - 9 - 9 = 60 chars
+    //
+    // Using a cleaner approach: write entire lines as CP437 byte arrays
+    // CP437: 0xDB=█ 0xDF=▀ 0xDC=▄ 0xB0=░ 0xB1=▒ 0xB2=▓ 0x20=space
+
+    // Logo line helper: writes rain-bordered art line
+    // rain_l/rain_r: 3 bytes each for matrix rain decoration
+    // art: CP437 bytes for the art content (must be exactly 60 bytes)
+    let logo_line = |lines: &mut Vec<String>,
+                     rain_l: [u8; 3],
+                     rain_r: [u8; 3],
+                     art: &[u8; 60]| {
+        lines.push(line!(|w: &mut AnsiWriter| {
+            w.set_fg(Color::DarkGray);
+            w.write_str("    ");
+            w.write_cp437(&rain_l);
+            w.write_str("  ");
+            w.set_fg(Color::LightGreen);
+            w.bold();
+            w.write_cp437(art);
+            w.set_fg(Color::DarkGray);
+            w.write_str("  ");
+            w.write_cp437(&rain_r);
+            w.write_str("    ");
+        }));
+    };
+
+    // THE CONSTRUCT - 6-line blocky ASCII art logo
+    // Each art content = exactly 60 CP437 bytes
+    //
+    // Design (visual, 60 columns):
+    // Line1: ▀▀▀█▀▀▀ █   █ █▀▀▀
+    // Line2:    █   █▀▀▀█ █▀▀
+    // Line3:    █   █   █ █▀▀▀
+    // Line4:  ▀▀▀ ▀▀█▀▀ █▀ █ ▀▀▀ ▀█▀ █▀▀ █ █ ▀▀▀ ▀█▀
+    // Line5:  █   █ █  █▀█  ▀▀█  █  ██  █ █ █    █
+    // Line6:  ▄▄▄ ▄▄█▄▄ █ ▀█ ▄▄▄  █  █ █ ▄▄▀ ▄▄▄  █
+
+    // Line 1: THE top - "▀▀▀█▀▀▀ █   █ █▀▀▀"
+    // 0xDF=▀ 0xDB=█ 0x20=space
+    logo_line(&mut lines,
+        [0xB0, 0xB1, 0xB2],
+        [0xB2, 0xB1, 0xB0],
+        //          ▀  ▀  ▀  █  ▀  ▀  ▀     █        █     █  ▀  ▀  ▀  ▀
+        &[0xDF,0xDF,0xDF,0xDB,0xDF,0xDF,0xDF,0x20,0xDB,0x20,0x20,0x20,0xDB,0x20,0xDB,0xDF,0xDF,0xDF,0xDF,0x20, // 20
+          0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20, // 40
+          0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20] // 60
+    );
+
+    // Line 2: THE middle - "   █   █████ ████"
+    logo_line(&mut lines,
+        [0xB1, 0xB0, 0xB2],
+        [0xB0, 0xB2, 0xB1],
+        //             █              █  █  █  █  █     █  █  █  █
+        &[0x20,0x20,0x20,0xDB,0x20,0x20,0x20,0xDB,0xDB,0xDB,0xDB,0xDB,0x20,0xDB,0xDB,0xDB,0xDB,0x20,0x20,0x20, // 20
+          0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20, // 40
+          0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20] // 60
+    );
+
+    // Line 3: THE bottom - "   █   █   █ ████"
+    logo_line(&mut lines,
+        [0xB2, 0xB1, 0xB0],
+        [0xB1, 0xB0, 0xB2],
+        //             █        █        █     █  █  █  █
+        &[0x20,0x20,0x20,0xDB,0x20,0x20,0x20,0xDB,0x20,0x20,0x20,0xDB,0x20,0xDB,0xDB,0xDB,0xDB,0x20,0x20,0x20, // 20
+          0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20, // 40
+          0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20] // 60
+    );
+
+    // Line 4: CONSTRUCT top
+    // "█▀▀ █▀█ █▀ █ ▀▀█ ▀█▀ █▀▀ █ █ █▀▀ ▀█▀"
+    logo_line(&mut lines,
+        [0xB0, 0xB2, 0xB1],
+        [0xB2, 0xB0, 0xB1],
+        // █  ▀  ▀     █  ▀  █     █  ▀     █     ▀  ▀  █     ▀  █  ▀     █  ▀  ▀     █     █     █  ▀  ▀     ▀  █  ▀
+        &[0xDB,0xDF,0xDF,0x20,0xDB,0xDF,0xDB,0x20,0xDB,0xDF,0x20,0xDB,0x20,0xDF,0xDF,0xDB,0x20,0xDF,0xDB,0xDF, // 20
+          0x20,0xDB,0xDF,0xDF,0x20,0xDB,0x20,0xDB,0x20,0xDB,0xDF,0xDF,0x20,0xDF,0xDB,0xDF,0x20,0x20,0x20,0x20, // 40
+          0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20] // 60
+    );
+
+    // Line 5: CONSTRUCT middle
+    // "█   █ █ ██ █  ▀▀█  █  ██  █ █ █    █ "
+    logo_line(&mut lines,
+        [0xB1, 0xB2, 0xB0],
+        [0xB0, 0xB1, 0xB2],
+        // █        █     █     █  █     █        ▀  ▀  █        █        █  █        █     █     █           █
+        &[0xDB,0x20,0x20,0x20,0xDB,0x20,0xDB,0x20,0xDB,0xDB,0x20,0xDB,0x20,0x20,0xDF,0xDF,0xDB,0x20,0x20,0xDB, // 20
+          0x20,0x20,0xDB,0xDB,0x20,0x20,0xDB,0x20,0xDB,0x20,0xDB,0x20,0x20,0x20,0x20,0xDB,0x20,0x20,0x20,0x20, // 40
+          0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20] // 60
+    );
+
+    // Line 6: CONSTRUCT bottom
+    // "█▄▄ ▀▄▀ █ ▀█ ▄▄▀  █  █ █ ▀▄▀ █▄▄  █ "
+    logo_line(&mut lines,
+        [0xB2, 0xB0, 0xB1],
+        [0xB1, 0xB2, 0xB0],
+        // █  ▄  ▄     ▀  ▄  ▀     █     ▀  █     ▄  ▄  ▀        █        █     █     ▀  ▄  ▀     █  ▄  ▄        █
+        &[0xDB,0xDC,0xDC,0x20,0xDF,0xDC,0xDF,0x20,0xDB,0x20,0xDF,0xDB,0x20,0xDC,0xDC,0xDF,0x20,0x20,0xDB,0x20, // 20
+          0x20,0xDB,0x20,0xDB,0x20,0xDF,0xDC,0xDF,0x20,0xDB,0xDC,0xDC,0x20,0x20,0xDB,0x20,0x20,0x20,0x20,0x20, // 40
+          0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20] // 60
+    );
 
     // Empty row
-    lines.push(line!(|w: &mut AnsiWriter| {
-        w.set_fg(Color::LightCyan);
-        w.bold();
-        w.write_cp437(&[0xBA]); // ║
-        w.write_str(&" ".repeat(78));
-        w.write_cp437(&[0xBA]); // ║
-    }));
+    empty_row!();
 
     // Tagline
-    lines.push(line!(|w: &mut AnsiWriter| {
-        w.set_fg(Color::LightCyan);
-        w.bold();
-        w.write_cp437(&[0xBA]); // ║
+    box_row!(|w: &mut AnsiWriter| {
         w.set_fg(Color::Yellow);
         // Center: "Where the underground connects" = 30 chars
         w.write_str("                        Where the underground connects                        ");
-        w.set_fg(Color::LightCyan);
-        w.write_cp437(&[0xBA]); // ║
-    }));
+    });
 
     // Empty row
-    lines.push(line!(|w: &mut AnsiWriter| {
-        w.set_fg(Color::LightCyan);
-        w.bold();
-        w.write_cp437(&[0xBA]); // ║
-        w.write_str(&" ".repeat(78));
-        w.write_cp437(&[0xBA]); // ║
-    }));
+    empty_row!();
 
     // Decorative divider inside box (single-line)
     lines.push(line!(|w: &mut AnsiWriter| {
@@ -308,43 +407,28 @@ fn build_splash_art() -> Vec<String> {
     }));
 
     // Empty row
-    lines.push(line!(|w: &mut AnsiWriter| {
-        w.set_fg(Color::LightCyan);
-        w.bold();
-        w.write_cp437(&[0xBA]); // ║
-        w.write_str(&" ".repeat(78));
-        w.write_cp437(&[0xBA]); // ║
-    }));
+    empty_row!();
 
-    // System info line 1
-    lines.push(line!(|w: &mut AnsiWriter| {
-        w.set_fg(Color::LightCyan);
-        w.bold();
-        w.write_cp437(&[0xBA]); // ║
+    // System info line: Running on Wildyahoos | v0.1.0 | ANSI/CP437 | 16-Color CGA
+    // "  Running on Wildyahoos " (24) + "│" (1) + " v0.1.0 " (8) +
+    // "│" (1) + " ANSI/CP437 " (12) + "│" (1) + " 16-Color CGA" (14) +
+    // spaces to fill 78: 78 - 24 - 1 - 8 - 1 - 12 - 1 - 14 = 17 spaces
+    box_row!(|w: &mut AnsiWriter| {
         w.set_fg(Color::Green);
-        w.write_str("      Running on Rust ");
+        w.write_str("  Running on Wildyahoos ");
         w.write_cp437(&[0xB3]); // │
-        w.write_str(" ANSI/CP437 Terminal ");
+        w.write_str(" v0.1.0 ");
         w.write_cp437(&[0xB3]); // │
-        w.write_str(" 16-Color CGA Palette           ");
-        w.set_fg(Color::LightCyan);
-        w.write_cp437(&[0xBA]); // ║
-    }));
+        w.write_str(" ANSI/CP437 ");
+        w.write_cp437(&[0xB3]); // │
+        w.write_str(" 16-Color CGA                 ");
+    });
 
     // Empty row
-    lines.push(line!(|w: &mut AnsiWriter| {
-        w.set_fg(Color::LightCyan);
-        w.bold();
-        w.write_cp437(&[0xBA]); // ║
-        w.write_str(&" ".repeat(78));
-        w.write_cp437(&[0xBA]); // ║
-    }));
+    empty_row!();
 
     // Decorative block art row
-    lines.push(line!(|w: &mut AnsiWriter| {
-        w.set_fg(Color::LightCyan);
-        w.bold();
-        w.write_cp437(&[0xBA]); // ║
+    box_row!(|w: &mut AnsiWriter| {
         w.set_fg(Color::DarkGray);
         w.write_str("    ");
         // Decorative blocks
@@ -352,19 +436,10 @@ fn build_splash_art() -> Vec<String> {
             w.write_cp437(&[0xB0]); // ░
         }
         w.write_str("    ");
-        w.set_fg(Color::LightCyan);
-        w.bold();
-        w.write_cp437(&[0xBA]); // ║
-    }));
+    });
 
     // Empty row
-    lines.push(line!(|w: &mut AnsiWriter| {
-        w.set_fg(Color::LightCyan);
-        w.bold();
-        w.write_cp437(&[0xBA]); // ║
-        w.write_str(&" ".repeat(78));
-        w.write_cp437(&[0xBA]); // ║
-    }));
+    empty_row!();
 
     // Double-line bottom border
     lines.push(line!(|w: &mut AnsiWriter| {

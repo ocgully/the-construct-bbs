@@ -45,26 +45,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.log('Mobile mode active');
     }
 
-    // Show connect prompt -- user must press a key to "pick up the phone"
-    // This serves double duty: user gesture for AudioContext AND atmospheric moment
-    terminal.writeln('\x1b[96m\x1b[1m');
-    terminal.writeln('  The Construct BBS');
-    terminal.writeln('\x1b[0m');
-    terminal.writeln('\x1b[93m  Press any key to dial in...\x1b[0m');
-    terminal.writeln('');
+    // Connect immediately on load (no keypress required)
+    connectWebSocket(terminal);
 
-    // Wait for a single keypress, then play modem sound and connect
-    const disposable = terminal.onData(() => {
-      disposable.dispose();
-
-      // Play modem sound (user gesture satisfies autoplay policy)
+    // Play modem sound on first user interaction (browser autoplay policy
+    // requires a user gesture before AudioContext can play audio)
+    const modemDisposable = terminal.onData(() => {
+      modemDisposable.dispose();
       playModemSound();
-
-      // Connect to the BBS
-      connectWebSocket(terminal);
     });
 
-    console.log('Terminal initialized, awaiting user input to connect');
+    console.log('Terminal initialized, connecting to BBS');
   } catch (error) {
     console.error('Failed to initialize terminal:', error);
   }
