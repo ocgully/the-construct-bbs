@@ -7,24 +7,24 @@
 
 ### Connection Experience
 
-- [ ] **CONN-01**: Modem handshake sound effect plays when user connects
-- [ ] **CONN-02**: ANSI art splash screen displayed during connection sequence
-- [ ] **CONN-03**: "Line busy" rejection when max concurrent users reached
-- [ ] **CONN-04**: Goodbye screen with session stats on logout
+- [x] **CONN-01**: Modem handshake sound effect plays when user connects
+- [x] **CONN-02**: ANSI art splash screen displayed during connection sequence
+- [x] **CONN-03**: "Line busy" rejection when max concurrent users reached
+- [x] **CONN-04**: Goodbye screen with session stats on logout
 
 ### Authentication
 
-- [ ] **AUTH-01**: User can register with username and password
-- [ ] **AUTH-02**: User can log in with existing credentials
-- [ ] **AUTH-03**: Passwords stored with secure hashing (argon2/bcrypt)
-- [ ] **AUTH-04**: Session persists across page refresh (reconnect to active session)
+- [x] **AUTH-01**: User can register with username and password
+- [x] **AUTH-02**: User can log in with existing credentials
+- [x] **AUTH-03**: Passwords stored with secure hashing (argon2/bcrypt)
+- [x] **AUTH-04**: Session persists across page refresh (reconnect to active session)
 
 ### Navigation
 
-- [ ] **NAV-01**: Main menu with Wildcat-style numbered/lettered options
-- [ ] **NAV-02**: Hierarchical menu navigation with breadcrumbs
-- [ ] **NAV-03**: Hotkey support for rapid menu traversal
-- [ ] **NAV-04**: ANSI art menu headers and borders (authentic Wildcat-era style)
+- [x] **NAV-01**: Main menu with Wildcat-style numbered/lettered options
+- [x] **NAV-02**: Hierarchical menu navigation with breadcrumbs
+- [x] **NAV-03**: Hotkey support for rapid menu traversal
+- [x] **NAV-04**: ANSI art menu headers and borders (authentic Wildcat-era style)
 
 ### Email
 
@@ -56,9 +56,9 @@
 
 ### User Features
 
-- [ ] **USER-01**: User profile with display name, join date, location, signature
-- [ ] **USER-02**: User stats tracking (logins, time spent, games played, messages sent)
-- [ ] **USER-03**: User levels — Guest, User, Co-Sysop, Sysop with permission gating
+- [x] **USER-01**: User profile with display name, join date, location, signature
+- [x] **USER-02**: User stats tracking (logins, time spent, games played, messages sent)
+- [x] **USER-03**: User levels — Guest, User, Co-Sysop, Sysop with permission gating
 - [ ] **USER-04**: Last callers list showing recent login history
 - [ ] **USER-05**: View other users' profiles
 
@@ -96,7 +96,7 @@
 
 - [x] **UX-01**: xterm.js browser terminal with CP437 font for authentic ANSI rendering
 - [x] **UX-02**: Mobile-responsive terminal — adapts to phone screens and touch keyboards
-- [ ] **UX-03**: Authentic ANSI art throughout — menus, splash screens, game UI (Wildcat-era quality)
+- [x] **UX-03**: Authentic ANSI art throughout — menus, splash screens, game UI (Wildcat-era quality)
 - [x] **UX-04**: Paginated output with [More] prompts (no infinite scrolling)
 - [x] **UX-05**: Keyboard-driven navigation (no mouse dependency)
 
@@ -151,18 +151,18 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CONN-01 | Phase 2 | Pending |
-| CONN-02 | Phase 2 | Pending |
-| CONN-03 | Phase 2 | Pending |
-| CONN-04 | Phase 2 | Pending |
-| AUTH-01 | Phase 2 | Pending |
-| AUTH-02 | Phase 2 | Pending |
-| AUTH-03 | Phase 2 | Pending |
-| AUTH-04 | Phase 2 | Pending |
-| NAV-01 | Phase 3 | Pending |
-| NAV-02 | Phase 3 | Pending |
-| NAV-03 | Phase 3 | Pending |
-| NAV-04 | Phase 3 | Pending |
+| CONN-01 | Phase 2 | Complete |
+| CONN-02 | Phase 2 | Complete |
+| CONN-03 | Phase 2 | Complete |
+| CONN-04 | Phase 2 | Complete |
+| AUTH-01 | Phase 2 | Complete |
+| AUTH-02 | Phase 2 | Complete |
+| AUTH-03 | Phase 2 | Complete |
+| AUTH-04 | Phase 2 | Complete |
+| NAV-01 | Phase 3 | Complete |
+| NAV-02 | Phase 3 | Complete |
+| NAV-03 | Phase 3 | Complete |
+| NAV-04 | Phase 3 | Complete |
 | MAIL-01 | Phase 5 | Pending |
 | MAIL-02 | Phase 5 | Pending |
 | MAIL-03 | Phase 5 | Pending |
@@ -182,9 +182,9 @@
 | GAME-06 | Phase 8 | Pending |
 | GAME-07 | Phase 8 | Pending |
 | GAME-08 | Phase 8 | Pending |
-| USER-01 | Phase 2 | Pending |
-| USER-02 | Phase 2 | Pending |
-| USER-03 | Phase 2 | Pending |
+| USER-01 | Phase 2 | Complete |
+| USER-02 | Phase 2 | Complete |
+| USER-03 | Phase 2 | Complete |
 | USER-04 | Phase 4 | Pending |
 | USER-05 | Phase 4 | Pending |
 | TIME-01 | Phase 4 | Pending |
@@ -207,7 +207,7 @@
 | ARCH-04 | Phase 1 | Complete |
 | UX-01 | Phase 1 | Complete |
 | UX-02 | Phase 1 | Complete |
-| UX-03 | Phase 3 | Pending |
+| UX-03 | Phase 3 | Complete |
 | UX-04 | Phase 1 | Complete |
 | UX-05 | Phase 1 | Complete |
 | EGGS-01 | Phase 14 | Pending |
@@ -221,4 +221,4 @@
 
 ---
 *Requirements defined: 2026-01-26*
-*Last updated: 2026-01-26 after roadmap creation*
+*Last updated: 2026-01-27 (Phase 3 complete)*

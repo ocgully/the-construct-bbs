@@ -13,8 +13,8 @@ The Construct delivers an authentic BBS experience through a browser terminal, b
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Terminal Foundation** - ANSI rendering, WebSocket I/O, service architecture
-- [ ] **Phase 2: Authentication & Connection** - User accounts, login/logout, connection experience
-- [ ] **Phase 3: Navigation System** - Wildcat-style menus with ANSI art and hotkeys
+- [x] **Phase 2: Authentication & Connection** - User accounts, login/logout, connection experience
+- [x] **Phase 3: Navigation System** - Wildcat-style menus with ANSI art and hotkeys
 - [ ] **Phase 4: Time Limits & User Lists** - Daily time caps, session timers, who's online
 - [ ] **Phase 5: Email System** - Inter-user private messaging
 - [ ] **Phase 6: Chat & Real-Time Communication** - Live teleconference, user paging
@@ -83,9 +83,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 03-01-PLAN.md -- Menu config schema, TOML menu definitions, and Stoic quotes module
-- [ ] 03-02-PLAN.md -- Menu state machine, type-ahead buffer, and ANSI rendering
-- [ ] 03-03-PLAN.md -- Session integration, legacy cleanup, and end-to-end verification
+- [x] 03-01-PLAN.md -- Menu config schema, TOML menu definitions, and Stoic quotes module
+- [x] 03-02-PLAN.md -- Menu state machine, type-ahead buffer, and ANSI rendering
+- [x] 03-03-PLAN.md -- Session integration, legacy cleanup, and end-to-end verification
 
 ### Phase 4: Time Limits & User Lists
 **Goal**: BBS enforces daily time limits and displays active/recent users
@@ -266,8 +266,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Terminal Foundation | 5/5 | Complete | 2026-01-26 |
-| 2. Authentication & Connection | 0/7 | Not started | - |
-| 3. Navigation System | 0/3 | Not started | - |
+| 2. Authentication & Connection | 7/7 | Complete | 2026-01-27 |
+| 3. Navigation System | 3/3 | Complete | 2026-01-27 |
 | 4. Time Limits & User Lists | 0/TBD | Not started | - |
 | 5. Email System | 0/TBD | Not started | - |
 | 6. Chat & Real-Time Communication | 0/TBD | Not started | - |
@@ -282,4 +282,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
 ---
 *Roadmap created: 2026-01-26*
-*Last updated: 2026-01-27*
+*Last updated: 2026-01-27 (Phase 3 complete)*
