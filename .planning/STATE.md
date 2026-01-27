@@ -5,34 +5,34 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** The feeling of dialing into an exclusive, underground system — artificial scarcity, ANSI art, and social games that only work because everyone's sharing the same constrained space.
-**Current focus:** Phase 1 - Terminal Foundation
+**Current focus:** Phase 2 - Authentication & Connection
 
 ## Current Position
 
-Phase: 1 of 14 (Terminal Foundation)
-Plan: 5 of 5 in current phase
-Status: Phase complete ✅
-Last activity: 2026-01-26 — Completed 01-05-PLAN.md (Integration and Visual Verification)
+Phase: 2 of 14 (Authentication & Connection)
+Plan: 1 of 5 in current phase
+Status: In progress
+Last activity: 2026-01-27 -- Completed 02-01-PLAN.md (Database Layer and Config Extensions)
 
-Progress: [█████░░░░░] 100% of Phase 1 (5/5 plans)
+Progress: [██████░░░░] 100% of Phase 1 (5/5), 20% of Phase 2 (1/5)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
+- Total plans completed: 6
 - Average duration: 5 min
-- Total execution time: 0.8 hours
+- Total execution time: 0.9 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan | Status |
 |-------|-------|-------|----------|--------|
-| 01    | 5     | 24min | 5min     | ✅ Complete |
+| 01    | 5     | 24min | 5min     | Complete |
+| 02    | 1     | 7min  | 7min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 7min, 3min, 7min, 3min, 4min (est. for 01-05)
+- Last 5 plans: 3min, 7min, 3min, 4min, 7min
 - Trend: Consistently fast execution (3-7min range)
-- Phase 1 completed in single session
 
 *Updated after each plan completion*
 
@@ -62,6 +62,10 @@ Recent decisions affecting current work:
 | 01-05 | Frontend served from backend via tower-http | Single-server deployment model matching BBS architecture |
 | 01-05 | Vite dev proxy for WebSocket routing | Enables hot-reload development with separate frontend/backend servers |
 | 01-05 | Mouse input filtering in frontend | Prevents scroll wheel escape sequences from spamming backend |
+| 02-01 | String-based sqlx queries (not compile-time macros) | No DATABASE_URL needed at build time, simpler CI/CD |
+| 02-01 | handle_lower column for case-insensitive lookups | Cheaper than COLLATE NOCASE on every query |
+| 02-01 | IF NOT EXISTS for idempotent schema execution | Schema runs safely on every startup without migration tooling |
+| 02-01 | #[serde(default)] on all config sections | Auth/connection sections optional in config.toml |
 
 ### Pending Todos
 
@@ -70,15 +74,15 @@ None yet.
 ### Blockers/Concerns
 
 **From research (SUMMARY.md):**
-- ✅ CP437 encoding addressed - terminal module includes CP437-to-UTF-8 conversion using codepage-437 crate
-- ✅ Mobile virtual keyboard handling implemented - visual viewport resize, touch-to-focus, responsive sizing
-- ✅ Rust toolchain installed (rustc 1.93.0) - compilation and tests verified
-- ✅ CP437 font resolved - IBM Plex Mono via Google Fonts provides box-drawing coverage
-- SQLite concurrency strategy (WAL mode + write queues) must be designed before multiplayer game phases
+- CP437 encoding addressed - terminal module includes CP437-to-UTF-8 conversion using codepage-437 crate
+- Mobile virtual keyboard handling implemented - visual viewport resize, touch-to-focus, responsive sizing
+- Rust toolchain installed (rustc 1.93.0) - compilation and tests verified
+- CP437 font resolved - IBM Plex Mono via Google Fonts provides box-drawing coverage
+- SQLite concurrency strategy resolved - WAL mode enabled in pool.rs, foreign keys enforced
 
 ## Phase 1 Completion Summary
 
-**Terminal Foundation Phase: COMPLETE ✅**
+**Terminal Foundation Phase: COMPLETE**
 
 All 5 plans executed successfully:
 - 01-01: Rust backend foundation (Service trait, config system)
@@ -87,24 +91,26 @@ All 5 plans executed successfully:
 - 01-04: WebSocket session layer (connection handling, ANSI buffering)
 - 01-05: Integration and visual verification (ANSI art, serving, verification)
 
-**Deliverables verified:**
-- ✅ End-to-end terminal (browser → WebSocket → backend)
-- ✅ ANSI art with CP437 box-drawing renders correctly
-- ✅ CGA 16-color palette accurate (brown, not dark yellow)
-- ✅ Service architecture pluggable via config
-- ✅ CRT effects toggleable and working
-- ✅ Mobile responsive layout functional
-- ✅ Human visual verification passed
+## Phase 2 Progress
 
-**Ready for Phase 2:** Authentication system
+**Authentication & Connection Phase: IN PROGRESS**
+
+Plans completed:
+- 02-01: Database layer and config extensions (SQLite + SQLx pool, schema, User CRUD, config)
+
+Plans remaining:
+- 02-02: Password authentication
+- 02-03: Session management
+- 02-04: Registration flow
+- 02-05: Connection ceremony
 
 ## Session Continuity
 
-Last session: 2026-01-26
-Stopped at: Phase 1 complete, verification passed (5/5), roadmap and requirements updated
+Last session: 2026-01-27
+Stopped at: Completed 02-01-PLAN.md (Database Layer and Config Extensions)
 Resume file: None
-Next action: Phase 2 - Authentication & Connection
+Next action: Phase 2, Plan 02 - Password Authentication
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-26*
+*Last updated: 2026-01-27*
