@@ -29,7 +29,7 @@ pub async fn ws_handler(
 /// - Split socket into sender and receiver
 /// - Create mpsc channel for session-to-websocket communication
 /// - Spawn sender task: forwards messages from channel to WebSocket
-/// - Main task: creates session, receives from WebSocket, routes to session
+/// - Main task: creates session, runs ceremony, receives from WebSocket, routes to session
 /// - On disconnect: clean up both tasks and session
 async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
     let (mut ws_sender, mut ws_receiver) = socket.split();
@@ -51,8 +51,18 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
     // Create session for this connection
     let mut session = Session::new(tx.clone(), state);
 
-    // Send welcome screen
-    session.on_connect().await;
+    // Run connection ceremony (typewriter text, splash screen, node assignment)
+    // Returns false if all lines are busy (session should disconnect)
+    let should_continue = session.on_connect().await;
+
+    if !should_continue {
+        // Line busy: wait for send_task to flush the busy message, then close
+        // Drop tx to signal send_task to finish
+        drop(tx);
+        let _ = send_task.await;
+        session.on_disconnect().await;
+        return;
+    }
 
     // Main receive loop
     let mut recv_task = tokio::spawn(async move {

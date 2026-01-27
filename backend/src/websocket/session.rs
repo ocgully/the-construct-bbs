@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use crate::{
     AppState,
+    connection::ceremony,
     services::{ServiceAction, SessionIO, welcome_art},
     terminal::{AnsiWriter, Color, Pager, Page, more_prompt, clear_more_prompt},
 };
@@ -11,10 +12,12 @@ use crate::{
 /// Per-connection session state
 ///
 /// Each WebSocket connection gets its own Session that:
+/// - Runs the connection ceremony on connect (modem sim, splash screen)
 /// - Manages service routing (main menu vs active service)
 /// - Implements SessionIO for service output
 /// - Composes ANSI-formatted output using AnsiWriter
 /// - Sends output to WebSocket via mpsc channel
+/// - Tracks assigned node_id for release on disconnect
 pub struct Session {
     tx: mpsc::Sender<String>,
     state: Arc<AppState>,
@@ -24,6 +27,10 @@ pub struct Session {
     pending_pages: Option<Vec<Page>>,
     page_index: usize,
     pagination_buffer: Option<String>,
+    /// Assigned BBS node number (1-based), set during ceremony
+    node_id: Option<usize>,
+    /// Set to true when session should be closed (e.g. line busy)
+    disconnecting: bool,
 }
 
 impl Session {
@@ -38,7 +45,14 @@ impl Session {
             pending_pages: None,
             page_index: 0,
             pagination_buffer: None,
+            node_id: None,
+            disconnecting: false,
         }
+    }
+
+    /// Returns true if the session is in a disconnecting state (line busy, etc.)
+    pub fn is_disconnecting(&self) -> bool {
+        self.disconnecting
     }
 
     /// Send the buffered output to the WebSocket
@@ -117,14 +131,47 @@ impl Session {
         }
     }
 
-    /// Called when client connects - send welcome screen
-    pub async fn on_connect(&mut self) {
-        let services: Vec<(String, String)> = self.state.registry.list()
-            .iter()
-            .map(|(n, d)| (n.to_string(), d.to_string()))
-            .collect();
-        let welcome = welcome_art::render_welcome(&services);
-        let _ = self.tx.send(welcome).await;
+    /// Called when client connects - run connection ceremony and splash screen.
+    ///
+    /// Returns true to continue the session, false to disconnect (line busy).
+    pub async fn on_connect(&mut self) -> bool {
+        // Run the connection ceremony (modem sim, protocol negotiation, node assignment)
+        let ceremony_result = ceremony::run_connection_ceremony(
+            &self.tx,
+            &self.state.node_manager,
+            &self.state.config.connection,
+        )
+        .await;
+
+        match ceremony_result {
+            Ok(node_id) => {
+                self.node_id = Some(node_id);
+                println!("Session connected on node {}", node_id);
+
+                // Send ANSI splash screen with baud-rate simulation
+                ceremony::send_splash_screen(
+                    &self.tx,
+                    self.state.config.connection.baud_simulation_cps,
+                )
+                .await;
+
+                // Show the welcome/main menu after splash
+                let services: Vec<(String, String)> = self.state.registry.list()
+                    .iter()
+                    .map(|(n, d)| (n.to_string(), d.to_string()))
+                    .collect();
+                let welcome = welcome_art::render_welcome(&services);
+                let _ = self.tx.send(welcome).await;
+
+                true // Continue session
+            }
+            Err(_) => {
+                // All lines busy - session should disconnect
+                self.disconnecting = true;
+                println!("Session rejected: all lines busy");
+                false // Disconnect
+            }
+        }
     }
 
     /// Show the main menu again
@@ -277,8 +324,14 @@ impl Session {
         }
     }
 
-    /// Called when client disconnects
+    /// Called when client disconnects - release node and clean up
     pub async fn on_disconnect(&mut self) {
+        // Release the assigned node
+        if let Some(node_id) = self.node_id {
+            self.state.node_manager.release_node(node_id).await;
+            println!("Node {} released", node_id);
+        }
+
         // If in a service, call on_exit
         if let Some(service_name) = &self.current_service {
             let service = self.state.registry.get(service_name).cloned();
