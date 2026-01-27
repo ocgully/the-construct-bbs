@@ -1,5 +1,6 @@
 mod auth;
 mod config;
+mod connection;
 mod db;
 mod services;
 mod terminal;
@@ -12,6 +13,7 @@ use axum::{
 use tower_http::services::ServeDir;
 use std::sync::Arc;
 use config::Config;
+use connection::NodeManager;
 use services::ServiceRegistry;
 use sqlx::SqlitePool;
 
@@ -20,6 +22,7 @@ pub(crate) struct AppState {
     pub(crate) config: Config,
     pub(crate) registry: ServiceRegistry,
     pub(crate) db_pool: SqlitePool,
+    pub(crate) node_manager: NodeManager,
 }
 
 #[tokio::main]
@@ -42,10 +45,15 @@ async fn main() {
         .expect("Failed to initialize database");
     println!("Database initialized");
 
+    // Initialize node manager for connection scarcity
+    let node_manager = NodeManager::new(config.connection.max_nodes as usize);
+    println!("Node capacity: {} nodes", config.connection.max_nodes);
+
     let state = Arc::new(AppState {
         config,
         registry,
         db_pool,
+        node_manager,
     });
 
     let app = Router::new()
