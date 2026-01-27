@@ -90,6 +90,17 @@ impl RegistrationFlow {
         &self.state
     }
 
+    /// Maximum input length for the current state.
+    fn max_input_length(&self) -> usize {
+        match self.state {
+            RegistrationState::EnterHandle => 20,
+            RegistrationState::EnterEmail => 254,
+            RegistrationState::EnterPassword | RegistrationState::ConfirmPassword => 128,
+            RegistrationState::EnterVerificationCode => 6,
+            RegistrationState::Complete => 0,
+        }
+    }
+
     /// Handle a single character of input and return the echo string.
     ///
     /// - For printable characters: returns the character itself (or '*' for password fields).
@@ -113,6 +124,11 @@ impl RegistrationFlow {
 
         // Ignore other control characters
         if ch.is_control() {
+            return None;
+        }
+
+        // Enforce max length for current field
+        if self.input_buffer.len() >= self.max_input_length() {
             return None;
         }
 
@@ -573,6 +589,7 @@ mod tests {
                 auth: crate::config::AuthConfig::default(),
                 connection: crate::config::ConnectionConfig::default(),
                 email: None,
+                menu: crate::menu::MenuConfig::default(),
             }
         }
 

@@ -419,7 +419,9 @@ mod tests {
         ];
 
         let output = render_main_menu(&config, 0, "TestUser", "User", Some(1), 16);
-        assert!(output.contains("[P] Profile"));
-        assert!(output.contains("[Q] Quit"));
+        assert!(output.contains("[P]"));
+        assert!(output.contains("Profile"));
+        assert!(output.contains("[Q]"));
+        assert!(output.contains("Quit"));
     }
 }

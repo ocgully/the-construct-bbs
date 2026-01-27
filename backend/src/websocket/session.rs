@@ -7,6 +7,7 @@ use crate::{
     auth::session::create_session,
     connection::ceremony,
     db::user::{find_user_by_id, update_last_login, update_user_field, update_user_time},
+    menu::{self, MenuAction, MenuSession, MenuState},
     services::{
         ServiceAction, SessionIO,
         goodbye::render_goodbye,
@@ -65,6 +66,17 @@ pub struct Session {
     node_id: Option<usize>,
     /// Set to true when session should be closed (e.g. line busy)
     disconnecting: bool,
+    /// Menu navigation state (created when user authenticates)
+    menu_session: Option<MenuSession>,
+}
+
+/// Map user level string to numeric level for menu filtering
+fn user_level_to_num(level: &str) -> u8 {
+    match level {
+        "Sysop" => 255,
+        "User" => 0,
+        _ => 0,
+    }
 }
 
 impl Session {
@@ -82,6 +94,7 @@ impl Session {
             pagination_buffer: None,
             node_id: None,
             disconnecting: false,
+            menu_session: None,
         }
     }
 
@@ -228,30 +241,49 @@ impl Session {
         send_colored_prompt(&self.tx, prompt, is_password).await;
     }
 
-    /// Show the main menu with user info (handle, level, node).
-    async fn show_main_menu(&mut self) {
-        let services: Vec<(String, String)> = self.state.registry.list()
-            .iter()
-            .map(|(n, d)| (n.to_string(), d.to_string()))
-            .collect();
+    /// Show the current menu (main menu or submenu).
+    async fn show_menu(&mut self) {
+        let menu_session = match &self.menu_session {
+            Some(ms) => ms,
+            None => return,
+        };
 
-        // Extract user info from auth state for the menu header
-        let (handle, user_level) = match &self.auth_state {
+        let (handle, user_level_name) = match &self.auth_state {
             AuthState::Authenticated { handle, user_level, .. } => {
                 (handle.clone(), user_level.clone())
             }
-            _ => ("Guest".to_string(), "User".to_string()),
+            _ => return,
         };
 
         let max_nodes = self.state.config.connection.max_nodes as usize;
-        let menu = welcome_art::render_main_menu_with_user(
-            &services,
-            &handle,
-            &user_level,
-            self.node_id,
-            max_nodes,
-        );
-        let _ = self.tx.send(menu).await;
+
+        let output = match menu_session.state() {
+            MenuState::MainMenu => {
+                menu::render::render_main_menu(
+                    &self.state.config.menu,
+                    menu_session.user_level(),
+                    &handle,
+                    &user_level_name,
+                    self.node_id,
+                    max_nodes,
+                )
+            }
+            MenuState::Submenu { submenu_key } => {
+                let items = self.state.config.menu.submenu_items(
+                    submenu_key,
+                    menu_session.user_level(),
+                );
+                let submenu_name = self.state.config.menu.submenu_name(submenu_key);
+                menu::render::render_submenu(
+                    submenu_key,
+                    submenu_name,
+                    &items,
+                    menu_session.user_level(),
+                )
+            }
+        };
+
+        let _ = self.tx.send(output).await;
     }
 
     /// Handle user input -- main routing based on auth state
@@ -349,13 +381,17 @@ impl Session {
                                         user_id: user.id,
                                         handle: user.handle.clone(),
                                         token: token_str.to_string(),
-                                        user_level,
+                                        user_level: user_level.clone(),
                                         login_time: std::time::Instant::now(),
                                     };
 
+                                    // Create menu session
+                                    let user_level_num = user_level_to_num(&user_level);
+                                    self.menu_session = Some(MenuSession::new(user_level_num));
+
                                     // Brief pause then show main menu
                                     tokio::time::sleep(Duration::from_secs(1)).await;
-                                    self.show_main_menu().await;
+                                    self.show_menu().await;
                                     return;
                                 }
                                 _ => {
@@ -485,15 +521,19 @@ impl Session {
                             user_id,
                             handle: handle.clone(),
                             token,
-                            user_level,
+                            user_level: user_level.clone(),
                             login_time: std::time::Instant::now(),
                         };
+
+                        // Create menu session
+                        let user_level_num = user_level_to_num(&user_level);
+                        self.menu_session = Some(MenuSession::new(user_level_num));
 
                         println!("User {} logged in", handle);
 
                         // Brief pause then show main menu
                         tokio::time::sleep(Duration::from_secs(1)).await;
-                        self.show_main_menu().await;
+                        self.show_menu().await;
                         return;
                     }
                     LoginResult::SwitchToRegistration => {
@@ -672,15 +712,19 @@ impl Session {
                                     user_id,
                                     handle: user.handle.clone(),
                                     token,
-                                    user_level,
+                                    user_level: user_level.clone(),
                                     login_time: std::time::Instant::now(),
                                 };
+
+                                // Create menu session
+                                let user_level_num = user_level_to_num(&user_level);
+                                self.menu_session = Some(MenuSession::new(user_level_num));
 
                                 println!("User {} auto-logged in after registration", user.handle);
 
                                 // Brief pause then show main menu
                                 tokio::time::sleep(Duration::from_secs(1)).await;
-                                self.show_main_menu().await;
+                                self.show_menu().await;
                             }
                             _ => {
                                 // Fallback: send to login flow
@@ -739,191 +783,274 @@ impl Session {
 
     /// Handle input when user is authenticated (services, main menu).
     async fn handle_authenticated_input(&mut self, input: &str) {
-        let trimmed = input.trim();
-
-        // Ignore empty input and escape sequences (e.g. from mouse scroll)
-        if trimmed.is_empty() || trimmed.starts_with('\x1b') {
-            return;
-        }
-
-        // If we're in paging mode, any keypress advances to next page
-        if self.pending_pages.is_some() {
-            self.send_next_page().await;
-            return;
-        }
-
+        // Profile edit mode needs raw input (spaces, Enter) -- check BEFORE trimming
         if let Some(service_name) = &self.current_service {
-            // Profile edit mode: accumulate input, save on Enter
             if service_name.starts_with("__profile_edit_") {
                 self.handle_profile_edit_input(input).await;
                 return;
             }
+        }
 
-            // Profile menu: handle 1/2/3/4/q
+        // If we're in paging mode, any keypress advances to next page
+        if self.pending_pages.is_some() {
+            let trimmed = input.trim();
+            if !trimmed.is_empty() && !trimmed.starts_with('\x1b') {
+                self.send_next_page().await;
+            }
+            return;
+        }
+
+        // Profile menu: handle 1/2/3/4/q
+        if let Some(service_name) = &self.current_service {
             if service_name == "__profile__" {
                 self.handle_profile_menu_input(input).await;
                 return;
             }
 
             // Currently in a service - route input to it
-            let service = self.state.registry.get(service_name).cloned();
-            if let Some(service) = service {
-                match service.handle_input(self, trimmed) {
-                    Ok(ServiceAction::Continue) => {
-                        // Service handled input, continue
-                    }
-                    Ok(ServiceAction::Exit) => {
-                        // Service wants to exit
-                        service.on_exit(self);
-                        self.current_service = None;
-                        self.flush_output().await;
-
-                        // Return to main menu
-                        tokio::time::sleep(Duration::from_millis(500)).await;
-                        self.show_main_menu().await;
-                    }
-                    Err(e) => {
-                        // Service error
-                        self.output_buffer.set_fg(Color::LightRed);
-                        self.output_buffer.writeln(&format!("Error: {}", e));
-                        self.output_buffer.reset_color();
-                        self.flush_output().await;
-                    }
-                }
-            } else {
-                // Service disappeared from registry
-                self.output_buffer.set_fg(Color::LightRed);
-                self.output_buffer.writeln("Error: Service no longer available");
-                self.output_buffer.reset_color();
-                self.current_service = None;
-                self.flush_output().await;
-                self.show_main_menu().await;
-            }
-        } else {
-            // At main menu - handle service selection or quit
-            if trimmed.eq_ignore_ascii_case("quit") || trimmed.eq_ignore_ascii_case("q") {
-                // User wants to disconnect -- full goodbye sequence
-                // Send logout JSON to frontend first (clears localStorage token)
-                let logout_msg = serde_json::json!({ "type": "logout" });
-                let _ = self.tx.send(
-                    serde_json::to_string(&logout_msg).unwrap()
-                ).await;
-
-                // Calculate session time and update DB
-                if let AuthState::Authenticated {
-                    user_id,
-                    handle,
-                    token,
-                    login_time,
-                    ..
-                } = &self.auth_state
-                {
-                    let session_secs = login_time.elapsed().as_secs();
-                    let session_minutes = (session_secs / 60) as i64;
-
-                    // Update total_time_minutes in DB
-                    let _ = update_user_time(
-                        &self.state.db_pool,
-                        *user_id,
-                        session_minutes,
-                    )
-                    .await;
-
-                    // Fetch updated user stats for goodbye screen
-                    let (total_calls, total_time) =
-                        match find_user_by_id(&self.state.db_pool, *user_id).await {
-                            Ok(Some(u)) => {
-                                (u.total_logins as i64, u.total_time_minutes as i64)
-                            }
-                            _ => (0, session_minutes),
-                        };
-
-                    // Render and send goodbye screen
-                    let goodbye = render_goodbye(
-                        handle,
-                        session_minutes,
-                        total_calls,
-                        total_time,
-                    );
-                    let _ = self.tx.send(goodbye).await;
-
-                    // Delete session token from DB
-                    let _ = crate::auth::session::delete_session(
-                        &self.state.db_pool,
-                        token,
-                    )
-                    .await;
-
-                    println!(
-                        "User {} logged out ({}m session)",
-                        handle, session_minutes
-                    );
-                }
-
-                // Let user read the goodbye screen
-                tokio::time::sleep(Duration::from_secs(3)).await;
-
-                // Signal disconnection
-                self.disconnecting = true;
-                return;
-            }
-
-            // Profile command: show user's profile card with edit menu
-            if trimmed.eq_ignore_ascii_case("profile") || trimmed.eq_ignore_ascii_case("p") {
-                if let AuthState::Authenticated { user_id, .. } = &self.auth_state {
-                    let user_id = *user_id;
-                    match find_user_by_id(&self.state.db_pool, user_id).await {
-                        Ok(Some(user)) => {
-                            let card = render_profile_card(&user, true);
-                            let _ = self.tx.send(card).await;
-
-                            // Show profile edit menu
-                            let menu = render_profile_edit_menu_string();
-                            let _ = self.tx.send(menu).await;
-
-                            self.current_service = Some("__profile__".to_string());
+            let trimmed = input.trim();
+            if !trimmed.is_empty() && !trimmed.starts_with('\x1b') {
+                let service = self.state.registry.get(service_name).cloned();
+                if let Some(service) = service {
+                    match service.handle_input(self, trimmed) {
+                        Ok(ServiceAction::Continue) => {
+                            // Service handled input, continue
                         }
-                        _ => {
+                        Ok(ServiceAction::Exit) => {
+                            // Service wants to exit
+                            service.on_exit(self);
+                            self.current_service = None;
+                            self.flush_output().await;
+
+                            // Return to main menu
+                            if let Some(ms) = &mut self.menu_session {
+                                ms.reset_to_main();
+                            }
+                            tokio::time::sleep(Duration::from_millis(500)).await;
+                            self.show_menu().await;
+                        }
+                        Err(e) => {
+                            // Service error
                             self.output_buffer.set_fg(Color::LightRed);
-                            self.output_buffer.writeln("Error loading profile");
+                            self.output_buffer.writeln(&format!("Error: {}", e));
                             self.output_buffer.reset_color();
                             self.flush_output().await;
                         }
                     }
+                } else {
+                    // Service disappeared from registry
+                    self.output_buffer.set_fg(Color::LightRed);
+                    self.output_buffer.writeln("Error: Service no longer available");
+                    self.output_buffer.reset_color();
+                    self.current_service = None;
+                    self.flush_output().await;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
                 }
-                return;
+            }
+            return;
+        }
+
+        // AT MENU -- single keypress navigation
+        for ch in input.chars() {
+            // Skip escape sequences and control chars (except Enter)
+            if ch == '\x1b' || (ch.is_control() && ch != '\r' && ch != '\n') {
+                continue;
             }
 
-            // Try to parse as service number or name
-            let services: Vec<(String, String)> = self.state.registry.list()
-                .iter()
-                .map(|(n, d)| (n.to_string(), d.to_string()))
-                .collect();
+            let action = {
+                let menu_session = match &mut self.menu_session {
+                    Some(ms) => ms,
+                    None => return,
+                };
+                menu_session.process_key(ch, &self.state.config.menu)
+            };
 
-            // Try number first
-            if let Ok(num) = trimmed.parse::<usize>() {
-                if num > 0 && num <= services.len() {
-                    let service_name = services[num - 1].0.clone();
+            match action {
+                MenuAction::Redraw => {
+                    self.show_menu().await;
+                }
+                MenuAction::EnterSubmenu(_key) => {
+                    // State already transitioned in process_key
+                    // Brief pause for transition feel
+                    tokio::time::sleep(Duration::from_millis(200)).await;
+                    self.show_menu().await;
+                    // Process any buffered keys (command stacking)
+                    self.process_typeahead().await;
+                }
+                MenuAction::BackToMain => {
+                    tokio::time::sleep(Duration::from_millis(200)).await;
+                    self.show_menu().await;
+                }
+                MenuAction::LaunchService(service_name) => {
+                    // Echo the key
+                    let _ = self.tx.send(format!("{}", ch)).await;
                     self.enter_service(&service_name).await;
-                    return;
+                    return; // Stop processing further chars
+                }
+                MenuAction::ExecuteCommand(cmd) => {
+                    match cmd.as_str() {
+                        "quit" => {
+                            // Echo 'Q'
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            self.handle_quit().await;
+                            return;
+                        }
+                        "profile" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            self.handle_profile_view().await;
+                            return;
+                        }
+                        _ => {
+                            // Unknown command, redraw
+                            self.show_menu().await;
+                        }
+                    }
+                }
+                MenuAction::ShowHelp => {
+                    let help = {
+                        let ms = self.menu_session.as_ref().unwrap();
+                        menu::render::render_help(
+                            ms.state(),
+                            &self.state.config.menu,
+                            ms.user_level(),
+                        )
+                    };
+                    let _ = self.tx.send(help).await;
+                    // After help, wait for any key then redraw menu
+                    // (Next input will trigger Redraw since help isn't a state)
+                }
+                MenuAction::Buffered | MenuAction::None => {
+                    // Do nothing
                 }
             }
+        }
+    }
 
-            // Try name match
-            for (service_name, _) in &services {
-                if service_name.eq_ignore_ascii_case(trimmed) {
-                    self.enter_service(service_name).await;
+    /// Process buffered type-ahead keys (for command stacking like G1)
+    async fn process_typeahead(&mut self) {
+        let actions = {
+            let ms = match &mut self.menu_session {
+                Some(ms) => ms,
+                None => return,
+            };
+            ms.drain_buffer(&self.state.config.menu)
+        };
+        for action in actions {
+            match action {
+                MenuAction::EnterSubmenu(_) => {
+                    tokio::time::sleep(Duration::from_millis(200)).await;
+                    self.show_menu().await;
+                }
+                MenuAction::LaunchService(svc) => {
+                    self.enter_service(&svc).await;
                     return;
                 }
+                MenuAction::ExecuteCommand(cmd) => {
+                    match cmd.as_str() {
+                        "quit" => { self.handle_quit().await; return; }
+                        "profile" => { self.handle_profile_view().await; return; }
+                        _ => {}
+                    }
+                }
+                MenuAction::Redraw => {
+                    self.show_menu().await;
+                }
+                _ => {}
             }
+        }
+    }
 
-            // Invalid selection
-            self.output_buffer.set_fg(Color::LightRed);
-            self.output_buffer.writeln(&format!("Unknown command: {}", trimmed));
-            self.output_buffer.set_fg(Color::LightCyan);
-            self.output_buffer.write_str("Enter service number or (q)uit to disconnect: ");
-            self.output_buffer.reset_color();
-            self.flush_output().await;
+    /// Handle quit command - full goodbye sequence
+    async fn handle_quit(&mut self) {
+        // Send logout JSON to frontend first (clears localStorage token)
+        let logout_msg = serde_json::json!({ "type": "logout" });
+        let _ = self.tx.send(
+            serde_json::to_string(&logout_msg).unwrap()
+        ).await;
+
+        // Calculate session time and update DB
+        if let AuthState::Authenticated {
+            user_id,
+            handle,
+            token,
+            login_time,
+            ..
+        } = &self.auth_state
+        {
+            let session_secs = login_time.elapsed().as_secs();
+            let session_minutes = (session_secs / 60) as i64;
+
+            // Update total_time_minutes in DB
+            let _ = update_user_time(
+                &self.state.db_pool,
+                *user_id,
+                session_minutes,
+            )
+            .await;
+
+            // Fetch updated user stats for goodbye screen
+            let (total_calls, total_time) =
+                match find_user_by_id(&self.state.db_pool, *user_id).await {
+                    Ok(Some(u)) => {
+                        (u.total_logins as i64, u.total_time_minutes as i64)
+                    }
+                    _ => (0, session_minutes),
+                };
+
+            // Render and send goodbye screen
+            let goodbye = render_goodbye(
+                handle,
+                session_minutes,
+                total_calls,
+                total_time,
+            );
+            let _ = self.tx.send(goodbye).await;
+
+            // Delete session token from DB
+            let _ = crate::auth::session::delete_session(
+                &self.state.db_pool,
+                token,
+            )
+            .await;
+
+            println!(
+                "User {} logged out ({}m session)",
+                handle, session_minutes
+            );
+        }
+
+        // Let user read the goodbye screen
+        tokio::time::sleep(Duration::from_secs(3)).await;
+
+        // Signal disconnection
+        self.disconnecting = true;
+    }
+
+    /// Handle profile view command
+    async fn handle_profile_view(&mut self) {
+        if let AuthState::Authenticated { user_id, .. } = &self.auth_state {
+            let user_id = *user_id;
+            match find_user_by_id(&self.state.db_pool, user_id).await {
+                Ok(Some(user)) => {
+                    let card = render_profile_card(&user, true);
+                    let _ = self.tx.send(card).await;
+
+                    // Show profile edit menu
+                    let menu = render_profile_edit_menu_string();
+                    let _ = self.tx.send(menu).await;
+
+                    self.current_service = Some("__profile__".to_string());
+                }
+                _ => {
+                    self.output_buffer.set_fg(Color::LightRed);
+                    self.output_buffer.writeln("Error loading profile");
+                    self.output_buffer.reset_color();
+                    self.flush_output().await;
+                }
+            }
         }
     }
 
@@ -937,7 +1064,10 @@ impl Session {
         match trimmed {
             "q" | "Q" => {
                 self.current_service = None;
-                self.show_main_menu().await;
+                if let Some(ms) = &mut self.menu_session {
+                    ms.reset_to_main();
+                }
+                self.show_menu().await;
             }
             "1" => {
                 self.current_service = Some("__profile_edit_real_name__".to_string());
@@ -1077,8 +1207,11 @@ impl Session {
                 self.output_buffer.reset_color();
                 self.flush_output().await;
 
+                if let Some(ms) = &mut self.menu_session {
+                    ms.reset_to_main();
+                }
                 tokio::time::sleep(Duration::from_millis(1500)).await;
-                self.show_main_menu().await;
+                self.show_menu().await;
                 return;
             }
 

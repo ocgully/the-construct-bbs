@@ -71,6 +71,14 @@ impl LoginFlow {
         matches!(self.state, LoginState::EnterPassword { .. })
     }
 
+    /// Maximum input length for the current state.
+    fn max_input_length(&self) -> usize {
+        match &self.state {
+            LoginState::EnterHandle => 20,
+            LoginState::EnterPassword { .. } => 128,
+        }
+    }
+
     /// Handle a single character of input and return the echo string.
     ///
     /// - For printable characters: returns the character itself (or '*' for password fields).
@@ -93,6 +101,11 @@ impl LoginFlow {
 
         // Ignore other control characters
         if ch.is_control() {
+            return None;
+        }
+
+        // Enforce max length for current field
+        if self.input_buffer.len() >= self.max_input_length() {
             return None;
         }
 
@@ -320,70 +333,71 @@ impl LoginFlow {
 }
 
 /// Render the ANSI art login header with BBS name, tagline, and node info.
+/// Full 80-column width (78 inner + 2 border chars).
 pub fn render_login_header(tagline: &str, active_nodes: usize, max_nodes: usize) -> String {
     let mut w = AnsiWriter::new();
+    let inner = 78;
 
     let available = max_nodes.saturating_sub(active_nodes);
+    let h_line = "\u{2500}".repeat(inner);
 
     w.set_fg(Color::LightCyan);
     w.bold();
-    // Top border
-    w.writeln("\u{250C}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2510}");
 
-    // BBS name line
+    // Top border
+    w.writeln(&format!("\u{250C}{}\u{2510}", h_line));
+
+    // BBS name line (centered)
     w.write_str("\u{2502}");
     w.set_fg(Color::Yellow);
     w.bold();
-    w.write_str("              THE CONSTRUCT BBS                               ");
+    w.write_str(&format!("{:^78}", "THE CONSTRUCT BBS"));
     w.set_fg(Color::LightCyan);
     w.bold();
     w.writeln("\u{2502}");
 
-    // Tagline line
+    // Tagline line (centered)
     w.write_str("\u{2502}");
     w.set_fg(Color::LightGreen);
-    // Center the tagline in 62 chars
-    let padded_tagline = format!("{:^62}", format!("\"{}\"", tagline));
-    w.write_str(&padded_tagline);
+    let quoted_tagline = format!("\"{}\"", tagline);
+    w.write_str(&format!("{:^78}", quoted_tagline));
     w.set_fg(Color::LightCyan);
     w.bold();
     w.writeln("\u{2502}");
 
     // Empty line
     w.write_str("\u{2502}");
-    w.write_str(&" ".repeat(62));
+    w.write_str(&" ".repeat(inner));
     w.writeln("\u{2502}");
 
-    // Node info line
+    // Node info line (centered)
     w.write_str("\u{2502}");
     w.set_fg(Color::White);
     let node_info = format!(
         "Node {} of {} -- {} lines available",
         active_nodes, max_nodes, available
     );
-    let padded_node = format!("{:^62}", node_info);
-    w.write_str(&padded_node);
+    w.write_str(&format!("{:^78}", node_info));
     w.set_fg(Color::LightCyan);
     w.bold();
     w.writeln("\u{2502}");
 
     // Empty line
     w.write_str("\u{2502}");
-    w.write_str(&" ".repeat(62));
+    w.write_str(&" ".repeat(inner));
     w.writeln("\u{2502}");
 
-    // Instruction line
+    // Instruction line (centered)
     w.write_str("\u{2502}");
     w.set_fg(Color::White);
     let instruction = "Enter your handle or type 'new' to register";
-    let padded_instr = format!("{:^62}", instruction);
-    w.write_str(&padded_instr);
+    w.write_str(&format!("{:^78}", instruction));
     w.set_fg(Color::LightCyan);
     w.bold();
     w.writeln("\u{2502}");
 
     // Bottom border
-    w.writeln("\u{2514}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2518}");
+    w.writeln(&format!("\u{2514}{}\u{2518}", h_line));
     w.reset_color();
     w.writeln("");
 
@@ -620,6 +634,7 @@ mod tests {
                 auth: crate::config::AuthConfig::default(),
                 connection: crate::config::ConnectionConfig::default(),
                 email: None,
+                menu: crate::menu::MenuConfig::default(),
             }
         }
 
