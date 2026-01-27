@@ -10,6 +10,7 @@ use crate::{
         ServiceAction, SessionIO,
         goodbye::render_goodbye,
         login::{LoginFlow, LoginResult, render_login_header, render_welcome_back},
+        profile::render_profile_card,
         registration::{RegistrationFlow, RegistrationResult, render_registration_header},
         welcome_art,
     },
@@ -226,13 +227,29 @@ impl Session {
         send_colored_prompt(&self.tx, prompt, is_password).await;
     }
 
-    /// Show the main menu
+    /// Show the main menu with user info (handle, level, node).
     async fn show_main_menu(&mut self) {
         let services: Vec<(String, String)> = self.state.registry.list()
             .iter()
             .map(|(n, d)| (n.to_string(), d.to_string()))
             .collect();
-        let menu = welcome_art::render_main_menu(&services);
+
+        // Extract user info from auth state for the menu header
+        let (handle, user_level) = match &self.auth_state {
+            AuthState::Authenticated { handle, user_level, .. } => {
+                (handle.clone(), user_level.clone())
+            }
+            _ => ("Guest".to_string(), "User".to_string()),
+        };
+
+        let max_nodes = self.state.config.connection.max_nodes as usize;
+        let menu = welcome_art::render_main_menu_with_user(
+            &services,
+            &handle,
+            &user_level,
+            self.node_id,
+            max_nodes,
+        );
         let _ = self.tx.send(menu).await;
     }
 
@@ -617,6 +634,13 @@ impl Session {
         }
 
         if let Some(service_name) = &self.current_service {
+            // Profile view: any key returns to main menu
+            if service_name == "__profile__" {
+                self.current_service = None;
+                self.show_main_menu().await;
+                return;
+            }
+
             // Currently in a service - route input to it
             let service = self.state.registry.get(service_name).cloned();
             if let Some(service) = service {
@@ -717,6 +741,40 @@ impl Session {
 
                 // Signal disconnection
                 self.disconnecting = true;
+                return;
+            }
+
+            // Profile command: show user's profile card
+            if trimmed.eq_ignore_ascii_case("profile") || trimmed.eq_ignore_ascii_case("p") {
+                if let AuthState::Authenticated { user_id, .. } = &self.auth_state {
+                    let user_id = *user_id;
+                    match find_user_by_id(&self.state.db_pool, user_id).await {
+                        Ok(Some(user)) => {
+                            let card = render_profile_card(&user, true);
+                            let _ = self.tx.send(card).await;
+
+                            // Show prompt to return to menu
+                            let mut w = AnsiWriter::new();
+                            w.writeln("");
+                            w.set_fg(Color::LightCyan);
+                            w.write_str("Press any key to return to menu...");
+                            w.reset_color();
+                            let _ = self.tx.send(w.flush()).await;
+
+                            // Set up a one-shot "return to menu" by using pending_pages
+                            // as a signal -- next input will show menu
+                            // Actually, just show menu on next input via a flag approach.
+                            // Simplest: use current_service = Some("__profile__") as marker
+                            self.current_service = Some("__profile__".to_string());
+                        }
+                        _ => {
+                            self.output_buffer.set_fg(Color::LightRed);
+                            self.output_buffer.writeln("Error loading profile");
+                            self.output_buffer.reset_color();
+                            self.flush_output().await;
+                        }
+                    }
+                }
                 return;
             }
 
