@@ -51,18 +51,9 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
     // Create session for this connection
     let mut session = Session::new(tx.clone(), state);
 
-    // Run connection ceremony (typewriter text, splash screen, node assignment)
-    // Returns false if all lines are busy (session should disconnect)
-    let should_continue = session.on_connect().await;
-
-    if !should_continue {
-        // Line busy: wait for send_task to flush the busy message, then close
-        // Drop tx to signal send_task to finish
-        drop(tx);
-        let _ = send_task.await;
-        session.on_disconnect().await;
-        return;
-    }
+    // Initialize session (sets AwaitingAuth state).
+    // The ceremony runs when the frontend sends the auth message.
+    let _ = session.on_connect().await;
 
     // Main receive loop
     let mut recv_task = tokio::spawn(async move {
@@ -71,6 +62,11 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
                 Ok(axum::extract::ws::Message::Text(text)) => {
                     // Handle user input
                     session.handle_input(&text).await;
+
+                    // Check if session wants to disconnect (line busy, lockout, etc.)
+                    if session.is_disconnecting() {
+                        break;
+                    }
                 }
                 Ok(axum::extract::ws::Message::Close(_)) => {
                     // Client closed connection

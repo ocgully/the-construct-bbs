@@ -27,8 +27,31 @@ export function connectWebSocket(terminal: Terminal): WebSocket {
     };
 
     ws.onmessage = (event) => {
+      const data = event.data as string;
+
+      // Try to intercept JSON control messages from the server
+      try {
+        const parsed = JSON.parse(data);
+        if (parsed && typeof parsed === 'object' && parsed.type) {
+          if (parsed.type === 'session' && parsed.token) {
+            // Store session token for reconnect persistence
+            localStorage.setItem('bbs_session_token', parsed.token);
+            console.log('Session token stored');
+            return; // Don't write JSON to terminal
+          }
+          if (parsed.type === 'logout') {
+            // Clear stored session token
+            localStorage.removeItem('bbs_session_token');
+            console.log('Session token cleared');
+            return; // Don't write JSON to terminal
+          }
+        }
+      } catch {
+        // Not JSON -- this is normal terminal output, fall through
+      }
+
       // Write received data to terminal
-      terminal.write(event.data);
+      terminal.write(data);
     };
 
     ws.onerror = (error) => {

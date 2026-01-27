@@ -5,15 +5,45 @@ use std::time::Duration;
 use crate::{
     AppState,
     connection::ceremony,
-    services::{ServiceAction, SessionIO, welcome_art},
+    db::user::find_user_by_id,
+    services::{
+        ServiceAction, SessionIO,
+        login::{LoginFlow, LoginResult, render_login_header, render_welcome_back},
+        registration::{RegistrationFlow, RegistrationResult, render_registration_header},
+        welcome_art,
+    },
     terminal::{AnsiWriter, Color, Pager, Page, more_prompt, clear_more_prompt},
 };
+
+/// Authentication state machine for the session lifecycle.
+///
+/// Tracks where the user is in the connect -> authenticate -> use BBS flow.
+enum AuthState {
+    /// Waiting for frontend to send { type: "auth", token } JSON message.
+    AwaitingAuth,
+    /// Running the connection ceremony (modem sim, splash screen).
+    ConnectionCeremony,
+    /// In the interactive login flow (handle -> password -> welcome).
+    Login(LoginFlow),
+    /// In the interactive registration flow (handle -> email -> password -> verify).
+    Registration(RegistrationFlow),
+    /// Successfully authenticated and using the BBS.
+    Authenticated {
+        user_id: i64,
+        handle: String,
+        token: String,
+        user_level: String,
+        login_time: std::time::Instant,
+    },
+}
 
 /// Per-connection session state
 ///
 /// Each WebSocket connection gets its own Session that:
-/// - Runs the connection ceremony on connect (modem sim, splash screen)
-/// - Manages service routing (main menu vs active service)
+/// - Waits for auth token from frontend (AwaitingAuth)
+/// - Runs the connection ceremony if no valid token (modem sim, splash screen)
+/// - Manages login/registration flows with character-by-character echo
+/// - Routes authenticated users to services (main menu vs active service)
 /// - Implements SessionIO for service output
 /// - Composes ANSI-formatted output using AnsiWriter
 /// - Sends output to WebSocket via mpsc channel
@@ -21,6 +51,7 @@ use crate::{
 pub struct Session {
     tx: mpsc::Sender<String>,
     state: Arc<AppState>,
+    auth_state: AuthState,
     current_service: Option<String>,
     output_buffer: AnsiWriter,
     pager: Pager,
@@ -39,6 +70,7 @@ impl Session {
         Self {
             tx,
             state,
+            auth_state: AuthState::AwaitingAuth,
             current_service: None,
             output_buffer: AnsiWriter::new(),
             pager: Pager::new(25), // Standard terminal height
@@ -131,11 +163,21 @@ impl Session {
         }
     }
 
-    /// Called when client connects - run connection ceremony and splash screen.
+    /// Called when client connects -- just sets up state.
     ///
-    /// Returns true to continue the session, false to disconnect (line busy).
+    /// The actual ceremony runs after receiving the auth message from the frontend.
+    /// Returns true always (line-busy check happens during ceremony).
     pub async fn on_connect(&mut self) -> bool {
-        // Run the connection ceremony (modem sim, protocol negotiation, node assignment)
+        // Session starts in AwaitingAuth state.
+        // The frontend will send { type: "auth", token } immediately on connect.
+        // We process that in handle_input, which decides: ceremony+login or resume.
+        true
+    }
+
+    /// Run the connection ceremony (modem sim, splash, node assignment).
+    /// After ceremony completes, transitions to Login state.
+    async fn run_ceremony_and_login(&mut self) {
+        // Run the connection ceremony
         let ceremony_result = ceremony::run_connection_ceremony(
             &self.tx,
             &self.state.node_manager,
@@ -155,26 +197,35 @@ impl Session {
                 )
                 .await;
 
-                // Show the welcome/main menu after splash
-                let services: Vec<(String, String)> = self.state.registry.list()
-                    .iter()
-                    .map(|(n, d)| (n.to_string(), d.to_string()))
-                    .collect();
-                let welcome = welcome_art::render_welcome(&services);
-                let _ = self.tx.send(welcome).await;
+                // Show login header
+                let (active, max) = self.state.node_manager.get_status().await;
+                let header = render_login_header(
+                    &self.state.config.connection.tagline,
+                    active,
+                    max,
+                );
+                let _ = self.tx.send(header).await;
 
-                true // Continue session
+                // Transition to Login state
+                let flow = LoginFlow::new();
+                self.send_prompt(flow.current_prompt(), false).await;
+                self.auth_state = AuthState::Login(flow);
             }
             Err(_) => {
                 // All lines busy - session should disconnect
                 self.disconnecting = true;
                 println!("Session rejected: all lines busy");
-                false // Disconnect
             }
         }
     }
 
-    /// Show the main menu again
+    /// Send a prompt with appropriate color formatting.
+    /// Uses send_colored_prompt free function to avoid borrow conflicts.
+    async fn send_prompt(&mut self, prompt: &str, is_password: bool) {
+        send_colored_prompt(&self.tx, prompt, is_password).await;
+    }
+
+    /// Show the main menu
     async fn show_main_menu(&mut self) {
         let services: Vec<(String, String)> = self.state.registry.list()
             .iter()
@@ -184,8 +235,373 @@ impl Session {
         let _ = self.tx.send(menu).await;
     }
 
-    /// Handle user input
+    /// Handle user input -- main routing based on auth state
     pub async fn handle_input(&mut self, input: &str) {
+        match &self.auth_state {
+            AuthState::AwaitingAuth => {
+                self.handle_awaiting_auth(input).await;
+            }
+            AuthState::ConnectionCeremony => {
+                // Ignore input during ceremony (it's automated)
+            }
+            AuthState::Login(_) => {
+                self.handle_login_input(input).await;
+            }
+            AuthState::Registration(_) => {
+                self.handle_registration_input(input).await;
+            }
+            AuthState::Authenticated { .. } => {
+                self.handle_authenticated_input(input).await;
+            }
+        }
+    }
+
+    /// Handle input while awaiting auth token from frontend.
+    ///
+    /// Parses the JSON { type: "auth", token } message.
+    /// If token is valid, resumes session. Otherwise, runs ceremony.
+    async fn handle_awaiting_auth(&mut self, input: &str) {
+        // Try to parse as JSON auth message
+        if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(input) {
+            if parsed.get("type").and_then(|t| t.as_str()) == Some("auth") {
+                let token = parsed.get("token").and_then(|t| t.as_str());
+
+                if let Some(token_str) = token {
+                    // Try to validate session token
+                    let pool = &self.state.db_pool;
+                    match crate::auth::session::validate_session(pool, token_str).await {
+                        Ok(Some(user_id)) => {
+                            // Valid token -- resume session
+                            match find_user_by_id(pool, user_id).await {
+                                Ok(Some(user)) => {
+                                    // Assign a node for this reconnecting user
+                                    match self.state.node_manager.assign_node(
+                                        user.id,
+                                        user.handle.clone(),
+                                    ).await {
+                                        Ok(node_id) => {
+                                            self.node_id = Some(node_id);
+                                            println!(
+                                                "Session resumed for {} on node {}",
+                                                user.handle, node_id
+                                            );
+                                        }
+                                        Err(_) => {
+                                            // All lines busy
+                                            self.disconnecting = true;
+                                            return;
+                                        }
+                                    }
+
+                                    // Determine user level
+                                    let user_level = if self.state.config.auth.sysop_handles
+                                        .iter()
+                                        .any(|h| h.eq_ignore_ascii_case(&user.handle))
+                                    {
+                                        "Sysop".to_string()
+                                    } else {
+                                        user.user_level.clone()
+                                    };
+
+                                    // Send welcome-back message
+                                    let welcome = render_welcome_back(
+                                        &user.handle,
+                                        user.last_login.as_deref(),
+                                        user.total_logins,
+                                    );
+                                    let _ = self.tx.send(welcome).await;
+
+                                    // Set authenticated state
+                                    self.auth_state = AuthState::Authenticated {
+                                        user_id: user.id,
+                                        handle: user.handle.clone(),
+                                        token: token_str.to_string(),
+                                        user_level,
+                                        login_time: std::time::Instant::now(),
+                                    };
+
+                                    // Brief pause then show main menu
+                                    tokio::time::sleep(Duration::from_secs(1)).await;
+                                    self.show_main_menu().await;
+                                    return;
+                                }
+                                _ => {
+                                    // User not found -- token is stale, fall through to ceremony
+                                }
+                            }
+                        }
+                        _ => {
+                            // Token invalid or expired -- fall through to ceremony
+                        }
+                    }
+                }
+
+                // No valid token -- run ceremony + login
+                self.auth_state = AuthState::ConnectionCeremony;
+                self.run_ceremony_and_login().await;
+                return;
+            }
+        }
+
+        // Not a valid auth message -- run ceremony anyway
+        self.auth_state = AuthState::ConnectionCeremony;
+        self.run_ceremony_and_login().await;
+    }
+
+    /// Handle character-by-character input during login flow.
+    async fn handle_login_input(&mut self, input: &str) {
+        // Clone tx for sending without borrowing self
+        let tx = self.tx.clone();
+
+        for ch in input.chars() {
+            if ch == '\r' || ch == '\n' {
+                // Enter pressed: take accumulated input and process
+                let (line, result) = {
+                    let flow = match &mut self.auth_state {
+                        AuthState::Login(f) => f,
+                        _ => return,
+                    };
+                    let line = flow.take_input();
+                    let pool = &self.state.db_pool;
+                    let config = &self.state.config.clone();
+                    let result = flow.handle_input(&line, pool, config).await;
+                    (line, result)
+                };
+                // flow borrow is now dropped -- we can freely use self
+
+                // Send newline echo
+                let _ = tx.send("\r\n".to_string()).await;
+
+                match result {
+                    LoginResult::Continue => {
+                        self.send_login_prompt().await;
+                    }
+                    LoginResult::Error(msg) => {
+                        let mut w = AnsiWriter::new();
+                        w.set_fg(Color::LightRed);
+                        w.writeln(&msg);
+                        w.reset_color();
+                        let _ = tx.send(w.flush()).await;
+                        self.send_login_prompt().await;
+                    }
+                    LoginResult::Success {
+                        user_id,
+                        handle,
+                        token,
+                        user_level,
+                        last_login,
+                    } => {
+                        // Update node_manager with real user info
+                        if let Some(node_id) = self.node_id {
+                            self.state.node_manager.release_node(node_id).await;
+                            match self.state.node_manager
+                                .assign_node(user_id, handle.clone())
+                                .await
+                            {
+                                Ok(new_node_id) => {
+                                    self.node_id = Some(new_node_id);
+                                }
+                                Err(_) => {
+                                    self.node_id = None;
+                                }
+                            }
+                        }
+
+                        // Send session token to frontend as JSON via tx channel
+                        let token_msg = serde_json::json!({
+                            "type": "session",
+                            "token": &token
+                        });
+                        let _ = tx.send(
+                            serde_json::to_string(&token_msg).unwrap()
+                        ).await;
+
+                        // Look up total_logins for welcome message
+                        let total_logins = match find_user_by_id(
+                            &self.state.db_pool,
+                            user_id,
+                        ).await {
+                            Ok(Some(u)) => u.total_logins,
+                            _ => 0,
+                        };
+
+                        // Show welcome-back message
+                        let welcome = render_welcome_back(
+                            &handle,
+                            last_login.as_deref(),
+                            total_logins,
+                        );
+                        let _ = tx.send(welcome).await;
+
+                        // Transition to Authenticated
+                        self.auth_state = AuthState::Authenticated {
+                            user_id,
+                            handle: handle.clone(),
+                            token,
+                            user_level,
+                            login_time: std::time::Instant::now(),
+                        };
+
+                        println!("User {} logged in", handle);
+
+                        // Brief pause then show main menu
+                        tokio::time::sleep(Duration::from_secs(1)).await;
+                        self.show_main_menu().await;
+                        return;
+                    }
+                    LoginResult::SwitchToRegistration => {
+                        let header = render_registration_header();
+                        let _ = tx.send(header).await;
+
+                        let reg_flow = RegistrationFlow::new();
+                        let prompt = reg_flow.current_prompt().to_string();
+                        self.auth_state = AuthState::Registration(reg_flow);
+                        self.send_prompt(&prompt, false).await;
+                        return;
+                    }
+                    LoginResult::Locked => {
+                        let mut w = AnsiWriter::new();
+                        w.set_fg(Color::LightRed);
+                        w.bold();
+                        w.writeln("");
+                        w.writeln("Account locked due to too many failed attempts.");
+                        w.writeln("Please try again later.");
+                        w.reset_color();
+                        let _ = tx.send(w.flush()).await;
+
+                        tokio::time::sleep(Duration::from_secs(2)).await;
+                        self.disconnecting = true;
+                        return;
+                    }
+                }
+            } else {
+                // Regular character: echo it
+                let flow = match &mut self.auth_state {
+                    AuthState::Login(f) => f,
+                    _ => return,
+                };
+                if let Some(echo) = flow.handle_char(ch) {
+                    let _ = tx.send(echo).await;
+                }
+            }
+        }
+    }
+
+    /// Helper: send the current login flow prompt (avoids borrow conflicts).
+    async fn send_login_prompt(&mut self) {
+        let (prompt, is_pw) = match &self.auth_state {
+            AuthState::Login(f) => (f.current_prompt().to_string(), f.needs_password_mask()),
+            _ => return,
+        };
+        send_colored_prompt(&self.tx, &prompt, is_pw).await;
+    }
+
+    /// Handle character-by-character input during registration flow.
+    async fn handle_registration_input(&mut self, input: &str) {
+        let tx = self.tx.clone();
+
+        for ch in input.chars() {
+            if ch == '\r' || ch == '\n' {
+                let result = {
+                    let flow = match &mut self.auth_state {
+                        AuthState::Registration(f) => f,
+                        _ => return,
+                    };
+                    let line = flow.take_input();
+                    let pool = &self.state.db_pool;
+                    let config = &self.state.config.clone();
+                    flow.handle_input(&line, pool, config).await
+                };
+                // flow borrow is now dropped
+
+                let _ = tx.send("\r\n".to_string()).await;
+
+                match result {
+                    RegistrationResult::Continue => {
+                        self.send_registration_prompt().await;
+                    }
+                    RegistrationResult::Error(msg) => {
+                        let mut w = AnsiWriter::new();
+                        w.set_fg(Color::LightRed);
+                        w.writeln(&msg);
+                        w.reset_color();
+                        let _ = tx.send(w.flush()).await;
+                        self.send_registration_prompt().await;
+                    }
+                    RegistrationResult::Message(msg) => {
+                        let mut w = AnsiWriter::new();
+                        w.set_fg(Color::Yellow);
+                        w.writeln(&msg);
+                        w.reset_color();
+                        let _ = tx.send(w.flush()).await;
+                        self.send_registration_prompt().await;
+                    }
+                    RegistrationResult::Complete(_user_id) => {
+                        let mut w = AnsiWriter::new();
+                        w.set_fg(Color::LightGreen);
+                        w.bold();
+                        w.writeln("");
+                        w.writeln("Registration complete! You can now log in.");
+                        w.reset_color();
+                        let _ = tx.send(w.flush()).await;
+
+                        tokio::time::sleep(Duration::from_secs(1)).await;
+
+                        let (active, max) = self.state.node_manager.get_status().await;
+                        let header = render_login_header(
+                            &self.state.config.connection.tagline,
+                            active,
+                            max,
+                        );
+                        let _ = tx.send(header).await;
+
+                        let login_flow = LoginFlow::new();
+                        let prompt = login_flow.current_prompt().to_string();
+                        self.auth_state = AuthState::Login(login_flow);
+                        self.send_prompt(&prompt, false).await;
+                        return;
+                    }
+                    RegistrationResult::Failed(msg) => {
+                        let mut w = AnsiWriter::new();
+                        w.set_fg(Color::LightRed);
+                        w.writeln(&msg);
+                        w.writeln("");
+                        w.writeln("Returning to login...");
+                        w.reset_color();
+                        let _ = tx.send(w.flush()).await;
+
+                        tokio::time::sleep(Duration::from_secs(1)).await;
+
+                        let login_flow = LoginFlow::new();
+                        let prompt = login_flow.current_prompt().to_string();
+                        self.auth_state = AuthState::Login(login_flow);
+                        self.send_prompt(&prompt, false).await;
+                        return;
+                    }
+                }
+            } else {
+                let flow = match &mut self.auth_state {
+                    AuthState::Registration(f) => f,
+                    _ => return,
+                };
+                if let Some(echo) = flow.handle_char(ch) {
+                    let _ = tx.send(echo).await;
+                }
+            }
+        }
+    }
+
+    /// Helper: send the current registration flow prompt (avoids borrow conflicts).
+    async fn send_registration_prompt(&mut self) {
+        let (prompt, is_pw) = match &self.auth_state {
+            AuthState::Registration(f) => (f.current_prompt().to_string(), f.needs_password_mask()),
+            _ => return,
+        };
+        send_colored_prompt(&self.tx, &prompt, is_pw).await;
+    }
+
+    /// Handle input when user is authenticated (services, main menu).
+    async fn handle_authenticated_input(&mut self, input: &str) {
         let trimmed = input.trim();
 
         // Ignore empty input and escape sequences (e.g. from mouse scroll)
@@ -245,8 +661,12 @@ impl Session {
                 self.output_buffer.reset_color();
                 self.flush_output().await;
 
-                // Note: Actual disconnection happens when this function returns
-                // and the WebSocket connection is closed by the handler
+                // Send logout message to frontend to clear stored token
+                let logout_msg = serde_json::json!({ "type": "logout" });
+                let _ = self.tx.send(
+                    serde_json::to_string(&logout_msg).unwrap()
+                ).await;
+
                 return;
             }
 
@@ -326,6 +746,12 @@ impl Session {
 
     /// Called when client disconnects - release node and clean up
     pub async fn on_disconnect(&mut self) {
+        // Delete session from DB if authenticated
+        if let AuthState::Authenticated { token, handle, .. } = &self.auth_state {
+            let _ = crate::auth::session::delete_session(&self.state.db_pool, token).await;
+            println!("Session token invalidated for {}", handle);
+        }
+
         // Release the assigned node
         if let Some(node_id) = self.node_id {
             self.state.node_manager.release_node(node_id).await;
@@ -343,6 +769,19 @@ impl Session {
 
         println!("Session disconnected");
     }
+}
+
+/// Send a colored prompt via the tx channel (free function to avoid borrow conflicts).
+async fn send_colored_prompt(tx: &mpsc::Sender<String>, prompt: &str, is_password: bool) {
+    let mut w = AnsiWriter::new();
+    if is_password {
+        w.set_fg(Color::DarkGray);
+    } else {
+        w.set_fg(Color::LightCyan);
+    }
+    w.write_str(prompt);
+    w.reset_color();
+    let _ = tx.send(w.flush()).await;
 }
 
 /// Implement SessionIO trait for Service interaction
