@@ -2,6 +2,7 @@ mod auth;
 mod config;
 mod connection;
 mod db;
+mod menu;
 mod services;
 mod terminal;
 mod websocket;

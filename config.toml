@@ -27,3 +27,155 @@ idle_warning_bell = true
 ceremony_skippable = false
 tagline = "Welcome to The Construct BBS"
 show_last_callers = true
+
+# Menu configuration
+# Main menu items
+[[menu.main]]
+type = "submenu"
+hotkey = "G"
+name = "Games"
+submenu_key = "games"
+order = 1
+
+[[menu.main]]
+type = "submenu"
+hotkey = "M"
+name = "Mail"
+submenu_key = "mail"
+order = 2
+
+[[menu.main]]
+type = "submenu"
+hotkey = "C"
+name = "Chat"
+submenu_key = "chat"
+order = 3
+
+[[menu.main]]
+type = "submenu"
+hotkey = "N"
+name = "News & Bulletins"
+submenu_key = "news"
+order = 4
+
+[[menu.main]]
+type = "command"
+hotkey = "P"
+name = "Profile"
+command = "profile"
+order = 90
+
+[[menu.main]]
+type = "command"
+hotkey = "Q"
+name = "Quit"
+command = "quit"
+order = 100
+
+# Games submenu -- items appear when their phase ships
+# [[menu.games]]
+# type = "service"
+# hotkey = "1"
+# name = "Drug Wars"
+# service_name = "drug_wars"
+# order = 1
+# Phase 8: Commodity trading game
+
+# [[menu.games]]
+# type = "service"
+# hotkey = "2"
+# name = "Legend of the Red Dragon"
+# service_name = "lord"
+# order = 2
+# Phase 9: Classic BBS RPG
+
+# [[menu.games]]
+# type = "service"
+# hotkey = "3"
+# name = "Usurper"
+# service_name = "usurper"
+# order = 3
+# Phase 10: Dark fantasy BBS game
+
+# [[menu.games]]
+# type = "service"
+# hotkey = "4"
+# name = "Acrophobia"
+# service_name = "acrophobia"
+# order = 4
+# Phase 11: Acronym word game
+
+# [[menu.games]]
+# type = "service"
+# hotkey = "5"
+# name = "Kyrandia MUD"
+# service_name = "kyrandia"
+# order = 5
+# Phase 12: Multi-user dungeon
+
+# Mail submenu -- Phase 5: Email system
+# [[menu.mail]]
+# type = "service"
+# hotkey = "1"
+# name = "Read Mail"
+# service_name = "mail_read"
+# order = 1
+
+# [[menu.mail]]
+# type = "service"
+# hotkey = "2"
+# name = "Send Mail"
+# service_name = "mail_send"
+# order = 2
+
+# [[menu.mail]]
+# type = "service"
+# hotkey = "3"
+# name = "Sent Messages"
+# service_name = "mail_sent"
+# order = 3
+
+# Chat submenu -- Phase 6: Chat system
+# [[menu.chat]]
+# type = "service"
+# hotkey = "1"
+# name = "Public Chat Room"
+# service_name = "chat_public"
+# order = 1
+
+# [[menu.chat]]
+# type = "service"
+# hotkey = "2"
+# name = "Private Messages"
+# service_name = "chat_private"
+# order = 2
+
+# [[menu.chat]]
+# type = "service"
+# hotkey = "3"
+# name = "Who's Online"
+# service_name = "whos_online"
+# order = 3
+
+# News submenu -- Phase 7: Bulletins system
+# [[menu.news]]
+# type = "service"
+# hotkey = "1"
+# name = "Read Bulletins"
+# service_name = "news_read"
+# order = 1
+
+# [[menu.news]]
+# type = "service"
+# hotkey = "2"
+# name = "Post Bulletin"
+# service_name = "news_post"
+# order = 2
+# min_level = 10
+
+# [[menu.news]]
+# type = "service"
+# hotkey = "3"
+# name = "System News"
+# service_name = "news_system"
+# order = 3

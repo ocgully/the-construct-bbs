@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 use std::fs;
+use crate::menu::MenuConfig;
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Config {
@@ -12,6 +13,8 @@ pub struct Config {
     #[serde(default)]
     pub connection: ConnectionConfig,
     pub email: Option<EmailConfig>,
+    #[serde(default)]
+    pub menu: MenuConfig,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
