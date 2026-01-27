@@ -5,9 +5,10 @@ use std::time::Duration;
 use crate::{
     AppState,
     connection::ceremony,
-    db::user::find_user_by_id,
+    db::user::{find_user_by_id, update_user_time},
     services::{
         ServiceAction, SessionIO,
+        goodbye::render_goodbye,
         login::{LoginFlow, LoginResult, render_login_header, render_welcome_back},
         registration::{RegistrationFlow, RegistrationResult, render_registration_header},
         welcome_art,
@@ -653,20 +654,69 @@ impl Session {
         } else {
             // At main menu - handle service selection or quit
             if trimmed.eq_ignore_ascii_case("quit") || trimmed.eq_ignore_ascii_case("q") {
-                // User wants to disconnect
-                self.output_buffer.set_fg(Color::Yellow);
-                self.output_buffer.writeln("");
-                self.output_buffer.writeln("Disconnecting from The Construct BBS...");
-                self.output_buffer.writeln("Come back soon!");
-                self.output_buffer.reset_color();
-                self.flush_output().await;
-
-                // Send logout message to frontend to clear stored token
+                // User wants to disconnect -- full goodbye sequence
+                // Send logout JSON to frontend first (clears localStorage token)
                 let logout_msg = serde_json::json!({ "type": "logout" });
                 let _ = self.tx.send(
                     serde_json::to_string(&logout_msg).unwrap()
                 ).await;
 
+                // Calculate session time and update DB
+                if let AuthState::Authenticated {
+                    user_id,
+                    handle,
+                    token,
+                    login_time,
+                    ..
+                } = &self.auth_state
+                {
+                    let session_secs = login_time.elapsed().as_secs();
+                    let session_minutes = (session_secs / 60) as i64;
+
+                    // Update total_time_minutes in DB
+                    let _ = update_user_time(
+                        &self.state.db_pool,
+                        *user_id,
+                        session_minutes,
+                    )
+                    .await;
+
+                    // Fetch updated user stats for goodbye screen
+                    let (total_calls, total_time) =
+                        match find_user_by_id(&self.state.db_pool, *user_id).await {
+                            Ok(Some(u)) => {
+                                (u.total_logins as i64, u.total_time_minutes as i64)
+                            }
+                            _ => (0, session_minutes),
+                        };
+
+                    // Render and send goodbye screen
+                    let goodbye = render_goodbye(
+                        handle,
+                        session_minutes,
+                        total_calls,
+                        total_time,
+                    );
+                    let _ = self.tx.send(goodbye).await;
+
+                    // Delete session token from DB
+                    let _ = crate::auth::session::delete_session(
+                        &self.state.db_pool,
+                        token,
+                    )
+                    .await;
+
+                    println!(
+                        "User {} logged out ({}m session)",
+                        handle, session_minutes
+                    );
+                }
+
+                // Let user read the goodbye screen
+                tokio::time::sleep(Duration::from_secs(3)).await;
+
+                // Signal disconnection
+                self.disconnecting = true;
                 return;
             }
 
@@ -744,12 +794,33 @@ impl Session {
         }
     }
 
-    /// Called when client disconnects - release node and clean up
+    /// Called when client disconnects - save session time, release node, and clean up.
+    ///
+    /// For unclean disconnects (browser close, network drop), this saves the
+    /// elapsed session time to the DB without showing the goodbye screen.
+    /// For clean disconnects (quit command), the goodbye sequence already handled
+    /// time saving and token deletion.
     pub async fn on_disconnect(&mut self) {
-        // Delete session from DB if authenticated
-        if let AuthState::Authenticated { token, handle, .. } = &self.auth_state {
+        // Save session time and delete token if authenticated
+        if let AuthState::Authenticated {
+            user_id,
+            handle,
+            token,
+            login_time,
+            ..
+        } = &self.auth_state
+        {
+            // Calculate and save session time (unclean disconnect -- no goodbye shown)
+            let session_secs = login_time.elapsed().as_secs();
+            let session_minutes = (session_secs / 60) as i64;
+            let _ = update_user_time(&self.state.db_pool, *user_id, session_minutes).await;
+
+            // Delete session token
             let _ = crate::auth::session::delete_session(&self.state.db_pool, token).await;
-            println!("Session token invalidated for {}", handle);
+            println!(
+                "Session for {} ended ({}m, unclean disconnect)",
+                handle, session_minutes
+            );
         }
 
         // Release the assigned node
