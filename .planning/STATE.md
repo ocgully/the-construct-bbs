@@ -10,28 +10,28 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 2 of 14 (Authentication & Connection)
-Plan: 1 of 5 in current phase
+Plan: 2 of 5 in current phase
 Status: In progress
-Last activity: 2026-01-27 -- Completed 02-01-PLAN.md (Database Layer and Config Extensions)
+Last activity: 2026-01-27 -- Completed 02-02-PLAN.md (Auth Core and Node Manager)
 
-Progress: [██████░░░░] 100% of Phase 1 (5/5), 20% of Phase 2 (1/5)
+Progress: [██████░░░░] 100% of Phase 1 (5/5), 40% of Phase 2 (2/5)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
+- Total plans completed: 7
 - Average duration: 5 min
-- Total execution time: 0.9 hours
+- Total execution time: 1.0 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan | Status |
 |-------|-------|-------|----------|--------|
 | 01    | 5     | 24min | 5min     | Complete |
-| 02    | 1     | 7min  | 7min     | In progress |
+| 02    | 2     | 11min | 6min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 7min, 3min, 4min, 7min
+- Last 5 plans: 7min, 3min, 4min, 7min, 4min
 - Trend: Consistently fast execution (3-7min range)
 
 *Updated after each plan completion*
@@ -66,6 +66,10 @@ Recent decisions affecting current work:
 | 02-01 | handle_lower column for case-insensitive lookups | Cheaper than COLLATE NOCASE on every query |
 | 02-01 | IF NOT EXISTS for idempotent schema execution | Schema runs safely on every startup without migration tooling |
 | 02-01 | #[serde(default)] on all config sections | Auth/connection sections optional in config.toml |
+| 02-02 | Argon2id with OWASP 2026 params (m=19456, t=2, p=1) | Maximum recommended server-side hashing security |
+| 02-02 | verify_password returns Ok(false) on mismatch, not Err | Cleaner API for login flows |
+| 02-02 | tokio::sync::RwLock for NodeManager (not std) | Async-safe concurrent access to node state |
+| 02-02 | First-available node assignment from 1..=max_nodes | BBS line numbering convention, fills gaps on disconnect |
 
 ### Pending Todos
 
@@ -97,9 +101,9 @@ All 5 plans executed successfully:
 
 Plans completed:
 - 02-01: Database layer and config extensions (SQLite + SQLx pool, schema, User CRUD, config)
+- 02-02: Auth core and node manager (Argon2id hashing, session CRUD, validation, NodeManager)
 
 Plans remaining:
-- 02-02: Password authentication
 - 02-03: Session management
 - 02-04: Registration flow
 - 02-05: Connection ceremony
@@ -107,9 +111,9 @@ Plans remaining:
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed 02-01-PLAN.md (Database Layer and Config Extensions)
+Stopped at: Completed 02-02-PLAN.md (Auth Core and Node Manager)
 Resume file: None
-Next action: Phase 2, Plan 02 - Password Authentication
+Next action: Phase 2, Plan 03 - Session Management
 
 ---
 *State initialized: 2026-01-26*
