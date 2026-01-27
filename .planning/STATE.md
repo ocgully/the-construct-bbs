@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 2 of 14 (Authentication & Connection)
-Plan: 3 of 5 in current phase
+Plan: 4 of 5 in current phase
 Status: In progress
-Last activity: 2026-01-27 -- Completed 02-03-PLAN.md (Connection Ceremony and Modem Audio)
+Last activity: 2026-01-27 -- Completed 02-04-PLAN.md (Registration Flow and Email Verification)
 
-Progress: [███████░░░] 100% of Phase 1 (5/5), 60% of Phase 2 (3/5)
+Progress: [████████░░] 100% of Phase 1 (5/5), 80% of Phase 2 (4/5)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 5 min
-- Total execution time: 1.1 hours
+- Total plans completed: 9
+- Average duration: 6 min
+- Total execution time: 1.2 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan | Status |
 |-------|-------|-------|----------|--------|
 | 01    | 5     | 24min | 5min     | Complete |
-| 02    | 3     | 16min | 5min     | In progress |
+| 02    | 4     | 24min | 6min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 4min, 7min, 4min, 5min
-- Trend: Consistently fast execution (3-7min range)
+- Last 5 plans: 4min, 7min, 4min, 5min, 8min
+- Trend: Consistently fast execution (3-8min range)
 
 *Updated after each plan completion*
 
@@ -74,6 +74,10 @@ Recent decisions affecting current work:
 | 02-03 | Eager node assignment during ceremony with placeholder info | Accurate node counts during ceremony; updated after login |
 | 02-03 | on_connect returns bool for line-busy disconnect flow | Clean session teardown when all nodes full |
 | 02-03 | Frontend connect prompt doubles as AudioContext user gesture | Browser autoplay policy compliance with atmospheric UX |
+| 02-04 | RegistrationFlow as standalone struct, not Service trait impl | Registration needs async DB, password masking, pre-login context |
+| 02-04 | Character-by-character echo via handle_char with input_buffer | Terminal has no local echo; server echoes with * for passwords |
+| 02-04 | SMTP fallback to console logging when not configured | Dev mode works without external SMTP server |
+| 02-04 | 6-digit zero-padded verification code with configurable expiry | Matches context spec; expiry from AuthConfig |
 
 ### Pending Todos
 
@@ -107,17 +111,17 @@ Plans completed:
 - 02-01: Database layer and config extensions (SQLite + SQLx pool, schema, User CRUD, config)
 - 02-02: Auth core and node manager (Argon2id hashing, session CRUD, validation, NodeManager)
 - 02-03: Connection ceremony and modem audio (typewriter text, splash screen, line-busy, Web Audio)
+- 02-04: Registration flow and email verification (state machine, lettre SMTP, character echo)
 
 Plans remaining:
-- 02-04: Registration flow
 - 02-05: Login flow and session management
 
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed 02-03-PLAN.md (Connection Ceremony and Modem Audio)
+Stopped at: Completed 02-04-PLAN.md (Registration Flow and Email Verification)
 Resume file: None
-Next action: Phase 2, Plan 04 - Registration flow (parallel with 02-03, may already be done)
+Next action: Phase 2, Plan 05 - Login flow and session management (final plan in Phase 2)
 
 ---
 *State initialized: 2026-01-26*
