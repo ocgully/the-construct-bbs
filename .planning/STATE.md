@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 4 of 14 (Time Limits & User Lists)
-Plan: 5 of 6 in current phase
-Status: In progress
-Last activity: 2026-01-27 -- Completed 04-05-PLAN.md (User Lists Menu Integration)
+Plan: 6 of 6 in current phase
+Status: Phase complete
+Last activity: 2026-01-28 -- Completed 04-04-PLAN.md (Who's Online and Last Callers)
 
-Progress: [█████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 83% of Phase 4 (5/6)
+Progress: [█████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 20
+- Total plans completed: 21
 - Average duration: 6 min
-- Total execution time: 2.0 hours
+- Total execution time: 2.1 hours
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [█████████████] 100% of Phase 1 (5/5), 100% 
 | 01    | 5     | 24min | 5min     | Complete |
 | 02    | 7     | 45min | 6min     | Complete (incl. integration) |
 | 03    | 3     | 16min | 5min     | Complete |
-| 04    | 5     | 35min | 7min     | In progress |
+| 04    | 6     | 42min | 7min     | Complete |
 
 **Recent Trend:**
-- Last 5 plans: 4min, 3min, 9min, 8min, 4min
+- Last 5 plans: 3min, 9min, 8min, 4min, 7min
 - Trend: Consistently fast execution (3-9min range)
 
 *Updated after each plan completion*
@@ -111,6 +111,8 @@ Recent decisions affecting current work:
 | 04-02 | expired and low_time flags exposed via Arc<AtomicBool> for session polling | Session can check timer state without blocking on async task |
 | 04-02 | CancellationToken enables clean timer cancellation on quit | tokio::select! races timer ticks against cancellation signal |
 | 04-02 | Timeout goodbye uses LightRed border vs LightCyan for normal quit | Visual distinction between time-expired and voluntary disconnect |
+| 04-04 | Who's Online and Last Callers use render functions (not Service trait) for async data access | Session fetches data async, calls render_* functions for display |
+| 04-04 | 80-column table width with careful border/data column calculation | Both tables: 75 data columns + 5 borders = 80 total |
 | 04-05 | Phase 4 features as main menu commands (not submenu) | W/L/U hotkeys provide direct access to Who's Online, Last Callers, User Lookup |
 | 04-05 | User lookup reuses render_profile_card with is_own_profile=false | Consistent profile display without edit options when viewing others |
 
@@ -182,27 +184,37 @@ Full navigation system implemented:
 7. Profile and Quit commands functional from main menu
 8. Service launch/exit properly managed with menu state transitions
 
-## Phase 4 Progress
+## Phase 4 Completion Summary
 
-**Time Limits & User Lists Phase: IN PROGRESS (5/6 plans complete)**
+**Time Limits & User Lists Phase: COMPLETE (6/6 plans complete)**
 
-Completed:
+All plans completed:
 - 04-01: Time Limits Foundation (TimeLimitsConfig, session_history table, time banking queries, NodeManager extensions)
 - 04-02: Session Timer & Status Bar (Timer task spawning, status bar renderer, client-side countdown)
 - 04-03: Status Bar Integration (WebSocket timer messages, status bar positioning, warning colors)
-- 04-04: User Lists Display (Who's Online, Last Callers services)
+- 04-04: User Lists Display (Who's Online and Last Callers ANSI table rendering)
 - 04-05: User Lists Menu Integration (User profile lookup renders, main menu registration W/L/U)
-
-Remaining:
 - 04-06: Session lifecycle integration (timeout handling, time banking withdrawal, graceful disconnect)
+
+Full time limits and user lists system implemented:
+1. Per-level time limits (Guest/User/Sysop) configured in config.toml
+2. Session timer with per-minute countdown (per-second in final minute)
+3. Status bar at row 24 showing user, online count, time remaining
+4. Warning colors at 5min (yellow) and 1min (red)
+5. Time banking with daily reset and withdrawal prompt
+6. Who's Online display with Node/Handle/Activity/Idle columns
+7. Last Callers list with Handle/Date/Time/Duration
+8. User profile lookup by handle
+9. Graceful timeout with timeout-specific goodbye screen
+10. Session history tracking with login/logout timestamps
 
 ## Session Continuity
 
-Last session: 2026-01-27
-Stopped at: Completed 04-02-PLAN.md (Session Timer & Status Bar)
+Last session: 2026-01-28
+Stopped at: Completed 04-04-PLAN.md (Who's Online and Last Callers)
 Resume file: None
-Next action: Phase 4 continuing (plans 04-03, 04-04, 04-05 already complete; 04-06 remaining)
+Next action: Phase 4 complete - ready for Phase 5
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-27 (04-02 session timer and timeout goodbye)*
+*Last updated: 2026-01-28 (04-04 user lists display)*
