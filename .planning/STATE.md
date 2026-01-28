@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** The feeling of dialing into an exclusive, underground system — artificial scarcity, ANSI art, and social games that only work because everyone's sharing the same constrained space.
-**Current focus:** Phase 4 - Time Limits & User Lists (IN PROGRESS)
+**Current focus:** Phase 4 - Time Limits & User Lists (COMPLETE)
 
 ## Current Position
 
 Phase: 4 of 14 (Time Limits & User Lists)
 Plan: 6 of 6 in current phase
 Status: Phase complete
-Last activity: 2026-01-28 -- Completed 04-04-PLAN.md (Who's Online and Last Callers)
+Last activity: 2026-01-28 -- Completed 04-06-PLAN.md (Session Lifecycle Integration)
 
-Progress: [█████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6)
+Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 21
+- Total plans completed: 22
 - Average duration: 6 min
-- Total execution time: 2.1 hours
+- Total execution time: 2.2 hours
 
 **By Phase:**
 
@@ -30,11 +30,11 @@ Progress: [█████████████] 100% of Phase 1 (5/5), 100% 
 | 01    | 5     | 24min | 5min     | Complete |
 | 02    | 7     | 45min | 6min     | Complete (incl. integration) |
 | 03    | 3     | 16min | 5min     | Complete |
-| 04    | 6     | 42min | 7min     | Complete |
+| 04    | 6     | 49min | 8min     | Complete (incl. integration) |
 
 **Recent Trend:**
-- Last 5 plans: 3min, 9min, 8min, 4min, 7min
-- Trend: Consistently fast execution (3-9min range)
+- Last 5 plans: 9min, 8min, 4min, 7min, 7min
+- Trend: Consistently fast execution (4-9min range)
 
 *Updated after each plan completion*
 
@@ -115,6 +115,11 @@ Recent decisions affecting current work:
 | 04-04 | 80-column table width with careful border/data column calculation | Both tables: 75 data columns + 5 borders = 80 total |
 | 04-05 | Phase 4 features as main menu commands (not submenu) | W/L/U hotkeys provide direct access to Who's Online, Last Callers, User Lookup |
 | 04-05 | User lookup reuses render_profile_card with is_own_profile=false | Consistent profile display without edit options when viewing others |
+| 04-06 | Timer started in all 3 auth paths (login, resume, registration) | Consistent timer lifecycle regardless of authentication method |
+| 04-06 | Timeout check at top of handle_authenticated_input | Prevents any user action after time expires |
+| 04-06 | Sentinel services for Phase 4 views (__whos_online__, __last_callers__, __user_lookup__) | Lightweight state-based input routing without new AuthState variants |
+| 04-06 | Daily time tracked in quit, disconnect, and timeout exits | Complete coverage ensures no session time goes unrecorded |
+| 04-06 | 30-minute bank withdrawal on low-time prompt | Reasonable extension amount with re-prompt if consumed again |
 
 ### Pending Todos
 
@@ -211,10 +216,10 @@ Full time limits and user lists system implemented:
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Completed 04-04-PLAN.md (Who's Online and Last Callers)
+Stopped at: Completed 04-06-PLAN.md (Session Lifecycle Integration)
 Resume file: None
 Next action: Phase 4 complete - ready for Phase 5
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-28 (04-04 user lists display)*
+*Last updated: 2026-01-28 (04-06 session lifecycle integration)*
