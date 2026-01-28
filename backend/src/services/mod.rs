@@ -1,4 +1,4 @@
-pub mod registry;
+pub mod chat;
 pub mod example;
 pub mod goodbye;
 pub mod last_callers;
@@ -6,6 +6,7 @@ pub mod login;
 pub mod mail;
 pub mod profile;
 pub mod registration;
+pub mod registry;
 pub mod user_profile;
 pub mod welcome_art;
 pub mod who;
