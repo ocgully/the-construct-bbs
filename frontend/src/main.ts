@@ -3,7 +3,9 @@ import { initTerminal, fitAddon } from './terminal';
 import { connectWebSocket } from './websocket';
 import { CRTController, CRTLevel } from './crt-effects';
 import { setupMobile, isMobile } from './mobile';
-import { loadModemSound, playModemSound } from './audio';
+import { loadModemSounds, ensureAudioReady } from './audio';
+import { StatusBar } from './status-bar';
+import { SessionTimer } from './timer';
 
 // Main initialization
 document.addEventListener('DOMContentLoaded', async () => {
@@ -19,8 +21,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Initialize terminal
     const terminal = await initTerminal(wrapper);
 
-    // Preload modem sound early (before user gesture)
-    loadModemSound();
+    // Preload modem sounds early (decoded when AudioContext is ready)
+    loadModemSounds();
 
     // Initialize CRT controller
     const crtController = new CRTController(container);
@@ -45,17 +47,31 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.log('Mobile mode active');
     }
 
-    // Connect immediately on load (no keypress required)
-    connectWebSocket(terminal);
+    // Create status bar and timer
+    const statusBar = new StatusBar(terminal);
+    const timer = new SessionTimer(statusBar);
 
-    // Play modem sound on first user interaction (browser autoplay policy
-    // requires a user gesture before AudioContext can play audio)
-    const modemDisposable = terminal.onData(() => {
-      modemDisposable.dispose();
-      playModemSound();
-    });
+    // Show "press any key" prompt and wait for user gesture before connecting.
+    // This satisfies browser autoplay policy so modem sounds can play.
+    terminal.write('\r\n  Press any key to connect to \x1b[32mThe Construct BBS\x1b[0m...\r\n');
 
-    console.log('Terminal initialized, connecting to BBS');
+    function handleFirstKey(e: KeyboardEvent) {
+      // Ignore modifier keys and F12 (CRT toggle)
+      if (['Shift', 'Control', 'Alt', 'Meta', 'F12'].includes(e.key)) return;
+
+      document.removeEventListener('keydown', handleFirstKey, true);
+
+      // Resume AudioContext during this user gesture (browser autoplay policy)
+      ensureAudioReady();
+
+      // Connect to BBS
+      connectWebSocket(terminal, { timer });
+    }
+
+    // Use capture phase so Enter/Space reach us before xterm.js absorbs them
+    document.addEventListener('keydown', handleFirstKey, true);
+
+    console.log('Terminal initialized, press any key to connect');
   } catch (error) {
     console.error('Failed to initialize terminal:', error);
   }

@@ -1,15 +1,11 @@
 import { Terminal } from '@xterm/xterm';
+import { playModemSuccess, playModemFail } from './audio';
+import { SessionTimer } from './timer';
 
-const INITIAL_RECONNECT_DELAY = 1000;
-const MAX_RECONNECT_DELAY = 30000;
-const RECONNECT_MULTIPLIER = 1.5;
-
-export function connectWebSocket(terminal: Terminal): WebSocket {
+export function connectWebSocket(terminal: Terminal, opts?: { timer?: SessionTimer }): WebSocket {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   const wsUrl = `${protocol}//${window.location.hostname}:3000/ws`;
 
-  let reconnectDelay = INITIAL_RECONNECT_DELAY;
-  let reconnectTimeout: number;
   let ws: WebSocket;
 
   function connect() {
@@ -17,9 +13,8 @@ export function connectWebSocket(terminal: Terminal): WebSocket {
 
     ws.onopen = () => {
       console.log('WebSocket connected');
-      // Clear the "Press any key to dial in..." prompt
+      // Clear the "Press any key to connect..." prompt
       terminal.clear();
-      reconnectDelay = INITIAL_RECONNECT_DELAY;
 
       // Send auth token if available (enables session resumption in Plan 05)
       const storedToken = localStorage.getItem('bbs_session_token');
@@ -42,8 +37,40 @@ export function connectWebSocket(terminal: Terminal): WebSocket {
           if (parsed.type === 'logout') {
             // Clear stored session token
             localStorage.removeItem('bbs_session_token');
+            if (opts?.timer) {
+              opts.timer.stop();
+            }
             console.log('Session token cleared');
             return; // Don't write JSON to terminal
+          }
+          if (parsed.type === 'modem') {
+            // Play appropriate modem sound based on connection result
+            if (parsed.status === 'success') {
+              playModemSuccess();
+            } else if (parsed.status === 'fail') {
+              playModemFail();
+            }
+            return; // Don't write JSON to terminal
+          }
+          if (parsed.type === 'timer') {
+            // Update status bar timer
+            if (opts?.timer) {
+              opts.timer.updateFromServer(parsed);
+            }
+            return; // Don't write JSON to terminal
+          }
+          if (parsed.type === 'timer_warning') {
+            // Timer warning -- no action needed, status bar handles visuals
+            // Could play a bell sound here if desired
+            return;
+          }
+          if (parsed.type === 'timeout') {
+            // Session timed out -- server will send goodbye screen as terminal text
+            // Stop client timer
+            if (opts?.timer) {
+              opts.timer.stop();
+            }
+            return;
           }
         }
       } catch {
@@ -60,19 +87,19 @@ export function connectWebSocket(terminal: Terminal): WebSocket {
 
     ws.onclose = () => {
       console.log('WebSocket disconnected');
-      terminal.writeln('\r\n\r\nDisconnected from server.');
-      terminal.writeln(`Reconnecting in ${Math.round(reconnectDelay / 1000)}s...`);
+      if (opts?.timer) {
+        opts.timer.stop();
+      }
+      terminal.writeln('\r\n\r\nDisconnected. Press any key to reconnect...');
 
-      // Exponential backoff reconnection
-      reconnectTimeout = window.setTimeout(() => {
-        console.log('Attempting to reconnect...');
+      // Wait for a keypress before reconnecting
+      function handleReconnectKey(e: KeyboardEvent) {
+        if (['Shift', 'Control', 'Alt', 'Meta', 'F12'].includes(e.key)) return;
+        document.removeEventListener('keydown', handleReconnectKey, true);
+        terminal.clear();
         connect();
-      }, reconnectDelay);
-
-      reconnectDelay = Math.min(
-        reconnectDelay * RECONNECT_MULTIPLIER,
-        MAX_RECONNECT_DELAY
-      );
+      }
+      document.addEventListener('keydown', handleReconnectKey, true);
     };
 
     return ws;
@@ -94,7 +121,6 @@ export function connectWebSocket(terminal: Terminal): WebSocket {
 
   // Cleanup on page unload
   window.addEventListener('beforeunload', () => {
-    clearTimeout(reconnectTimeout);
     if (ws.readyState === WebSocket.OPEN) {
       ws.close();
     }
