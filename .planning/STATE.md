@@ -12,16 +12,16 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 Phase: 5 of 14 (Email System)
 Plan: 4 of 4 in current phase
 Status: Phase complete
-Last activity: 2026-01-28 -- Completed 05-04-PLAN.md (MAIL Indicator in Status Bar)
+Last activity: 2026-01-28 -- Completed 05-03-PLAN.md (Mail Session Integration)
 
 Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 26
+- Total plans completed: 27
 - Average duration: 6 min
-- Total execution time: 2.6 hours
+- Total execution time: 2.7 hours
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [████████████████████] 100% of
 | 02    | 7     | 45min | 6min     | Complete (incl. integration) |
 | 03    | 3     | 16min | 5min     | Complete |
 | 04    | 6     | 49min | 8min     | Complete (incl. integration) |
-| 05    | 4     | 23min | 6min     | Complete |
+| 05    | 4     | 31min | 8min     | Complete |
 
 **Recent Trend:**
-- Last 5 plans: 7min, 5min, 6min, 6min, 6min
-- Trend: Consistently fast execution (5-7min range)
+- Last 5 plans: 5min, 6min, 6min, 6min, 8min
+- Trend: Consistently fast execution (5-8min range)
 
 *Updated after each plan completion*
 
@@ -131,6 +131,10 @@ Recent decisions affecting current work:
 | 05-02 | Self-mail check in session.rs (not ComposeFlow) | Session compares sender_id with recipient_id after async lookup |
 | 05-02 | Reply mode de-duplicates Re: prefix | Prevents "Re: Re: Re:" accumulation by checking starts_with("Re: ") |
 | 05-02 | Slash commands for body input | /s send, /a abort, /h help, /l list - all case-insensitive |
+| 05-03 | Mail command routing in BOTH MenuAction::ExecuteCommand match blocks | Ensures both single-keypress and command dispatch paths work for menu integration |
+| 05-03 | Hardcoded page size of 10 messages per page | MailConfig has no page_size field; 10 is reasonable default matching BBS conventions |
+| 05-03 | Sentinel handler pattern for mail views | __mail_inbox__, __mail_read__, __mail_compose__ follow Phase 4 pattern |
+| 05-03 | Login notification in all three auth paths | Unread mail notification after welcome message, before main menu (resume, login, registration) |
 | 05-04 | Timer checks unread mail on every tick | get_unread_count called per-minute and per-second; indexed query, negligible overhead |
 | 05-04 | Timer failures fail silently for auxiliary features | DB query errors return false has_mail flag; don't break timer for mail check |
 | 05-04 | MAIL indicator uses yellow bold ANSI styling | \x1b[33m\x1b[1m for visibility without alarm-level urgency |
@@ -253,7 +257,7 @@ Full email system implemented:
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Completed 05-04-PLAN.md
+Stopped at: Completed 05-03-PLAN.md
 Resume file: None
 Next action: Phase 5 complete - ready for Phase 6
 
