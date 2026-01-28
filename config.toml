@@ -73,6 +73,28 @@ name = "News & Bulletins"
 submenu_key = "news"
 order = 4
 
+# Phase 4: User Lists (main menu commands)
+[[menu.main]]
+type = "command"
+hotkey = "W"
+name = "Who's Online"
+command = "whos_online"
+order = 5
+
+[[menu.main]]
+type = "command"
+hotkey = "L"
+name = "Last Callers"
+command = "last_callers"
+order = 6
+
+[[menu.main]]
+type = "command"
+hotkey = "U"
+name = "User Lookup"
+command = "user_lookup"
+order = 7
+
 [[menu.main]]
 type = "command"
 hotkey = "P"
