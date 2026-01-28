@@ -1778,6 +1778,110 @@ impl Session {
         }
     }
 
+    /// Enter chat mode: join ChatManager, subscribe to broadcasts, spawn receiver task
+    async fn enter_chat(&mut self) {
+        // Get user info
+        let (user_id, handle) = match &self.auth_state {
+            AuthState::Authenticated { user_id, handle, .. } => (*user_id, handle.clone()),
+            _ => return,
+        };
+
+        // Try to join chat
+        if let Err(e) = self.state.chat_manager.join(user_id, handle.clone()).await {
+            let _ = self.tx.send(render_chat_error(&e)).await;
+            return;
+        }
+
+        // Subscribe to broadcasts
+        let mut rx = self.state.chat_manager.subscribe();
+
+        // Broadcast join announcement
+        self.state.chat_manager.broadcast(ChatMessage::Join { handle: handle.clone() });
+
+        // Send welcome message
+        let _ = self.tx.send(render_chat_welcome()).await;
+
+        // Set sentinel service
+        self.current_service = Some("__chat__".to_string());
+
+        // Update activity
+        if let Some(node_id) = self.node_id {
+            self.state.node_manager.update_activity(node_id, "In Chat").await;
+        }
+
+        // Spawn task to forward broadcasts to session tx
+        let tx = self.tx.clone();
+        let my_handle = handle.clone();
+        let cancel = CancellationToken::new();
+        let cancel_clone = cancel.clone();
+
+        tokio::spawn(async move {
+            loop {
+                tokio::select! {
+                    _ = cancel_clone.cancelled() => {
+                        break;
+                    }
+                    result = rx.recv() => {
+                        match result {
+                            Ok(msg) => {
+                                let formatted = render_chat_message(&msg, &my_handle);
+                                if !formatted.is_empty() {
+                                    // Check if this is a page for me (trigger bell)
+                                    if let ChatMessage::Page { to, .. } = &msg {
+                                        if to == &my_handle {
+                                            // Send bell JSON signal
+                                            let _ = tx.send(r#"{"type":"bell"}"#.to_string()).await;
+                                        }
+                                    }
+                                    // Check if this is a DM to me (trigger bell)
+                                    if let ChatMessage::Direct { from, to, .. } = &msg {
+                                        if to == &my_handle && from != &my_handle {
+                                            let _ = tx.send(r#"{"type":"bell"}"#.to_string()).await;
+                                        }
+                                    }
+                                    let _ = tx.send(formatted).await;
+                                }
+                            }
+                            Err(broadcast::error::RecvError::Lagged(n)) => {
+                                let _ = tx.send(render_chat_error(&format!("Missed {} messages", n))).await;
+                            }
+                            Err(broadcast::error::RecvError::Closed) => {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        self.chat_cancel = Some(cancel);
+    }
+
+    /// Exit chat mode: cancel receiver, broadcast leave, leave ChatManager
+    async fn exit_chat(&mut self) {
+        // Cancel broadcast receiver task
+        if let Some(cancel) = self.chat_cancel.take() {
+            cancel.cancel();
+        }
+
+        // Get user info and broadcast leave
+        if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+            // Broadcast leave announcement
+            self.state.chat_manager.broadcast(ChatMessage::Leave { handle: handle.clone() });
+
+            // Leave ChatManager
+            self.state.chat_manager.leave(*user_id).await;
+        }
+
+        // Clear sentinel
+        self.current_service = None;
+
+        // Update activity
+        if let Some(node_id) = self.node_id {
+            self.state.node_manager.update_activity(node_id, "Main Menu").await;
+        }
+    }
+
     /// Show inbox (mail command handler from menu)
     async fn show_inbox(&mut self) {
         if let AuthState::Authenticated { user_id, .. } = &self.auth_state {
