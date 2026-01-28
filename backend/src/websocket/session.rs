@@ -506,6 +506,14 @@ impl Session {
                                     );
                                     let _ = self.tx.send(welcome).await;
 
+                                    // Check for new mail
+                                    if let Ok(unread) = get_unread_count(&self.state.db_pool, user.id).await {
+                                        if unread > 0 {
+                                            let notification = render_new_mail_notification(unread);
+                                            let _ = self.tx.send(notification).await;
+                                        }
+                                    }
+
                                     // Set authenticated state
                                     self.auth_state = AuthState::Authenticated {
                                         user_id: user.id,
@@ -661,6 +669,14 @@ impl Session {
                             total_logins,
                         );
                         let _ = tx.send(welcome).await;
+
+                        // Check for new mail
+                        if let Ok(unread) = get_unread_count(&self.state.db_pool, user_id).await {
+                            if unread > 0 {
+                                let notification = render_new_mail_notification(unread);
+                                let _ = tx.send(notification).await;
+                            }
+                        }
 
                         // Transition to Authenticated
                         self.auth_state = AuthState::Authenticated {
@@ -868,6 +884,14 @@ impl Session {
                                     1, // First login
                                 );
                                 let _ = tx.send(welcome).await;
+
+                                // Check for new mail
+                                if let Ok(unread) = get_unread_count(&self.state.db_pool, user_id).await {
+                                    if unread > 0 {
+                                        let notification = render_new_mail_notification(unread);
+                                        let _ = tx.send(notification).await;
+                                    }
+                                }
 
                                 // Transition to Authenticated
                                 self.auth_state = AuthState::Authenticated {
