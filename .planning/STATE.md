@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** The feeling of dialing into an exclusive, underground system — artificial scarcity, ANSI art, and social games that only work because everyone's sharing the same constrained space.
-**Current focus:** Phase 5 - Email System (COMPLETE)
+**Current focus:** Phase 6 - Chat & Real-Time Communication
 
 ## Current Position
 
-Phase: 5 of 14 (Email System)
-Plan: 4 of 4 in current phase
-Status: Phase complete
-Last activity: 2026-01-28 -- Completed 05-03-PLAN.md (Mail Session Integration)
+Phase: 6 of 15 (Chat & Real-Time Communication)
+Plan: 1 of 5 in current phase
+Status: In progress
+Last activity: 2026-01-28 -- Completed 06-01-PLAN.md (ChatManager with broadcast channel)
 
-Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4)
+Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 20% of Phase 6 (1/5)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 27
+- Total plans completed: 26
 - Average duration: 6 min
-- Total execution time: 2.7 hours
+- Total execution time: 2.8 hours
 
 **By Phase:**
 
@@ -32,10 +32,11 @@ Progress: [████████████████████] 100% of
 | 03    | 3     | 16min | 5min     | Complete |
 | 04    | 6     | 49min | 8min     | Complete (incl. integration) |
 | 05    | 4     | 31min | 8min     | Complete |
+| 06    | 1     | 7min  | 7min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 5min, 6min, 6min, 6min, 8min
-- Trend: Consistently fast execution (5-8min range)
+- Last 5 plans: 6min, 6min, 6min, 8min, 7min
+- Trend: Consistently fast execution (6-8min range)
 
 *Updated after each plan completion*
 
@@ -139,6 +140,14 @@ Recent decisions affecting current work:
 | 05-04 | Timer failures fail silently for auxiliary features | DB query errors return false has_mail flag; don't break timer for mail check |
 | 05-04 | MAIL indicator uses yellow bold ANSI styling | \x1b[33m\x1b[1m for visibility without alarm-level urgency |
 | 05-04 | Mail command accessible via M hotkey | Changed from submenu to command type in config.toml for direct access |
+| 06-01 | ChatMessage enum with 7 variants (Public, Action, System, Direct, Join, Leave, Page) | Covers all chat message types including emotes, private messages, and notifications |
+| 06-01 | Broadcast channel buffer size of 100 messages | Buffer for in-flight messages, separate from participant capacity |
+| 06-01 | Case-insensitive handle lookup for /msg commands | User-friendly private messaging regardless of handle case |
+| 06-01 | Default chat capacity of 32 users (2x max_nodes) | Reasonable default that can be configured per deployment |
+
+### Roadmap Evolution
+
+- Phase 15 added: End-to-End Play Testing — automating and validating all functionality
 
 ### Pending Todos
 
@@ -254,13 +263,26 @@ Full email system implemented:
 9. Real-time indicator updates on timer ticks without user action
 10. Ownership checks built into all SQL queries for security
 
+## Phase 6 Progress
+
+**Chat & Real-Time Communication Phase: IN PROGRESS (1/5 plans complete)**
+
+Plans completed:
+- 06-01: ChatManager with broadcast channel (ChatMessage enum, ChatManager struct, ChatConfig, AppState wiring)
+
+Plans remaining:
+- 06-02: ChatState and session integration
+- 06-03: Chat command handlers
+- 06-04: Chat ANSI rendering
+- 06-05: Chat lifecycle and testing
+
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Phase 5 complete - all 4 plans executed and verified (19/19 must-haves)
+Stopped at: Completed 06-01-PLAN.md (ChatManager with broadcast channel)
 Resume file: None
-Next action: Phase 6 - Chat & Real-Time Communication
+Next action: 06-02 (ChatState and session integration)
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-28 (05-04 MAIL indicator in status bar - Phase 5 complete)*
+*Last updated: 2026-01-28 (06-01 ChatManager with broadcast channel)*
