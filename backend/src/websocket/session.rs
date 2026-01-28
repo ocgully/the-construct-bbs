@@ -1743,6 +1743,457 @@ impl Session {
         }
     }
 
+    /// Show inbox (mail command handler from menu)
+    async fn show_inbox(&mut self) {
+        if let AuthState::Authenticated { user_id, .. } = &self.auth_state {
+            let user_id = *user_id;
+            let page_size = 10i64; // Messages per page
+
+            // Fetch inbox data
+            match get_inbox_page(&self.state.db_pool, user_id, self.mail_page as i64, page_size).await {
+                Ok(entries) => {
+                    // Get sender handles
+                    let sender_ids: Vec<i64> = entries.iter().map(|e| e.sender_id).collect();
+                    let handles_result = get_sender_handles(&self.state.db_pool, &sender_ids).await;
+                    let sender_handles: std::collections::HashMap<i64, String> = handles_result
+                        .unwrap_or_default()
+                        .into_iter()
+                        .collect();
+
+                    // Get total count
+                    let total_count = get_inbox_count(&self.state.db_pool, user_id)
+                        .await
+                        .unwrap_or(0);
+
+                    // Render inbox
+                    let output = render_inbox(
+                        &entries,
+                        self.mail_page as i64,
+                        total_count,
+                        page_size,
+                        &sender_handles,
+                    );
+                    let _ = self.tx.send(output).await;
+
+                    // Set sentinel service
+                    self.current_service = Some("__mail_inbox__".to_string());
+
+                    // Update activity
+                    if let Some(node_id) = self.node_id {
+                        self.state.node_manager.update_activity(node_id, "Mail").await;
+                    }
+                }
+                Err(e) => {
+                    let mut w = AnsiWriter::new();
+                    w.set_fg(Color::LightRed);
+                    w.writeln(&format!("Error loading inbox: {}", e));
+                    w.reset_color();
+                    let _ = self.tx.send(w.flush()).await;
+                }
+            }
+        }
+    }
+
+    /// Handle inbox input (C/N/P/Q/digit)
+    async fn handle_mail_inbox_input(&mut self, input: &str) {
+        let trimmed = input.trim();
+        if trimmed.is_empty() || trimmed.starts_with('\x1b') {
+            return;
+        }
+
+        for ch in trimmed.chars() {
+            match ch {
+                'c' | 'C' => {
+                    // Start compose flow
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        let user_id = *user_id;
+                        let handle = handle.clone();
+                        let mut compose_flow = ComposeFlow::new(user_id, handle);
+                        let prompt = compose_flow.current_prompt().to_string();
+                        compose_flow.advance_to_input();
+                        self.mail_compose = Some(compose_flow);
+                        self.current_service = Some("__mail_compose__".to_string());
+                        send_colored_prompt(&self.tx, &prompt, false).await;
+                    }
+                    return;
+                }
+                'n' | 'N' => {
+                    // Next page
+                    if let AuthState::Authenticated { user_id, .. } = &self.auth_state {
+                        let user_id = *user_id;
+                        let page_size = 10i64; // Messages per page
+                        let total_count = get_inbox_count(&self.state.db_pool, user_id)
+                            .await
+                            .unwrap_or(0);
+                        let max_page = ((total_count + page_size - 1) / page_size).saturating_sub(1).max(0);
+
+                        if (self.mail_page as i64) < max_page {
+                            self.mail_page += 1;
+                            self.show_inbox().await;
+                        }
+                    }
+                    return;
+                }
+                'p' | 'P' => {
+                    // Previous page
+                    if self.mail_page > 0 {
+                        self.mail_page -= 1;
+                        self.show_inbox().await;
+                    }
+                    return;
+                }
+                'q' | 'Q' => {
+                    // Return to menu
+                    self.current_service = None;
+                    self.mail_page = 0;
+                    self.mail_input_buffer = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+                '0'..='9' => {
+                    // Accumulate digit
+                    if self.mail_input_buffer.is_none() {
+                        self.mail_input_buffer = Some(String::new());
+                    }
+                    if let Some(buf) = &mut self.mail_input_buffer {
+                        buf.push(ch);
+                        let _ = self.tx.send(ch.to_string()).await;
+                    }
+                }
+                '\r' | '\n' => {
+                    // Enter pressed: read message
+                    if let Some(num_str) = self.mail_input_buffer.take() {
+                        let _ = self.tx.send("\r\n".to_string()).await;
+                        if let Ok(msg_num) = num_str.parse::<i64>() {
+                            self.handle_read_message(msg_num).await;
+                        }
+                    }
+                    return;
+                }
+                _ => {
+                    // Ignore other chars
+                }
+            }
+        }
+    }
+
+    /// Handle reading a message by number
+    async fn handle_read_message(&mut self, msg_num: i64) {
+        if let AuthState::Authenticated { user_id, .. } = &self.auth_state {
+            let user_id = *user_id;
+            let page_size = 10i64; // Messages per page
+
+            // Fetch inbox page to get the message at that index
+            match get_inbox_page(&self.state.db_pool, user_id, self.mail_page as i64, page_size).await {
+                Ok(entries) => {
+                    // Convert msg_num (1-based display) to 0-based index on current page
+                    let page_start = self.mail_page as i64 * page_size;
+                    let page_index = msg_num - page_start - 1;
+
+                    if page_index >= 0 && (page_index as usize) < entries.len() {
+                        let entry = &entries[page_index as usize];
+                        let message_id = entry.id;
+
+                        // Fetch full message
+                        match get_message_by_id(&self.state.db_pool, message_id, user_id).await {
+                            Ok(Some(msg)) => {
+                                // Mark as read
+                                let _ = mark_message_read(&self.state.db_pool, message_id, user_id).await;
+
+                                // Get sender handle
+                                let sender_handle = match get_sender_handles(&self.state.db_pool, &[msg.sender_id]).await {
+                                    Ok(handles) => handles.into_iter().next().map(|(_, h)| h).unwrap_or_else(|| "(unknown)".to_string()),
+                                    Err(_) => "(unknown)".to_string(),
+                                };
+
+                                // Render message
+                                let output = render_message(&msg, &sender_handle);
+                                let _ = self.tx.send(output).await;
+
+                                // Set state to reading
+                                self.mail_reading_id = Some(message_id);
+                                self.current_service = Some("__mail_read__".to_string());
+                            }
+                            _ => {
+                                let mut w = AnsiWriter::new();
+                                w.set_fg(Color::LightRed);
+                                w.writeln("Error loading message.");
+                                w.reset_color();
+                                let _ = self.tx.send(w.flush()).await;
+                            }
+                        }
+                    } else {
+                        let mut w = AnsiWriter::new();
+                        w.set_fg(Color::LightRed);
+                        w.writeln("Invalid message number.");
+                        w.reset_color();
+                        let _ = self.tx.send(w.flush()).await;
+                    }
+                }
+                Err(_) => {
+                    let mut w = AnsiWriter::new();
+                    w.set_fg(Color::LightRed);
+                    w.writeln("Error loading inbox.");
+                    w.reset_color();
+                    let _ = self.tx.send(w.flush()).await;
+                }
+            }
+        }
+    }
+
+    /// Handle mail read input (R/D/N/Q)
+    async fn handle_mail_read_input(&mut self, input: &str) {
+        let trimmed = input.trim();
+        if trimmed.is_empty() || trimmed.starts_with('\x1b') {
+            return;
+        }
+
+        let ch = trimmed.chars().next().unwrap_or(' ');
+
+        match ch {
+            'r' | 'R' => {
+                // Reply to message
+                if let (Some(message_id), AuthState::Authenticated { user_id, handle, .. }) =
+                    (self.mail_reading_id, &self.auth_state)
+                {
+                    let user_id = *user_id;
+                    let sender_handle = handle.clone();
+
+                    match get_message_by_id(&self.state.db_pool, message_id, user_id).await {
+                        Ok(Some(msg)) => {
+                            // Get recipient handle
+                            let recipient_handle = match get_sender_handles(&self.state.db_pool, &[msg.sender_id]).await {
+                                Ok(handles) => handles.into_iter().next().map(|(_, h)| h).unwrap_or_else(|| "(unknown)".to_string()),
+                                Err(_) => "(unknown)".to_string(),
+                            };
+
+                            // Create reply compose flow
+                            let mut compose_flow = ComposeFlow::new_reply(
+                                user_id,
+                                sender_handle,
+                                msg.sender_id,
+                                recipient_handle.clone(),
+                                msg.subject.clone(),
+                                msg.body.clone(),
+                            );
+
+                            // Show compose header
+                            let header = render_compose_header(&recipient_handle);
+                            let _ = self.tx.send(header).await;
+
+                            // Show subject
+                            let mut w = AnsiWriter::new();
+                            w.set_fg(Color::LightGray);
+                            w.write_str("  Subject: ");
+                            w.set_fg(Color::White);
+                            w.writeln(&msg.subject);
+                            w.reset_color();
+                            w.writeln("");
+                            let _ = self.tx.send(w.flush()).await;
+
+                            // Show body prompt
+                            let prompt = compose_flow.current_prompt().to_string();
+                            compose_flow.advance_to_input();
+                            let _ = self.tx.send(prompt).await;
+
+                            self.mail_compose = Some(compose_flow);
+                            self.current_service = Some("__mail_compose__".to_string());
+                        }
+                        _ => {
+                            let mut w = AnsiWriter::new();
+                            w.set_fg(Color::LightRed);
+                            w.writeln("Error loading message for reply.");
+                            w.reset_color();
+                            let _ = self.tx.send(w.flush()).await;
+                        }
+                    }
+                }
+            }
+            'd' | 'D' => {
+                // Delete message
+                if let (Some(message_id), AuthState::Authenticated { user_id, .. }) =
+                    (self.mail_reading_id, &self.auth_state)
+                {
+                    let user_id = *user_id;
+                    match delete_message(&self.state.db_pool, message_id, user_id).await {
+                        Ok(true) => {
+                            let mut w = AnsiWriter::new();
+                            w.set_fg(Color::LightGreen);
+                            w.writeln("");
+                            w.writeln("  Message deleted.");
+                            w.reset_color();
+                            let _ = self.tx.send(w.flush()).await;
+                            tokio::time::sleep(Duration::from_millis(500)).await;
+                        }
+                        _ => {
+                            let mut w = AnsiWriter::new();
+                            w.set_fg(Color::LightRed);
+                            w.writeln("");
+                            w.writeln("  Error deleting message.");
+                            w.reset_color();
+                            let _ = self.tx.send(w.flush()).await;
+                            tokio::time::sleep(Duration::from_millis(500)).await;
+                        }
+                    }
+                    // Return to inbox
+                    self.mail_reading_id = None;
+                    self.show_inbox().await;
+                }
+            }
+            'n' | 'N' => {
+                // Next message (just return to inbox for now)
+                self.mail_reading_id = None;
+                self.show_inbox().await;
+            }
+            'q' | 'Q' => {
+                // Return to inbox
+                self.mail_reading_id = None;
+                self.show_inbox().await;
+            }
+            _ => {
+                // Ignore other input
+            }
+        }
+    }
+
+    /// Handle mail compose input (character-by-character through ComposeFlow)
+    async fn handle_mail_compose_input(&mut self, input: &str) {
+        let tx = self.tx.clone();
+
+        for ch in input.chars() {
+            if let Some(compose_flow) = &mut self.mail_compose {
+                let action = compose_flow.handle_char(ch);
+
+                match action {
+                    ComposeAction::Continue => {
+                        // Do nothing
+                    }
+                    ComposeAction::Echo(s) => {
+                        let _ = tx.send(s).await;
+                    }
+                    ComposeAction::ShowPrompt(s) => {
+                        let _ = tx.send("\r\n".to_string()).await;
+                        send_colored_prompt(&tx, &s, false).await;
+                    }
+                    ComposeAction::NeedRecipientLookup(handle) => {
+                        let _ = tx.send("\r\n".to_string()).await;
+
+                        // Look up recipient
+                        match find_user_by_handle(&self.state.db_pool, &handle).await {
+                            Ok(Some(user)) => {
+                                // Check self-mail
+                                if let AuthState::Authenticated { user_id, .. } = &self.auth_state {
+                                    if user.id == *user_id {
+                                        // Self-mail error
+                                        let error = render_self_mail_error();
+                                        let _ = tx.send(error).await;
+                                        if let Some(flow) = &mut self.mail_compose {
+                                            flow.set_recipient_error();
+                                            let prompt = flow.current_prompt().to_string();
+                                            send_colored_prompt(&tx, &prompt, false).await;
+                                        }
+                                        continue;
+                                    }
+                                }
+
+                                // Valid recipient
+                                if let Some(flow) = &mut self.mail_compose {
+                                    flow.set_recipient(user.id, user.handle.clone());
+                                    let prompt = flow.current_prompt().to_string();
+                                    send_colored_prompt(&tx, &prompt, false).await;
+                                }
+                            }
+                            _ => {
+                                // User not found
+                                let error = render_user_not_found_error(&handle);
+                                let _ = tx.send(error).await;
+                                if let Some(flow) = &mut self.mail_compose {
+                                    flow.set_recipient_error();
+                                    let prompt = flow.current_prompt().to_string();
+                                    send_colored_prompt(&tx, &prompt, false).await;
+                                }
+                            }
+                        }
+                    }
+                    ComposeAction::SendMessage { recipient_id, recipient_handle, subject, body } => {
+                        let _ = tx.send("\r\n".to_string()).await;
+
+                        // Check mailbox full
+                        let limit = self.state.config.mail.mailbox_size_limit;
+                        match check_mailbox_full(&self.state.db_pool, recipient_id, limit).await {
+                            Ok(true) => {
+                                // Mailbox full
+                                let error = render_mailbox_full_error();
+                                let _ = tx.send(error).await;
+                                tokio::time::sleep(Duration::from_secs(2)).await;
+                            }
+                            _ => {
+                                // Send message
+                                if let AuthState::Authenticated { user_id, .. } = &self.auth_state {
+                                    let user_id = *user_id;
+                                    match create_message(&self.state.db_pool, user_id, recipient_id, &subject, &body).await {
+                                        Ok(_) => {
+                                            // Increment messages_sent counter
+                                            let current = match find_user_by_id(&self.state.db_pool, user_id).await {
+                                                Ok(Some(u)) => u.messages_sent,
+                                                _ => 0,
+                                            };
+                                            let _ = update_user_field(&self.state.db_pool, user_id, "messages_sent", &(current + 1).to_string()).await;
+
+                                            let mut w = AnsiWriter::new();
+                                            w.set_fg(Color::LightGreen);
+                                            w.writeln(&format!("  Message sent to {}.", recipient_handle));
+                                            w.reset_color();
+                                            let _ = tx.send(w.flush()).await;
+                                            tokio::time::sleep(Duration::from_millis(500)).await;
+                                        }
+                                        Err(e) => {
+                                            let mut w = AnsiWriter::new();
+                                            w.set_fg(Color::LightRed);
+                                            w.writeln(&format!("  Error sending message: {}", e));
+                                            w.reset_color();
+                                            let _ = tx.send(w.flush()).await;
+                                            tokio::time::sleep(Duration::from_millis(500)).await;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Return to inbox
+                        self.mail_compose = None;
+                        self.show_inbox().await;
+                        return;
+                    }
+                    ComposeAction::Aborted => {
+                        let _ = tx.send("\r\n".to_string()).await;
+                        let mut w = AnsiWriter::new();
+                        w.set_fg(Color::Yellow);
+                        w.writeln("  Message aborted.");
+                        w.reset_color();
+                        let _ = tx.send(w.flush()).await;
+                        tokio::time::sleep(Duration::from_millis(500)).await;
+
+                        // Return to inbox
+                        self.mail_compose = None;
+                        self.show_inbox().await;
+                        return;
+                    }
+                    ComposeAction::ShowHelp => {
+                        let help = render_compose_help();
+                        let _ = tx.send(help).await;
+                    }
+                    ComposeAction::ShowLines(s) => {
+                        let _ = tx.send(s).await;
+                    }
+                }
+            }
+        }
+    }
+
     /// Called when client disconnects - save session time, release node, and clean up.
     ///
     /// For unclean disconnects (browser close, network drop), this saves the
