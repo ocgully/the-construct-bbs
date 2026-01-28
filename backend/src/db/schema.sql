@@ -59,10 +59,24 @@ CREATE TABLE IF NOT EXISTS session_history (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY,
+    sender_id INTEGER NOT NULL,
+    recipient_id INTEGER NOT NULL,
+    subject TEXT NOT NULL,
+    body TEXT NOT NULL,
+    sent_at TEXT NOT NULL DEFAULT (datetime('now', '-5 hours')),
+    is_read INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_sessions_expires ON sessions(expires_at);
 CREATE INDEX IF NOT EXISTS idx_verification_expires ON verification_codes(expires_at);
 CREATE INDEX IF NOT EXISTS idx_login_attempts_handle ON login_attempts(handle);
 CREATE INDEX IF NOT EXISTS idx_users_handle_lower ON users(handle_lower);
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_session_history_login ON session_history(login_time)
+CREATE INDEX IF NOT EXISTS idx_session_history_login ON session_history(login_time);
+CREATE INDEX IF NOT EXISTS idx_messages_recipient ON messages(recipient_id, sent_at DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_sender ON messages(sender_id, sent_at DESC)
