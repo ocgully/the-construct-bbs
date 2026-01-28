@@ -108,6 +108,287 @@ fn truncate(s: &str, max: usize) -> String {
     }
 }
 
+// ============================================================================
+// COMPOSE STATE MACHINE
+// ============================================================================
+
+/// The stages of the compose flow.
+#[derive(Debug, Clone, PartialEq)]
+pub enum ComposeState {
+    PromptTo,
+    InputTo,
+    PromptSubject,
+    InputSubject,
+    PromptBody,
+    InputBody,
+    Sending,
+    Done,
+    Aborted,
+}
+
+/// Actions returned by ComposeFlow to guide session.rs.
+#[derive(Debug, Clone, PartialEq)]
+pub enum ComposeAction {
+    /// Continue without any output.
+    Continue,
+    /// Echo this string back to user.
+    Echo(String),
+    /// Show this prompt to user.
+    ShowPrompt(String),
+    /// Need async DB lookup for recipient handle.
+    NeedRecipientLookup(String),
+    /// Ready to send message (all fields collected).
+    SendMessage {
+        recipient_id: i64,
+        recipient_handle: String,
+        subject: String,
+        body: String,
+    },
+    /// User aborted compose.
+    Aborted,
+    /// Show help text.
+    ShowHelp,
+    /// Show body lines with line numbers.
+    ShowLines(String),
+}
+
+/// Compose flow state machine.
+///
+/// Handles To -> Subject -> Body flow with character-by-character input.
+/// Like LoginFlow and RegistrationFlow, this is a synchronous state machine
+/// that returns ComposeAction to let session.rs handle async DB operations.
+pub struct ComposeFlow {
+    state: ComposeState,
+    sender_id: i64,
+    sender_handle: String,
+    input_buffer: String,
+    recipient_id: Option<i64>,
+    recipient_handle: Option<String>,
+    subject: Option<String>,
+    body_lines: Vec<String>,
+    is_reply: bool,
+}
+
+impl ComposeFlow {
+    /// Create a new compose flow starting at To prompt.
+    pub fn new(sender_id: i64, sender_handle: String) -> Self {
+        Self {
+            state: ComposeState::PromptTo,
+            sender_id,
+            sender_handle,
+            input_buffer: String::new(),
+            recipient_id: None,
+            recipient_handle: None,
+            subject: None,
+            body_lines: Vec::new(),
+            is_reply: false,
+        }
+    }
+
+    /// Create a reply compose flow with pre-filled recipient and quoted body.
+    ///
+    /// Subject gets "Re: " prefix (de-duplicated to prevent "Re: Re: Re:").
+    /// Body gets quoted with "> " prefix on each line.
+    pub fn new_reply(
+        sender_id: i64,
+        sender_handle: String,
+        recipient_id: i64,
+        recipient_handle: String,
+        original_subject: String,
+        original_body: String,
+    ) -> Self {
+        // De-duplicate "Re: " prefix
+        let reply_subject = if original_subject.starts_with("Re: ") {
+            original_subject
+        } else {
+            format!("Re: {}", original_subject)
+        };
+
+        // Quote original body with "> " prefix
+        let quoted_lines: Vec<String> = original_body
+            .lines()
+            .map(|line| format!("> {}", line))
+            .collect();
+
+        Self {
+            state: ComposeState::PromptBody,
+            sender_id,
+            sender_handle,
+            input_buffer: String::new(),
+            recipient_id: Some(recipient_id),
+            recipient_handle: Some(recipient_handle),
+            subject: Some(reply_subject),
+            body_lines: quoted_lines,
+            is_reply: true,
+        }
+    }
+
+    /// Get the current prompt text.
+    pub fn current_prompt(&self) -> &str {
+        match self.state {
+            ComposeState::PromptTo => "To: ",
+            ComposeState::PromptSubject => "Subject: ",
+            ComposeState::PromptBody => "Enter message. /s to send, /a to abort, /h for help:\r\n",
+            _ => "",
+        }
+    }
+
+    /// Get current state (for external inspection if needed).
+    pub fn state(&self) -> &ComposeState {
+        &self.state
+    }
+
+    /// Maximum input length for current state.
+    fn max_input_length(&self) -> usize {
+        match self.state {
+            ComposeState::InputTo => 254,
+            ComposeState::InputSubject => 254,
+            ComposeState::InputBody => usize::MAX, // No limit on body lines
+            _ => 0,
+        }
+    }
+
+    /// Handle a single character of input and return action.
+    ///
+    /// Follows LoginFlow/RegistrationFlow pattern:
+    /// - Backspace: remove last char, return "\x08 \x08"
+    /// - Enter: process line via handle_line()
+    /// - Printable: accumulate and echo
+    pub fn handle_char(&mut self, ch: char) -> ComposeAction {
+        // Backspace: \x7f (DEL) or \x08 (BS)
+        if ch == '\x7f' || ch == '\x08' {
+            if self.input_buffer.pop().is_some() {
+                return ComposeAction::Echo("\x08 \x08".to_string());
+            }
+            return ComposeAction::Continue; // Nothing to erase
+        }
+
+        // Enter: process completed line
+        if ch == '\r' || ch == '\n' {
+            return self.handle_line();
+        }
+
+        // Ignore other control characters
+        if ch.is_control() {
+            return ComposeAction::Continue;
+        }
+
+        // Enforce max length
+        if self.input_buffer.len() >= self.max_input_length() {
+            return ComposeAction::Continue;
+        }
+
+        // Accumulate printable character
+        self.input_buffer.push(ch);
+        ComposeAction::Echo(ch.to_string())
+    }
+
+    /// Handle a completed line of input (Enter was pressed).
+    fn handle_line(&mut self) -> ComposeAction {
+        let input = std::mem::take(&mut self.input_buffer);
+        let trimmed = input.trim();
+
+        match self.state {
+            ComposeState::InputTo => {
+                if trimmed.is_empty() {
+                    self.state = ComposeState::PromptTo;
+                    return ComposeAction::ShowPrompt("To: ".to_string());
+                }
+                // Request async DB lookup from session
+                ComposeAction::NeedRecipientLookup(trimmed.to_string())
+            }
+            ComposeState::InputSubject => {
+                self.subject = Some(trimmed.to_string());
+                self.state = ComposeState::PromptBody;
+                ComposeAction::ShowPrompt(self.current_prompt().to_string())
+            }
+            ComposeState::InputBody => {
+                // Check for slash commands
+                if trimmed.starts_with("/s") || trimmed.starts_with("/S") {
+                    // Send message
+                    if let (Some(recipient_id), Some(recipient_handle), Some(subject)) = (
+                        self.recipient_id,
+                        self.recipient_handle.as_ref(),
+                        self.subject.as_ref(),
+                    ) {
+                        self.state = ComposeState::Sending;
+                        return ComposeAction::SendMessage {
+                            recipient_id,
+                            recipient_handle: recipient_handle.clone(),
+                            subject: subject.clone(),
+                            body: self.get_body(),
+                        };
+                    }
+                    // Should never happen (missing fields), just continue
+                    ComposeAction::Continue
+                } else if trimmed.starts_with("/a") || trimmed.starts_with("/A") {
+                    // Abort
+                    self.state = ComposeState::Aborted;
+                    ComposeAction::Aborted
+                } else if trimmed.starts_with("/h") || trimmed.starts_with("/H") {
+                    // Show help
+                    ComposeAction::ShowHelp
+                } else if trimmed.starts_with("/l") || trimmed.starts_with("/L") {
+                    // List lines
+                    let formatted = format_body_lines(&self.body_lines);
+                    ComposeAction::ShowLines(formatted)
+                } else {
+                    // Regular body line
+                    self.body_lines.push(input); // Use original input (not trimmed) to preserve whitespace
+                    ComposeAction::Continue
+                }
+            }
+            _ => ComposeAction::Continue,
+        }
+    }
+
+    /// Set recipient after successful DB lookup.
+    ///
+    /// Called by session.rs after NeedRecipientLookup action.
+    /// Advances to PromptSubject (or PromptBody if is_reply).
+    pub fn set_recipient(&mut self, id: i64, handle: String) {
+        self.recipient_id = Some(id);
+        self.recipient_handle = Some(handle);
+
+        if self.is_reply {
+            self.state = ComposeState::PromptBody;
+        } else {
+            self.state = ComposeState::PromptSubject;
+        }
+    }
+
+    /// Handle recipient lookup error.
+    ///
+    /// Stays in InputTo state so user can try again.
+    pub fn set_recipient_error(&mut self) {
+        self.state = ComposeState::PromptTo;
+    }
+
+    /// Get the composed message body.
+    ///
+    /// Joins body_lines with "\n" (LF for storage).
+    /// Session converts to CRLF for display.
+    pub fn get_body(&self) -> String {
+        self.body_lines.join("\n")
+    }
+
+    /// Transition to input state after prompt is shown.
+    ///
+    /// Called by session after showing prompt.
+    pub fn advance_to_input(&mut self) {
+        match self.state {
+            ComposeState::PromptTo => self.state = ComposeState::InputTo,
+            ComposeState::PromptSubject => self.state = ComposeState::InputSubject,
+            ComposeState::PromptBody => self.state = ComposeState::InputBody,
+            _ => {}
+        }
+    }
+}
+
+// ============================================================================
+// RENDER FUNCTIONS
+// ============================================================================
+
 /// Render inbox as ANSI table with CP437 box-drawing.
 ///
 /// Table layout (80 columns total):
