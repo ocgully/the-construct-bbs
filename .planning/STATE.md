@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 6 of 15 (Chat & Real-Time Communication)
-Plan: 1 of 5 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-01-28 -- Completed 06-01-PLAN.md (ChatManager with broadcast channel)
+Last activity: 2026-01-28 -- Completed 06-02-PLAN.md (Chat command parser and ANSI rendering)
 
-Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 20% of Phase 6 (1/5)
+Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 50% of Phase 6 (2/4)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 26
+- Total plans completed: 27
 - Average duration: 6 min
-- Total execution time: 2.8 hours
+- Total execution time: 2.9 hours
 
 **By Phase:**
 
@@ -32,10 +32,10 @@ Progress: [████████████████████] 100% of
 | 03    | 3     | 16min | 5min     | Complete |
 | 04    | 6     | 49min | 8min     | Complete (incl. integration) |
 | 05    | 4     | 31min | 8min     | Complete |
-| 06    | 1     | 7min  | 7min     | In progress |
+| 06    | 2     | 15min | 8min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 6min, 6min, 6min, 8min, 7min
+- Last 5 plans: 6min, 6min, 8min, 7min, 8min
 - Trend: Consistently fast execution (6-8min range)
 
 *Updated after each plan completion*
@@ -144,6 +144,10 @@ Recent decisions affecting current work:
 | 06-01 | Broadcast channel buffer size of 100 messages | Buffer for in-flight messages, separate from participant capacity |
 | 06-01 | Case-insensitive handle lookup for /msg commands | User-friendly private messaging regardless of handle case |
 | 06-01 | Default chat capacity of 32 users (2x max_nodes) | Reasonable default that can be configured per deployment |
+| 06-02 | Import ChatMessage from connection module | Reuse existing enum from chat_manager.rs, no duplication |
+| 06-02 | Case-insensitive command parsing via to_lowercase() | Commands work regardless of case (/QUIT, /Quit, /quit) |
+| 06-02 | Direct message privacy filtering returns empty string | render_chat_message returns "" for non-participants |
+| 06-02 | All render functions return String | Matches mail.rs pattern, enables async session integration |
 
 ### Roadmap Evolution
 
@@ -265,24 +269,23 @@ Full email system implemented:
 
 ## Phase 6 Progress
 
-**Chat & Real-Time Communication Phase: IN PROGRESS (1/5 plans complete)**
+**Chat & Real-Time Communication Phase: IN PROGRESS (2/4 plans complete)**
 
 Plans completed:
 - 06-01: ChatManager with broadcast channel (ChatMessage enum, ChatManager struct, ChatConfig, AppState wiring)
+- 06-02: Chat command parser and ANSI rendering (ChatCommand enum, parse_chat_command, render functions)
 
 Plans remaining:
-- 06-02: ChatState and session integration
-- 06-03: Chat command handlers
-- 06-04: Chat ANSI rendering
-- 06-05: Chat lifecycle and testing
+- 06-03: Chat session state and command handling
+- 06-04: Chat integration and testing
 
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Completed 06-01-PLAN.md (ChatManager with broadcast channel)
+Stopped at: Completed 06-02-PLAN.md (Chat command parser and ANSI rendering)
 Resume file: None
-Next action: 06-02 (ChatState and session integration)
+Next action: 06-03 (Chat session state and command handling)
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-28 (06-01 ChatManager with broadcast channel)*
+*Last updated: 2026-01-28 (06-02 Chat command parser and ANSI rendering)*
