@@ -19,6 +19,8 @@ pub struct Config {
     pub time_limits: TimeLimitsConfig,
     #[serde(default)]
     pub mail: MailConfig,
+    #[serde(default)]
+    pub chat: ChatConfig,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -242,6 +244,24 @@ impl Default for MailConfig {
     fn default() -> Self {
         Self {
             mailbox_size_limit: default_mailbox_size_limit(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct ChatConfig {
+    #[serde(default = "default_chat_capacity")]
+    pub capacity: usize,
+}
+
+fn default_chat_capacity() -> usize {
+    32 // Allows up to 32 users in chat (2x default max_nodes)
+}
+
+impl Default for ChatConfig {
+    fn default() -> Self {
+        Self {
+            capacity: default_chat_capacity(),
         }
     }
 }

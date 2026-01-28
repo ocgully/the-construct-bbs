@@ -640,6 +640,7 @@ mod tests {
                 menu: crate::menu::MenuConfig::default(),
                 time_limits: crate::config::TimeLimitsConfig::default(),
                 mail: crate::config::MailConfig::default(),
+                chat: crate::config::ChatConfig::default(),
             }
         }
 

@@ -14,7 +14,7 @@ use axum::{
 use tower_http::services::ServeDir;
 use std::sync::Arc;
 use config::Config;
-use connection::NodeManager;
+use connection::{ChatManager, NodeManager};
 use services::ServiceRegistry;
 use sqlx::SqlitePool;
 
@@ -24,6 +24,7 @@ pub(crate) struct AppState {
     pub(crate) registry: ServiceRegistry,
     pub(crate) db_pool: SqlitePool,
     pub(crate) node_manager: NodeManager,
+    pub(crate) chat_manager: ChatManager,
 }
 
 #[tokio::main]
@@ -50,11 +51,16 @@ async fn main() {
     let node_manager = NodeManager::new(config.connection.max_nodes as usize);
     println!("Node capacity: {} nodes", config.connection.max_nodes);
 
+    // Initialize chat manager for real-time messaging
+    let chat_manager = ChatManager::new(config.chat.capacity);
+    println!("Chat capacity: {} users", config.chat.capacity);
+
     let state = Arc::new(AppState {
         config,
         registry,
         db_pool,
         node_manager,
+        chat_manager,
     });
 
     let app = Router::new()
