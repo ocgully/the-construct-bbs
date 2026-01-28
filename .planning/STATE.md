@@ -148,6 +148,10 @@ Recent decisions affecting current work:
 | 06-02 | Case-insensitive command parsing via to_lowercase() | Commands work regardless of case (/QUIT, /Quit, /quit) |
 | 06-02 | Direct message privacy filtering returns empty string | render_chat_message returns "" for non-participants |
 | 06-02 | All render functions return String | Matches mail.rs pattern, enables async session integration |
+| 06-03 | Simplified /r reply: suggest /msg instead | Receiver task can't update Session fields across boundaries |
+| 06-03 | Bell signal sent as JSON before formatted message | Frontend plays sound before displaying text |
+| 06-03 | Chat cleanup in both exit_chat and on_disconnect | Complete coverage for clean/unclean exits |
+| 06-03 | __chat__ sentinel routes input to handle_chat_input | Matches Phase 4/5 sentinel pattern for state routing |
 | 06-04 | Programmatic bell sound generation via Web Audio API | 800Hz sine wave with exponential decay, no external file needed |
 | 06-04 | Bell message interception in WebSocket handler | JSON { type: "bell" } triggers sound without terminal output |
 
@@ -276,7 +280,7 @@ Full email system implemented:
 All plans executed successfully:
 - 06-01: ChatManager with broadcast channel (ChatMessage enum, ChatManager struct, ChatConfig, AppState wiring)
 - 06-02: Chat command parser and ANSI rendering (ChatCommand enum, parse_chat_command, render functions)
-- 06-03: Chat session state and command handling
+- 06-03: Chat session state and command handling (enter_chat/exit_chat, broadcast receiver task, menu integration)
 - 06-04: Bell sound for page/DM notifications (Web Audio API sine wave generation, WebSocket interception)
 
 Full chat system implemented:
@@ -284,8 +288,10 @@ Full chat system implemented:
 2. ChatMessage enum with 7 variants (Public, Action, System, Direct, Join, Leave, Page)
 3. ChatCommand enum for parsing user input (/msg, /me, /who, /quit, etc.)
 4. ANSI-rendered chat messages with CGA color coding
-5. Bell sound notification via programmatic Web Audio API generation
-6. WebSocket bell message interception (JSON not shown in terminal)
+5. Session integration with enter_chat/exit_chat lifecycle and broadcast receiver task
+6. Full command handling: /help, /who, /me, /msg, /page, /quit
+7. Bell sound notification via programmatic Web Audio API generation
+8. WebSocket bell message interception (JSON not shown in terminal)
 
 ## Session Continuity
 
