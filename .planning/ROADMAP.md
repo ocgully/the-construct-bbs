@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Terminal Foundation** - ANSI rendering, WebSocket I/O, service architecture
 - [x] **Phase 2: Authentication & Connection** - User accounts, login/logout, connection experience
 - [x] **Phase 3: Navigation System** - Wildcat-style menus with ANSI art and hotkeys
-- [ ] **Phase 4: Time Limits & User Lists** - Daily time caps, session timers, who's online
+- [x] **Phase 4: Time Limits & User Lists** - Daily time caps, session timers, who's online
 - [ ] **Phase 5: Email System** - Inter-user private messaging
 - [ ] **Phase 6: Chat & Real-Time Communication** - Live teleconference, user paging
 - [ ] **Phase 7: News & Bulletins** - RSS feed integration, sysop bulletins
@@ -63,13 +63,13 @@ Plans:
 **Plans**: 7 plans
 
 Plans:
-- [ ] 02-01-PLAN.md -- Database foundation (SQLx, schema, User CRUD) and config extensions
-- [ ] 02-02-PLAN.md -- Auth core (Argon2 password hashing, session tokens, validation, profanity filter) and NodeManager
-- [ ] 02-03-PLAN.md -- Connection ceremony (modem audio, typewriter text, ANSI splash, line-busy rejection)
-- [ ] 02-04-PLAN.md -- Registration service (interactive terminal prompts, email verification, handle validation)
-- [ ] 02-05-PLAN.md -- Login flow (handle/password prompts, session token persistence, session resumption)
-- [ ] 02-06-PLAN.md -- User profile ANSI card and goodbye sequence with session stats
-- [ ] 02-07-PLAN.md -- Flow integration, end-to-end wiring, and human verification
+- [x] 02-01-PLAN.md -- Database foundation (SQLx, schema, User CRUD) and config extensions
+- [x] 02-02-PLAN.md -- Auth core (Argon2 password hashing, session tokens, validation, profanity filter) and NodeManager
+- [x] 02-03-PLAN.md -- Connection ceremony (modem audio, typewriter text, ANSI splash, line-busy rejection)
+- [x] 02-04-PLAN.md -- Registration service (interactive terminal prompts, email verification, handle validation)
+- [x] 02-05-PLAN.md -- Login flow (handle/password prompts, session token persistence, session resumption)
+- [x] 02-06-PLAN.md -- User profile ANSI card and goodbye sequence with session stats
+- [x] 02-07-PLAN.md -- Flow integration, end-to-end wiring, and human verification
 
 ### Phase 3: Navigation System
 **Goal**: Users can navigate BBS using Wildcat-style numbered/lettered menus with ANSI art
@@ -102,12 +102,12 @@ Plans:
 **Plans**: 6 plans
 
 Plans:
-- [ ] 04-01-PLAN.md -- Database schema extensions, time limits config, NodeManager idle tracking
-- [ ] 04-02-PLAN.md -- Backend session timer task with CancellationToken and timeout goodbye
-- [ ] 04-03-PLAN.md -- Frontend status bar renderer and client-side countdown timer
-- [ ] 04-04-PLAN.md -- Who's Online and Last Callers ANSI display services
-- [ ] 04-05-PLAN.md -- User profile lookup service and menu item registration
-- [ ] 04-06-PLAN.md -- Timer lifecycle integration, timeout enforcement, command routing
+- [x] 04-01-PLAN.md -- Database schema extensions, time limits config, NodeManager idle tracking
+- [x] 04-02-PLAN.md -- Backend session timer task with CancellationToken and timeout goodbye
+- [x] 04-03-PLAN.md -- Frontend status bar renderer and client-side countdown timer
+- [x] 04-04-PLAN.md -- Who's Online and Last Callers ANSI display services
+- [x] 04-05-PLAN.md -- User profile lookup service and menu item registration
+- [x] 04-06-PLAN.md -- Timer lifecycle integration, timeout enforcement, command routing
 
 ### Phase 5: Email System
 **Goal**: Users can send and receive private messages to other BBS users
@@ -273,7 +273,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 1. Terminal Foundation | 5/5 | Complete | 2026-01-26 |
 | 2. Authentication & Connection | 7/7 | Complete | 2026-01-27 |
 | 3. Navigation System | 3/3 | Complete | 2026-01-27 |
-| 4. Time Limits & User Lists | 0/6 | Planned | - |
+| 4. Time Limits & User Lists | 6/6 | Complete | 2026-01-28 |
 | 5. Email System | 0/TBD | Not started | - |
 | 6. Chat & Real-Time Communication | 0/TBD | Not started | - |
 | 7. News & Bulletins | 0/TBD | Not started | - |
@@ -287,4 +287,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
 ---
 *Roadmap created: 2026-01-26*
-*Last updated: 2026-01-27 (Phase 4 planned)*
+*Last updated: 2026-01-28 (Phase 4 complete)*
