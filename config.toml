@@ -56,10 +56,10 @@ submenu_key = "games"
 order = 1
 
 [[menu.main]]
-type = "submenu"
+type = "command"
 hotkey = "M"
 name = "Mail"
-submenu_key = "mail"
+command = "mail"
 order = 2
 
 [[menu.main]]

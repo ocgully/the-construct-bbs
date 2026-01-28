@@ -20,6 +20,7 @@ export class SessionTimer {
         warning: string;
         handle: string;
         online: number;
+        has_mail?: boolean;
     }) {
         if (data.unit === 'unlimited') {
             this.isUnlimited = true;
@@ -28,6 +29,7 @@ export class SessionTimer {
                 online: data.online,
                 timeDisplay: 'Unlimited',
                 warning: 'normal',
+                hasMail: data.has_mail || false,
             });
             this.statusBar.show();
             return;
@@ -48,6 +50,7 @@ export class SessionTimer {
             online: data.online,
             timeDisplay: this.formatTime(),
             warning: warning,
+            hasMail: data.has_mail || false,
         });
         this.statusBar.show();
 
@@ -131,5 +134,12 @@ export class SessionTimer {
      */
     updateOnlineCount(count: number) {
         this.statusBar.update({ online: count });
+    }
+
+    /**
+     * Re-render the status bar (call after terminal writes that may clear the screen).
+     */
+    refreshBar() {
+        this.statusBar.refresh();
     }
 }

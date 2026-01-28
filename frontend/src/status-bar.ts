@@ -9,6 +9,7 @@ export class StatusBar {
     private timeDisplay: string = '';
     private warningLevel: WarningLevel = 'normal';
     private visible: boolean = false;
+    private hasMail: boolean = false;
 
     constructor(terminal: Terminal) {
         this.terminal = terminal;
@@ -22,11 +23,13 @@ export class StatusBar {
         online?: number;
         timeDisplay?: string;
         warning?: WarningLevel;
+        hasMail?: boolean;
     }) {
         if (opts.handle !== undefined) this.handle = opts.handle;
         if (opts.online !== undefined) this.onlineCount = opts.online;
         if (opts.timeDisplay !== undefined) this.timeDisplay = opts.timeDisplay;
         if (opts.warning !== undefined) this.warningLevel = opts.warning;
+        if (opts.hasMail !== undefined) this.hasMail = opts.hasMail;
         this.render();
     }
 
@@ -45,6 +48,13 @@ export class StatusBar {
         this.visible = false;
         // Clear row 24
         this.terminal.write('\x1b7\x1b[24;1H\x1b[2K\x1b8');
+    }
+
+    /**
+     * Force a re-render of the status bar (e.g., after screen clears).
+     */
+    refresh() {
+        this.render();
     }
 
     /**
@@ -67,43 +77,43 @@ export class StatusBar {
                 fgColor = '\x1b[30m';   // Black text
                 break;
             default:
-                bgColor = '\x1b[44m';   // Blue background (more visible than black)
-                fgColor = '\x1b[97m';   // Bright white text
+                bgColor = '\x1b[40m';   // Black background (no color until meaningful)
+                fgColor = '\x1b[90m';   // Light grey text
                 break;
         }
 
         // Build the bar content
         const left = ` ${this.handle}`;
+        const mailIndicator = this.hasMail ? ' \x1b[33m\x1b[1mMAIL\x1b[0m' : '';
         const center = `Online: ${this.onlineCount}`;
         const right = `Time: ${this.timeDisplay} `;
 
-        // Pad to fill 80 columns
-        const contentLen = left.length + center.length + right.length;
+        // Calculate visible length (excluding ANSI escape codes)
+        const mailVisibleLen = this.hasMail ? 5 : 0; // " MAIL" = 5 chars
+        const visibleContentLen = left.length + mailVisibleLen + center.length + right.length;
         const totalWidth = 80;
-        const leftPad = Math.floor((totalWidth - contentLen) / 3);
-        const rightPad = totalWidth - left.length - leftPad - center.length - (totalWidth - left.length - leftPad - center.length - right.length);
 
-        // Simple approach: left-aligned handle, centered online count, right-aligned time
-        const spaceBetweenLeftCenter = Math.max(1, Math.floor((totalWidth - left.length - center.length - right.length) / 2));
-        const spaceBetweenCenterRight = Math.max(1, totalWidth - left.length - spaceBetweenLeftCenter - center.length - right.length);
+        // Simple approach: left-aligned handle + MAIL, centered online count, right-aligned time
+        const spaceBetweenLeftCenter = Math.max(1, Math.floor((totalWidth - visibleContentLen) / 2));
+        const spaceBetweenCenterRight = Math.max(1, totalWidth - left.length - mailVisibleLen - spaceBetweenLeftCenter - center.length - right.length);
 
-        const barContent = left +
-            ' '.repeat(spaceBetweenLeftCenter) +
+        // Apply colors before building string
+        const barContent = bgColor + fgColor + left + mailIndicator +
+            bgColor + fgColor + ' '.repeat(spaceBetweenLeftCenter) +
             center +
             ' '.repeat(spaceBetweenCenterRight) +
             right;
 
-        // Pad or trim to exactly 80 chars
-        const paddedBar = barContent.length < totalWidth
-            ? barContent + ' '.repeat(totalWidth - barContent.length)
-            : barContent.substring(0, totalWidth);
+        // Pad to exactly 80 visible chars (account for ANSI codes in mailIndicator)
+        const currentVisibleLen = visibleContentLen + spaceBetweenLeftCenter + spaceBetweenCenterRight;
+        const paddingNeeded = totalWidth - currentVisibleLen;
+        const paddedBar = barContent + bgColor + fgColor + ' '.repeat(Math.max(0, paddingNeeded));
 
-        // Write: save cursor, move to row 24 col 1, set colors, write bar, reset, restore cursor
+        // Write: save cursor, move to row 24 col 1, write bar, reset, restore cursor
         this.terminal.write(
             '\x1b7' +           // Save cursor position (DEC)
             '\x1b[24;1H' +     // Move to row 24, column 1
-            bgColor + fgColor + // Set colors
-            paddedBar +         // Bar content
+            paddedBar +         // Bar content (already has colors embedded)
             '\x1b[0m' +        // Reset colors
             '\x1b8'            // Restore cursor position (DEC)
         );
