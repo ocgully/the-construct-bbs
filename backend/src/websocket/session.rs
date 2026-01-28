@@ -1,11 +1,12 @@
-use tokio::sync::mpsc;
+use tokio::sync::{broadcast, mpsc};
+use tokio_util::sync::CancellationToken;
 use std::sync::Arc;
 use std::time::Duration;
 
 use crate::{
     AppState,
     auth::session::create_session,
-    connection::ceremony,
+    connection::{ceremony, ChatMessage},
     db::{
         messages::{
             check_mailbox_full, create_message, delete_message, get_inbox_count,
@@ -17,6 +18,10 @@ use crate::{
     menu::{self, MenuAction, MenuSession, MenuState},
     services::{
         ServiceAction, SessionIO,
+        chat::{
+            parse_chat_command, ChatCommand, render_chat_message, render_chat_help,
+            render_chat_who, render_chat_welcome, render_chat_error,
+        },
         goodbye::render_goodbye,
         login::{LoginFlow, LoginResult, render_login_header, render_welcome_back},
         mail::{
@@ -95,6 +100,10 @@ pub struct Session {
     mail_reading_id: Option<i64>,
     /// Input buffer for message number entry in inbox
     mail_input_buffer: Option<String>,
+    /// Handle of last DM sender for /r reply command
+    last_dm_sender: Option<String>,
+    /// Cancellation token for chat broadcast receiver task
+    chat_cancel: Option<CancellationToken>,
 }
 
 /// Map user level string to numeric level for menu filtering
@@ -130,6 +139,8 @@ impl Session {
             mail_compose: None,
             mail_reading_id: None,
             mail_input_buffer: None,
+            last_dm_sender: None,
+            chat_cancel: None,
         }
     }
 
