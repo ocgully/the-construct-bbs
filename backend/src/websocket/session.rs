@@ -1040,6 +1040,14 @@ impl Session {
             }
         }
 
+        // Chat mode: process chat input
+        if let Some(service_name) = &self.current_service {
+            if service_name == "__chat__" {
+                self.handle_chat_input(input).await;
+                return;
+            }
+        }
+
         // Profile edit mode needs raw input (spaces, Enter) -- check BEFORE trimming
         if let Some(service_name) = &self.current_service {
             if service_name.starts_with("__profile_edit_") {
@@ -1275,6 +1283,11 @@ impl Session {
                             self.show_inbox().await;
                             return;
                         }
+                        "chat" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            self.enter_chat().await;
+                            return;
+                        }
                         _ => {
                             // Unknown command, redraw
                             self.show_menu().await;
@@ -1328,6 +1341,7 @@ impl Session {
                         "last_callers" => { self.handle_last_callers().await; return; }
                         "user_lookup" => { self.handle_user_lookup_start().await; return; }
                         "mail" => { self.show_inbox().await; return; }
+                        "chat" => { self.enter_chat().await; return; }
                         _ => {}
                     }
                 }
@@ -2466,6 +2480,21 @@ impl Session {
                 "Session for {} ended ({}m, unclean disconnect)",
                 handle, session_minutes
             );
+        }
+
+        // Exit chat if in chat mode
+        if let Some(service_name) = &self.current_service {
+            if service_name == "__chat__" {
+                // Cancel broadcast receiver
+                if let Some(cancel) = self.chat_cancel.take() {
+                    cancel.cancel();
+                }
+                // Broadcast leave and cleanup
+                if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                    self.state.chat_manager.broadcast(ChatMessage::Leave { handle: handle.clone() });
+                    self.state.chat_manager.leave(*user_id).await;
+                }
+            }
         }
 
         // Release the assigned node
