@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** The feeling of dialing into an exclusive, underground system — artificial scarcity, ANSI art, and social games that only work because everyone's sharing the same constrained space.
-**Current focus:** Phase 3 - Navigation System (IN PROGRESS)
+**Current focus:** Phase 4 - Time Limits & User Lists (IN PROGRESS)
 
 ## Current Position
 
-Phase: 3 of 14 (Navigation System)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-01-27 -- Completed 03-03-PLAN.md (Navigation Logic Integration)
+Phase: 4 of 14 (Time Limits & User Lists)
+Plan: 1 of 6 in current phase
+Status: In progress
+Last activity: 2026-01-27 -- Completed 04-01-PLAN.md (Time Limits Foundation)
 
-Progress: [████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3)
+Progress: [█████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 17% of Phase 4 (1/6)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 15
+- Total plans completed: 16
 - Average duration: 6 min
-- Total execution time: 1.7 hours
+- Total execution time: 1.8 hours
 
 **By Phase:**
 
@@ -30,9 +30,10 @@ Progress: [████████████] 100% of Phase 1 (5/5), 100% of 
 | 01    | 5     | 24min | 5min     | Complete |
 | 02    | 7     | 45min | 6min     | Complete (incl. integration) |
 | 03    | 3     | 16min | 5min     | Complete |
+| 04    | 1     | 8min  | 8min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 4min, 8min, 4min, 3min, 9min
+- Last 5 plans: 8min, 4min, 3min, 9min, 8min
 - Trend: Consistently fast execution (3-9min range)
 
 *Updated after each plan completion*
@@ -102,6 +103,10 @@ Recent decisions affecting current work:
 | 03-03 | Single-keypress navigation: process each char individually through MenuSession | Matches Wildcat BBS immediate response behavior |
 | 03-03 | Type-ahead buffer drained after EnterSubmenu for command stacking | Enables G1 to go directly to Games > item 1 |
 | 03-03 | Menu state reset to MainMenu via reset_to_main() on service exit | Prevents user stuck in submenu after exiting service |
+| 04-01 | Time limits configurable per user level (Guest/User/Sysop) in config.toml | Phase 4 timer and banking features use per-level daily_minutes and time_bank_cap |
+| 04-01 | Session history uses datetime('now', '-5 hours') for EST timezone consistency | All datetime fields maintain EST timezone offset |
+| 04-01 | Time banking with daily reset detection using SQLite date() comparison | Daily reset triggered by comparing date(last_daily_reset) < date('now', '-5 hours') |
+| 04-01 | NodeManager tracks current_activity string and last_input timestamp | Enables Who's Online display and idle detection |
 
 ### Pending Todos
 
@@ -171,13 +176,27 @@ Full navigation system implemented:
 7. Profile and Quit commands functional from main menu
 8. Service launch/exit properly managed with menu state transitions
 
+## Phase 4 Progress
+
+**Time Limits & User Lists Phase: IN PROGRESS (1/6 plans complete)**
+
+Completed:
+- 04-01: Time Limits Foundation (TimeLimitsConfig, session_history table, time banking queries, NodeManager extensions)
+
+Foundation complete for remaining Phase 4 plans:
+- Session timer can use TimeLimitsConfig for per-level time limits
+- Last Callers display can query session_history table
+- Who's Online can use NodeInfo.current_activity and last_input
+- Time banking can use daily reset detection and withdrawal queries
+- Graceful timeout can track session_history on disconnect
+
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed 03-03-PLAN.md (Navigation Logic Integration) -- Phase 3 complete
+Stopped at: Completed 04-01-PLAN.md (Time Limits Foundation)
 Resume file: None
-Next action: Phase 4 (Time Limits & User Lists)
+Next action: Phase 4 plan 04-02 (Session Timer & Status Bar)
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-27 (03-03 navigation logic integration -- Phase 3 complete)*
+*Last updated: 2026-01-27 (04-01 time limits foundation)*
