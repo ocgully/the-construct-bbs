@@ -6,12 +6,24 @@ use crate::{
     AppState,
     auth::session::create_session,
     connection::ceremony,
-    db::user::{find_user_by_id, find_user_by_handle, update_last_login, update_user_field, update_user_time},
+    db::{
+        messages::{
+            check_mailbox_full, create_message, delete_message, get_inbox_count,
+            get_inbox_page, get_message_by_id, get_sender_handles, get_unread_count,
+            mark_message_read, InboxEntry,
+        },
+        user::{find_user_by_id, find_user_by_handle, update_last_login, update_user_field, update_user_time},
+    },
     menu::{self, MenuAction, MenuSession, MenuState},
     services::{
         ServiceAction, SessionIO,
         goodbye::render_goodbye,
         login::{LoginFlow, LoginResult, render_login_header, render_welcome_back},
+        mail::{
+            render_compose_header, render_compose_help, render_inbox, render_mailbox_full_error,
+            render_message, render_new_mail_notification, render_self_mail_error,
+            render_user_not_found_error, ComposeAction, ComposeFlow, format_body_lines,
+        },
         profile::{render_profile_card, render_profile_edit_menu_string},
         registration::{RegistrationFlow, RegistrationResult, render_registration_header},
     },
@@ -75,6 +87,14 @@ pub struct Session {
     lookup_input: Option<String>,
     /// Whether bank withdrawal has been offered this session
     withdrawal_offered: bool,
+    /// Current inbox page number
+    mail_page: usize,
+    /// Active compose flow state machine
+    mail_compose: Option<ComposeFlow>,
+    /// ID of message currently being read (for reply/delete context)
+    mail_reading_id: Option<i64>,
+    /// Input buffer for message number entry in inbox
+    mail_input_buffer: Option<String>,
 }
 
 /// Map user level string to numeric level for menu filtering
@@ -106,6 +126,10 @@ impl Session {
             session_history_id: None,
             lookup_input: None,
             withdrawal_offered: false,
+            mail_page: 0,
+            mail_compose: None,
+            mail_reading_id: None,
+            mail_input_buffer: None,
         }
     }
 
@@ -327,7 +351,7 @@ impl Session {
                 _ => "Unknown".to_string(),
             };
             let timer = crate::connection::timer::SessionTimer::spawn(
-                self.tx.clone(), 0, handle, active,
+                self.tx.clone(), 0, handle, active, user_id, self.state.db_pool.clone(),
             );
             self.session_timer = Some(timer);
             return;
@@ -374,7 +398,7 @@ impl Session {
                 _ => "Unknown".to_string(),
             };
             let timer = crate::connection::timer::SessionTimer::spawn(
-                self.tx.clone(), withdrawn, handle, active,
+                self.tx.clone(), withdrawn, handle, active, user_id, self.state.db_pool.clone(),
             );
             self.session_timer = Some(timer);
             return;
@@ -387,7 +411,7 @@ impl Session {
             _ => "Unknown".to_string(),
         };
         let timer = crate::connection::timer::SessionTimer::spawn(
-            self.tx.clone(), remaining, handle, active,
+            self.tx.clone(), remaining, handle, active, user_id, self.state.db_pool.clone(),
         );
         self.session_timer = Some(timer);
     }
@@ -1028,7 +1052,7 @@ impl Session {
                                 _ => "Unknown".to_string(),
                             };
                             let new_timer = crate::connection::timer::SessionTimer::spawn(
-                                self.tx.clone(), withdrawn, handle, active,
+                                self.tx.clone(), withdrawn, handle, active, user_id, self.state.db_pool.clone(),
                             );
                             self.session_timer = Some(new_timer);
                             self.withdrawal_offered = false; // Allow re-prompt if they run low again
@@ -1046,8 +1070,7 @@ impl Session {
 
             // Who's Online and Last Callers: any keypress returns to menu
             if service_name == "__whos_online__" || service_name == "__last_callers__" {
-                let trimmed = input.trim();
-                if !trimmed.is_empty() && !trimmed.starts_with('\x1b') {
+                if !input.is_empty() && !input.starts_with('\x1b') {
                     self.current_service = None;
                     if let Some(ms) = &mut self.menu_session {
                         ms.reset_to_main();
@@ -1065,10 +1088,27 @@ impl Session {
 
             // User Lookup view/retry: any keypress returns to lookup prompt
             if service_name == "__user_lookup_view__" || service_name == "__user_lookup_retry__" {
-                let trimmed = input.trim();
-                if !trimmed.is_empty() && !trimmed.starts_with('\x1b') {
+                if !input.is_empty() && !input.starts_with('\x1b') {
                     self.handle_user_lookup_start().await;
                 }
+                return;
+            }
+
+            // Mail Inbox: handle C/N/P/Q/digit input
+            if service_name == "__mail_inbox__" {
+                self.handle_mail_inbox_input(input).await;
+                return;
+            }
+
+            // Mail Read: handle R/D/N/Q
+            if service_name == "__mail_read__" {
+                self.handle_mail_read_input(input).await;
+                return;
+            }
+
+            // Mail Compose: character-by-character through ComposeFlow
+            if service_name == "__mail_compose__" {
+                self.handle_mail_compose_input(input).await;
                 return;
             }
         }
@@ -1195,6 +1235,11 @@ impl Session {
                             self.handle_user_lookup_start().await;
                             return;
                         }
+                        "mail" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            self.show_inbox().await;
+                            return;
+                        }
                         _ => {
                             // Unknown command, redraw
                             self.show_menu().await;
@@ -1247,6 +1292,7 @@ impl Session {
                         "whos_online" => { self.handle_whos_online().await; return; }
                         "last_callers" => { self.handle_last_callers().await; return; }
                         "user_lookup" => { self.handle_user_lookup_start().await; return; }
+                        "mail" => { self.show_inbox().await; return; }
                         _ => {}
                     }
                 }

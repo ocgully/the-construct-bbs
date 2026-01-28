@@ -34,9 +34,11 @@ impl SessionTimer {
     /// - `remaining_minutes`: How many minutes the user has left today
     /// - `handle`: User's handle (for status bar)
     /// - `users_online`: Number of users currently online (for status bar)
+    /// - `user_id`: User's ID (for checking unread mail)
+    /// - `pool`: Database connection pool (for checking unread mail)
     ///
     /// The timer sends JSON messages of the form:
-    /// { "type": "timer", "remaining": <minutes_or_seconds>, "unit": "min"|"sec", "warning": "normal"|"yellow"|"red", "handle": "...", "online": N }
+    /// { "type": "timer", "remaining": <minutes_or_seconds>, "unit": "min"|"sec", "warning": "normal"|"yellow"|"red", "handle": "...", "online": N, "has_mail": bool }
     ///
     /// Timer ticks per-minute normally. In the final minute, switches to per-second.
     /// When remaining reaches 0, sends { "type": "timeout" } and returns TimerResult::Expired.
@@ -45,6 +47,8 @@ impl SessionTimer {
         remaining_minutes: i64,
         handle: String,
         users_online: usize,
+        user_id: i64,
+        pool: sqlx::SqlitePool,
     ) -> Self {
         let cancel = CancellationToken::new();
         let cancel_clone = cancel.clone();
@@ -54,7 +58,7 @@ impl SessionTimer {
         let low_time_clone = low_time.clone();
 
         let handle_task = tokio::spawn(async move {
-            run_timer(tx, remaining_minutes, handle, users_online, cancel_clone, expired_clone, low_time_clone).await
+            run_timer(tx, remaining_minutes, handle, users_online, user_id, pool, cancel_clone, expired_clone, low_time_clone).await
         });
 
         Self {
@@ -101,19 +105,26 @@ async fn run_timer(
     remaining_minutes: i64,
     handle: String,
     users_online: usize,
+    user_id: i64,
+    pool: sqlx::SqlitePool,
     cancel: CancellationToken,
     expired_flag: Arc<AtomicBool>,
     low_time_flag: Arc<AtomicBool>,
 ) -> TimerResult {
     if remaining_minutes <= 0 {
         // Unlimited time (sysop) -- still send initial status but never expire
+        let has_mail = match crate::db::messages::get_unread_count(&pool, user_id).await {
+            Ok(count) => count > 0,
+            Err(_) => false, // Fail silently - don't break timer for mail check
+        };
         let msg = serde_json::json!({
             "type": "timer",
             "remaining": 0,
             "unit": "unlimited",
             "warning": "normal",
             "handle": handle,
-            "online": users_online
+            "online": users_online,
+            "has_mail": has_mail
         });
         let _ = tx.send(msg.to_string()).await;
 
@@ -128,13 +139,18 @@ async fn run_timer(
 
     // Send initial time update
     let warning = get_warning_level(remaining, false);
+    let has_mail = match crate::db::messages::get_unread_count(&pool, user_id).await {
+        Ok(count) => count > 0,
+        Err(_) => false, // Fail silently - don't break timer for mail check
+    };
     let msg = serde_json::json!({
         "type": "timer",
         "remaining": remaining,
         "unit": "min",
         "warning": warning,
         "handle": handle,
-        "online": users_online
+        "online": users_online,
+        "has_mail": has_mail
     });
     let _ = tx.send(msg.to_string()).await;
 
@@ -155,13 +171,18 @@ async fn run_timer(
                 }
 
                 let warning = get_warning_level(remaining, false);
+                let has_mail = match crate::db::messages::get_unread_count(&pool, user_id).await {
+                    Ok(count) => count > 0,
+                    Err(_) => false, // Fail silently - don't break timer for mail check
+                };
                 let msg = serde_json::json!({
                     "type": "timer",
                     "remaining": remaining,
                     "unit": "min",
                     "warning": warning,
                     "handle": handle,
-                    "online": users_online
+                    "online": users_online,
+                    "has_mail": has_mail
                 });
                 let _ = tx.send(msg.to_string()).await;
 
@@ -200,13 +221,18 @@ async fn run_timer(
             _ = sec_ticker.tick() => {
                 remaining_secs -= 1;
 
+                let has_mail = match crate::db::messages::get_unread_count(&pool, user_id).await {
+                    Ok(count) => count > 0,
+                    Err(_) => false, // Fail silently - don't break timer for mail check
+                };
                 let msg = serde_json::json!({
                     "type": "timer",
                     "remaining": remaining_secs,
                     "unit": "sec",
                     "warning": "red",
                     "handle": handle,
-                    "online": users_online
+                    "online": users_online,
+                    "has_mail": has_mail
                 });
                 let _ = tx.send(msg.to_string()).await;
 
