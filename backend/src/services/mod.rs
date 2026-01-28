@@ -4,7 +4,9 @@ pub mod goodbye;
 pub mod login;
 pub mod profile;
 pub mod registration;
+pub mod user_profile;
 pub mod welcome_art;
+pub mod who;
 
 pub use registry::ServiceRegistry;
 
