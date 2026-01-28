@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 6 of 15 (Chat & Real-Time Communication)
-Plan: 4 of 4 in current phase
+Plan: 5 of 5 in current phase
 Status: Phase complete
-Last activity: 2026-01-28 -- Completed 06-04-PLAN.md (Bell sound for page/DM notifications)
+Last activity: 2026-01-28 -- Completed 06-05-PLAN.md (Menu integration and command routing)
 
-Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (4/4)
+Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 29
+- Total plans completed: 30
 - Average duration: 6 min
 - Total execution time: 3.0 hours
 
@@ -32,11 +32,11 @@ Progress: [████████████████████] 100% of
 | 03    | 3     | 16min | 5min     | Complete |
 | 04    | 6     | 49min | 8min     | Complete (incl. integration) |
 | 05    | 4     | 31min | 8min     | Complete |
-| 06    | 4     | 16min | 4min     | Complete |
+| 06    | 5     | 18min | 4min     | Complete |
 
 **Recent Trend:**
-- Last 5 plans: 6min, 6min, 8min, 7min, 8min
-- Trend: Consistently fast execution (6-8min range)
+- Last 5 plans: 6min, 8min, 7min, 8min, 2min
+- Trend: Consistently fast execution (2-8min range)
 
 *Updated after each plan completion*
 
@@ -154,6 +154,7 @@ Recent decisions affecting current work:
 | 06-03 | __chat__ sentinel routes input to handle_chat_input | Matches Phase 4/5 sentinel pattern for state routing |
 | 06-04 | Programmatic bell sound generation via Web Audio API | 800Hz sine wave with exponential decay, no external file needed |
 | 06-04 | Bell message interception in WebSocket handler | JSON { type: "bell" } triggers sound without terminal output |
+| 06-05 | Chat as command type (not submenu) for direct access | C hotkey enters chat directly like M for mail |
 
 ### Roadmap Evolution
 
@@ -275,13 +276,14 @@ Full email system implemented:
 
 ## Phase 6 Completion Summary
 
-**Chat & Real-Time Communication Phase: COMPLETE (4/4 plans complete)**
+**Chat & Real-Time Communication Phase: COMPLETE (5/5 plans complete)**
 
 All plans executed successfully:
 - 06-01: ChatManager with broadcast channel (ChatMessage enum, ChatManager struct, ChatConfig, AppState wiring)
 - 06-02: Chat command parser and ANSI rendering (ChatCommand enum, parse_chat_command, render functions)
 - 06-03: Chat session state and command handling (enter_chat/exit_chat, broadcast receiver task, menu integration)
 - 06-04: Bell sound for page/DM notifications (Web Audio API sine wave generation, WebSocket interception)
+- 06-05: Menu integration and command routing (Chat command in config.toml, /who verification)
 
 Full chat system implemented:
 1. ChatManager with broadcast channel for real-time message distribution
@@ -292,14 +294,15 @@ Full chat system implemented:
 6. Full command handling: /help, /who, /me, /msg, /page, /quit
 7. Bell sound notification via programmatic Web Audio API generation
 8. WebSocket bell message interception (JSON not shown in terminal)
+9. Chat accessible from main menu via C hotkey (command type, not submenu)
 
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Completed 06-04-PLAN.md (Bell sound for page/DM notifications)
+Stopped at: Completed 06-05-PLAN.md (Menu integration and command routing)
 Resume file: None
 Next action: Phase 7 (Message Boards)
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-28 (06-04 Bell sound for page/DM notifications)*
+*Last updated: 2026-01-28 (06-05 Menu integration and command routing)*
