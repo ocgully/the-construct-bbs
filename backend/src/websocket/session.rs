@@ -2118,6 +2118,7 @@ impl Session {
                                             flow.set_recipient_error();
                                             let prompt = flow.current_prompt().to_string();
                                             send_colored_prompt(&tx, &prompt, false).await;
+                                            flow.advance_to_input();
                                         }
                                         continue;
                                     }
@@ -2128,6 +2129,7 @@ impl Session {
                                     flow.set_recipient(user.id, user.handle.clone());
                                     let prompt = flow.current_prompt().to_string();
                                     send_colored_prompt(&tx, &prompt, false).await;
+                                    flow.advance_to_input();
                                 }
                             }
                             _ => {
@@ -2138,6 +2140,7 @@ impl Session {
                                     flow.set_recipient_error();
                                     let prompt = flow.current_prompt().to_string();
                                     send_colored_prompt(&tx, &prompt, false).await;
+                                    flow.advance_to_input();
                                 }
                             }
                         }

@@ -62,7 +62,7 @@ Single-room teleconference chat where users can see messages from all participan
 
 - Multiple chat rooms / channels — future phase
 - Chat logging / history retrieval — future phase
-- Bug fix needed: Mail compose self-mail error causes input lock (user cannot type or quit) — needs fix before Phase 6
+- ~~Bug fix needed: Mail compose self-mail error causes input lock~~ — FIXED (missing advance_to_input() call after error prompts)
 
 </deferred>
 
