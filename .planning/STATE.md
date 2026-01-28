@@ -107,6 +107,10 @@ Recent decisions affecting current work:
 | 04-01 | Session history uses datetime('now', '-5 hours') for EST timezone consistency | All datetime fields maintain EST timezone offset |
 | 04-01 | Time banking with daily reset detection using SQLite date() comparison | Daily reset triggered by comparing date(last_daily_reset) < date('now', '-5 hours') |
 | 04-01 | NodeManager tracks current_activity string and last_input timestamp | Enables Who's Online display and idle detection |
+| 04-02 | Timer ticks per-minute normally, switches to per-second in final minute | Minimizes WebSocket traffic while providing accurate countdown in final minute |
+| 04-02 | expired and low_time flags exposed via Arc<AtomicBool> for session polling | Session can check timer state without blocking on async task |
+| 04-02 | CancellationToken enables clean timer cancellation on quit | tokio::select! races timer ticks against cancellation signal |
+| 04-02 | Timeout goodbye uses LightRed border vs LightCyan for normal quit | Visual distinction between time-expired and voluntary disconnect |
 | 04-05 | Phase 4 features as main menu commands (not submenu) | W/L/U hotkeys provide direct access to Who's Online, Last Callers, User Lookup |
 | 04-05 | User lookup reuses render_profile_card with is_own_profile=false | Consistent profile display without edit options when viewing others |
 
@@ -195,10 +199,10 @@ Remaining:
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed 04-05-PLAN.md (User Lists Menu Integration)
+Stopped at: Completed 04-02-PLAN.md (Session Timer & Status Bar)
 Resume file: None
-Next action: Phase 4 plan 04-06 (Session Lifecycle Integration)
+Next action: Phase 4 continuing (plans 04-03, 04-04, 04-05 already complete; 04-06 remaining)
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-27 (04-05 user lists menu integration)*
+*Last updated: 2026-01-27 (04-02 session timer and timeout goodbye)*
