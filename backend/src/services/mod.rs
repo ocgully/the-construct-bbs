@@ -1,6 +1,7 @@
 pub mod registry;
 pub mod example;
 pub mod goodbye;
+pub mod last_callers;
 pub mod login;
 pub mod profile;
 pub mod registration;
