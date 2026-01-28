@@ -6,7 +6,7 @@ use crate::{
     AppState,
     auth::session::create_session,
     connection::ceremony,
-    db::user::{find_user_by_id, update_last_login, update_user_field, update_user_time},
+    db::user::{find_user_by_id, find_user_by_handle, update_last_login, update_user_field, update_user_time},
     menu::{self, MenuAction, MenuSession, MenuState},
     services::{
         ServiceAction, SessionIO,
@@ -67,6 +67,14 @@ pub struct Session {
     disconnecting: bool,
     /// Menu navigation state (created when user authenticates)
     menu_session: Option<MenuSession>,
+    /// Session timer for time limit enforcement
+    session_timer: Option<crate::connection::timer::SessionTimer>,
+    /// Session history ID for updating logout time
+    session_history_id: Option<i64>,
+    /// Input buffer for user lookup handle entry
+    lookup_input: Option<String>,
+    /// Whether bank withdrawal has been offered this session
+    withdrawal_offered: bool,
 }
 
 /// Map user level string to numeric level for menu filtering
@@ -94,6 +102,10 @@ impl Session {
             node_id: None,
             disconnecting: false,
             menu_session: None,
+            session_timer: None,
+            session_history_id: None,
+            lookup_input: None,
+            withdrawal_offered: false,
         }
     }
 
@@ -285,6 +297,101 @@ impl Session {
         let _ = self.tx.send(output).await;
     }
 
+    /// Start the session timer and check for daily time reset.
+    ///
+    /// Called after authentication in all three paths (login, resume, registration).
+    /// Checks whether the daily time limit has reset (midnight boundary),
+    /// banks unused time, and spawns the countdown timer task.
+    async fn start_session_timer(&mut self, user_id: i64, user_level: &str) {
+        let pool = &self.state.db_pool;
+        let config = &self.state.config;
+
+        // Check daily reset (midnight boundary crossed since last login)
+        if let Ok(needs_reset) = crate::db::user::check_daily_reset(pool, user_id).await {
+            if needs_reset {
+                let time_cfg = config.time_limits.get_time_config(user_level);
+                let _ = crate::db::user::reset_daily_time(
+                    pool, user_id, time_cfg.daily_minutes, time_cfg.time_bank_cap,
+                ).await;
+            }
+        }
+
+        // Get time configuration for this user level
+        let time_cfg = config.time_limits.get_time_config(user_level);
+
+        if time_cfg.daily_minutes == 0 {
+            // Unlimited time (sysop) -- still start timer for status bar display
+            let (active, _) = self.state.node_manager.get_status().await;
+            let handle = match &self.auth_state {
+                AuthState::Authenticated { handle, .. } => handle.clone(),
+                _ => "Unknown".to_string(),
+            };
+            let timer = crate::connection::timer::SessionTimer::spawn(
+                self.tx.clone(), 0, handle, active,
+            );
+            self.session_timer = Some(timer);
+            return;
+        }
+
+        let (daily_used, _banked, _) = match crate::db::user::get_user_time_info(pool, user_id).await {
+            Ok(info) => info,
+            Err(_) => (0, 0, 0),
+        };
+
+        let remaining = (time_cfg.daily_minutes - daily_used).max(0);
+
+        if remaining <= 0 {
+            // No daily time left -- check banked time
+            let banked = match crate::db::user::get_user_time_info(pool, user_id).await {
+                Ok((_, b, _)) => b,
+                Err(_) => 0,
+            };
+            if banked <= 0 {
+                // No time available at all -- disconnect
+                let mut w = AnsiWriter::new();
+                w.set_fg(Color::LightRed);
+                w.bold();
+                w.writeln("");
+                w.writeln("Your daily time has expired and you have no banked time.");
+                w.writeln("Please try again after midnight.");
+                w.reset_color();
+                let _ = self.tx.send(w.flush()).await;
+                tokio::time::sleep(Duration::from_secs(3)).await;
+                self.disconnecting = true;
+                return;
+            }
+            // Has banked time -- withdraw it
+            let withdrawn = crate::db::user::withdraw_banked_time(pool, user_id, banked).await.unwrap_or(0);
+            let mut w = AnsiWriter::new();
+            w.set_fg(Color::Yellow);
+            w.writeln(&format!("Using {} minutes of banked time.", withdrawn));
+            w.reset_color();
+            let _ = self.tx.send(w.flush()).await;
+            // Start timer with withdrawn amount
+            let (active, _) = self.state.node_manager.get_status().await;
+            let handle = match &self.auth_state {
+                AuthState::Authenticated { handle, .. } => handle.clone(),
+                _ => "Unknown".to_string(),
+            };
+            let timer = crate::connection::timer::SessionTimer::spawn(
+                self.tx.clone(), withdrawn, handle, active,
+            );
+            self.session_timer = Some(timer);
+            return;
+        }
+
+        // Normal case: start timer with remaining daily time
+        let (active, _) = self.state.node_manager.get_status().await;
+        let handle = match &self.auth_state {
+            AuthState::Authenticated { handle, .. } => handle.clone(),
+            _ => "Unknown".to_string(),
+        };
+        let timer = crate::connection::timer::SessionTimer::spawn(
+            self.tx.clone(), remaining, handle, active,
+        );
+        self.session_timer = Some(timer);
+    }
+
     /// Handle user input -- main routing based on auth state
     pub async fn handle_input(&mut self, input: &str) {
         match &self.auth_state {
@@ -387,6 +494,22 @@ impl Session {
                                     // Create menu session
                                     let user_level_num = user_level_to_num(&user_level);
                                     self.menu_session = Some(MenuSession::new(user_level_num));
+
+                                    // Start session timer
+                                    self.start_session_timer(user.id, &user_level).await;
+                                    if self.disconnecting { return; }
+
+                                    // Record session history
+                                    if let Ok(history_id) = crate::db::session_history::insert_session_history(
+                                        &self.state.db_pool, user.id, &user.handle,
+                                    ).await {
+                                        self.session_history_id = Some(history_id);
+                                    }
+
+                                    // Update NodeManager activity
+                                    if let Some(node_id) = self.node_id {
+                                        self.state.node_manager.update_activity(node_id, "Main Menu").await;
+                                    }
 
                                     // Brief pause then show main menu
                                     tokio::time::sleep(Duration::from_secs(1)).await;
@@ -527,6 +650,22 @@ impl Session {
                         // Create menu session
                         let user_level_num = user_level_to_num(&user_level);
                         self.menu_session = Some(MenuSession::new(user_level_num));
+
+                        // Start session timer
+                        self.start_session_timer(user_id, &user_level).await;
+                        if self.disconnecting { return; }
+
+                        // Record session history
+                        if let Ok(history_id) = crate::db::session_history::insert_session_history(
+                            &self.state.db_pool, user_id, &handle,
+                        ).await {
+                            self.session_history_id = Some(history_id);
+                        }
+
+                        // Update NodeManager activity
+                        if let Some(node_id) = self.node_id {
+                            self.state.node_manager.update_activity(node_id, "Main Menu").await;
+                        }
 
                         println!("User {} logged in", handle);
 
@@ -719,6 +858,22 @@ impl Session {
                                 let user_level_num = user_level_to_num(&user_level);
                                 self.menu_session = Some(MenuSession::new(user_level_num));
 
+                                // Start session timer
+                                self.start_session_timer(user_id, &user_level).await;
+                                if self.disconnecting { return; }
+
+                                // Record session history
+                                if let Ok(history_id) = crate::db::session_history::insert_session_history(
+                                    &self.state.db_pool, user_id, &user.handle,
+                                ).await {
+                                    self.session_history_id = Some(history_id);
+                                }
+
+                                // Update NodeManager activity
+                                if let Some(node_id) = self.node_id {
+                                    self.state.node_manager.update_activity(node_id, "Main Menu").await;
+                                }
+
                                 println!("User {} auto-logged in after registration", user.handle);
 
                                 // Brief pause then show main menu
@@ -782,6 +937,50 @@ impl Session {
 
     /// Handle input when user is authenticated (services, main menu).
     async fn handle_authenticated_input(&mut self, input: &str) {
+        // Update last input time for idle tracking
+        if let Some(node_id) = self.node_id {
+            self.state.node_manager.update_last_input(node_id).await;
+        }
+
+        // Check for timeout (timer expired flag set by timer.rs)
+        if let Some(timer) = &self.session_timer {
+            if timer.is_expired() {
+                self.handle_timeout().await;
+                return;
+            }
+        }
+
+        // Check for low time -- offer bank withdrawal once per session
+        if !self.withdrawal_offered {
+            if let Some(timer) = &self.session_timer {
+                if timer.is_low_time() {
+                    self.withdrawal_offered = true;
+                    // Check if banked time available
+                    if let AuthState::Authenticated { user_id, .. } = &self.auth_state {
+                        let user_id = *user_id;
+                        let banked = match crate::db::user::get_user_time_info(&self.state.db_pool, user_id).await {
+                            Ok((_, b, _)) => b,
+                            Err(_) => 0,
+                        };
+                        if banked > 0 {
+                            // Offer withdrawal -- non-blocking message
+                            let mut w = AnsiWriter::new();
+                            w.writeln("");
+                            w.set_fg(Color::Yellow);
+                            w.bold();
+                            w.writeln("  WARNING: Less than 1 minute remaining!");
+                            w.writeln(&format!("  You have {} minutes in your time bank.", banked));
+                            w.writeln("  Press [B] to use banked time, or any other key to continue.");
+                            w.reset_color();
+                            let _ = self.tx.send(w.flush()).await;
+                            self.current_service = Some("__time_bank_prompt__".to_string());
+                            return; // Wait for response
+                        }
+                    }
+                }
+            }
+        }
+
         // Profile edit mode needs raw input (spaces, Enter) -- check BEFORE trimming
         if let Some(service_name) = &self.current_service {
             if service_name.starts_with("__profile_edit_") {
@@ -797,6 +996,81 @@ impl Session {
                 self.send_next_page().await;
             }
             return;
+        }
+
+        // Phase 4 sentinel services
+        if let Some(service_name) = &self.current_service {
+            let service_name = service_name.clone();
+
+            // Time bank withdrawal prompt
+            if service_name == "__time_bank_prompt__" {
+                let trimmed = input.trim();
+                if trimmed.eq_ignore_ascii_case("b") {
+                    // Withdraw banked time
+                    if let AuthState::Authenticated { user_id, .. } = &self.auth_state {
+                        let user_id = *user_id;
+                        let withdrawn = crate::db::user::withdraw_banked_time(
+                            &self.state.db_pool, user_id, 30, // Withdraw 30 minutes
+                        ).await.unwrap_or(0);
+                        if withdrawn > 0 {
+                            let mut w = AnsiWriter::new();
+                            w.set_fg(Color::LightGreen);
+                            w.writeln(&format!("  {} minutes of banked time applied!", withdrawn));
+                            w.reset_color();
+                            let _ = self.tx.send(w.flush()).await;
+                            // Restart timer with new remaining time
+                            if let Some(old_timer) = self.session_timer.take() {
+                                old_timer.cancel();
+                            }
+                            let (active, _) = self.state.node_manager.get_status().await;
+                            let handle = match &self.auth_state {
+                                AuthState::Authenticated { handle, .. } => handle.clone(),
+                                _ => "Unknown".to_string(),
+                            };
+                            let new_timer = crate::connection::timer::SessionTimer::spawn(
+                                self.tx.clone(), withdrawn, handle, active,
+                            );
+                            self.session_timer = Some(new_timer);
+                            self.withdrawal_offered = false; // Allow re-prompt if they run low again
+                        }
+                    }
+                }
+                // Return to menu regardless
+                self.current_service = None;
+                if let Some(ms) = &mut self.menu_session {
+                    ms.reset_to_main();
+                }
+                self.show_menu().await;
+                return;
+            }
+
+            // Who's Online and Last Callers: any keypress returns to menu
+            if service_name == "__whos_online__" || service_name == "__last_callers__" {
+                let trimmed = input.trim();
+                if !trimmed.is_empty() && !trimmed.starts_with('\x1b') {
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                }
+                return;
+            }
+
+            // User Lookup: character-by-character input for handle
+            if service_name == "__user_lookup__" {
+                self.handle_user_lookup_input(input).await;
+                return;
+            }
+
+            // User Lookup view/retry: any keypress returns to lookup prompt
+            if service_name == "__user_lookup_view__" || service_name == "__user_lookup_retry__" {
+                let trimmed = input.trim();
+                if !trimmed.is_empty() && !trimmed.starts_with('\x1b') {
+                    self.handle_user_lookup_start().await;
+                }
+                return;
+            }
         }
 
         // Profile menu: handle 1/2/3/4/q
@@ -824,6 +1098,10 @@ impl Session {
                             // Return to main menu
                             if let Some(ms) = &mut self.menu_session {
                                 ms.reset_to_main();
+                            }
+                            // Update NodeManager activity
+                            if let Some(node_id) = self.node_id {
+                                self.state.node_manager.update_activity(node_id, "Main Menu").await;
                             }
                             tokio::time::sleep(Duration::from_millis(500)).await;
                             self.show_menu().await;
@@ -902,6 +1180,21 @@ impl Session {
                             self.handle_profile_view().await;
                             return;
                         }
+                        "whos_online" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            self.handle_whos_online().await;
+                            return;
+                        }
+                        "last_callers" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            self.handle_last_callers().await;
+                            return;
+                        }
+                        "user_lookup" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            self.handle_user_lookup_start().await;
+                            return;
+                        }
                         _ => {
                             // Unknown command, redraw
                             self.show_menu().await;
@@ -951,6 +1244,9 @@ impl Session {
                     match cmd.as_str() {
                         "quit" => { self.handle_quit().await; return; }
                         "profile" => { self.handle_profile_view().await; return; }
+                        "whos_online" => { self.handle_whos_online().await; return; }
+                        "last_callers" => { self.handle_last_callers().await; return; }
+                        "user_lookup" => { self.handle_user_lookup_start().await; return; }
                         _ => {}
                     }
                 }
@@ -964,6 +1260,11 @@ impl Session {
 
     /// Handle quit command - full goodbye sequence
     async fn handle_quit(&mut self) {
+        // Cancel session timer
+        if let Some(timer) = self.session_timer.take() {
+            timer.cancel();
+        }
+
         // Send logout JSON to frontend first (clears localStorage token)
         let logout_msg = serde_json::json!({ "type": "logout" });
         let _ = self.tx.send(
@@ -989,6 +1290,18 @@ impl Session {
                 session_minutes,
             )
             .await;
+
+            // Update daily time used
+            let _ = crate::db::user::update_daily_time_used(
+                &self.state.db_pool, *user_id, session_minutes,
+            ).await;
+
+            // Update session history with logout time
+            if let Some(history_id) = self.session_history_id {
+                let _ = crate::db::session_history::update_session_history_logout(
+                    &self.state.db_pool, history_id, session_minutes as i32,
+                ).await;
+            }
 
             // Fetch updated user stats for goodbye screen
             let (total_calls, total_time) =
@@ -1181,6 +1494,159 @@ impl Session {
         }
     }
 
+    /// Handle Who's Online command
+    async fn handle_whos_online(&mut self) {
+        let nodes = self.state.node_manager.get_active_nodes_full().await;
+        let output = crate::services::who::render_whos_online(&nodes);
+        let _ = self.tx.send(output).await;
+        // Set sentinel service to wait for keypress then return to menu
+        self.current_service = Some("__whos_online__".to_string());
+
+        if let Some(node_id) = self.node_id {
+            self.state.node_manager.update_activity(node_id, "Who's Online").await;
+        }
+    }
+
+    /// Handle Last Callers command
+    async fn handle_last_callers(&mut self) {
+        let limit = self.state.config.time_limits.last_callers_count;
+        let entries = crate::db::session_history::get_last_callers(
+            &self.state.db_pool, limit,
+        ).await.unwrap_or_default();
+        let output = crate::services::last_callers::render_last_callers(&entries);
+        let _ = self.tx.send(output).await;
+        // Set sentinel service to wait for keypress then return to menu
+        self.current_service = Some("__last_callers__".to_string());
+
+        if let Some(node_id) = self.node_id {
+            self.state.node_manager.update_activity(node_id, "Last Callers").await;
+        }
+    }
+
+    /// Handle User Lookup start -- show prompt
+    async fn handle_user_lookup_start(&mut self) {
+        let prompt = crate::services::user_profile::render_lookup_prompt();
+        let _ = self.tx.send(prompt).await;
+        self.current_service = Some("__user_lookup__".to_string());
+        self.lookup_input = Some(String::new());
+
+        if let Some(node_id) = self.node_id {
+            self.state.node_manager.update_activity(node_id, "User Lookup").await;
+        }
+    }
+
+    /// Handle character-by-character input during user lookup handle entry
+    async fn handle_user_lookup_input(&mut self, input: &str) {
+        let tx = self.tx.clone();
+
+        for ch in input.chars() {
+            if ch == '\r' || ch == '\n' {
+                let handle_input = self.lookup_input.take().unwrap_or_default();
+                let _ = tx.send("\r\n".to_string()).await;
+
+                if handle_input.eq_ignore_ascii_case("q") || handle_input.is_empty() {
+                    // Cancel lookup
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+
+                // Look up user
+                match find_user_by_handle(&self.state.db_pool, &handle_input).await {
+                    Ok(Some(user)) => {
+                        // Show profile card (read-only)
+                        let card = render_profile_card(&user, false);
+                        let _ = tx.send(card).await;
+                        let footer = crate::services::user_profile::render_profile_footer();
+                        let _ = tx.send(footer).await;
+                        // Switch to "viewing profile" state -- next keypress returns to lookup prompt
+                        self.current_service = Some("__user_lookup_view__".to_string());
+                    }
+                    _ => {
+                        let err = crate::services::user_profile::render_user_not_found(&handle_input);
+                        let _ = tx.send(err).await;
+                        // Stay in lookup mode, reinitialize input
+                        self.lookup_input = Some(String::new());
+                        // Next keypress shows prompt again
+                        self.current_service = Some("__user_lookup_retry__".to_string());
+                    }
+                }
+                return;
+            } else if ch == '\x7f' || ch == '\x08' {
+                // Backspace
+                if let Some(buf) = &mut self.lookup_input {
+                    if buf.pop().is_some() {
+                        let _ = tx.send("\x08 \x08".to_string()).await;
+                    }
+                }
+            } else if !ch.is_control() {
+                if let Some(buf) = &mut self.lookup_input {
+                    buf.push(ch);
+                }
+                let _ = tx.send(ch.to_string()).await;
+            }
+        }
+    }
+
+    /// Handle timeout -- timer expired, force logout with timeout goodbye screen
+    async fn handle_timeout(&mut self) {
+        // Take timer to prevent double handling
+        let timer = self.session_timer.take();
+        if let Some(t) = timer {
+            t.cancel(); // Ensure task is cleaned up
+        }
+
+        // Send logout JSON to frontend
+        let logout_msg = serde_json::json!({ "type": "logout" });
+        let _ = self.tx.send(serde_json::to_string(&logout_msg).unwrap()).await;
+
+        if let AuthState::Authenticated { user_id, handle, token, login_time, .. } = &self.auth_state {
+            let session_secs = login_time.elapsed().as_secs();
+            let session_minutes = (session_secs / 60) as i64;
+
+            // Update daily time used
+            let _ = crate::db::user::update_daily_time_used(
+                &self.state.db_pool, *user_id, session_minutes,
+            ).await;
+
+            // Update total time
+            let _ = update_user_time(
+                &self.state.db_pool, *user_id, session_minutes,
+            ).await;
+
+            // Update session history
+            if let Some(history_id) = self.session_history_id {
+                let _ = crate::db::session_history::update_session_history_logout(
+                    &self.state.db_pool, history_id, session_minutes as i32,
+                ).await;
+            }
+
+            // Fetch stats for goodbye
+            let (total_calls, total_time) = match find_user_by_id(&self.state.db_pool, *user_id).await {
+                Ok(Some(u)) => (u.total_logins as i64, u.total_time_minutes as i64),
+                _ => (0, session_minutes),
+            };
+
+            // Render timeout goodbye
+            let goodbye = crate::services::goodbye::render_timeout_goodbye(
+                handle, session_minutes, total_calls, total_time,
+            );
+            let _ = self.tx.send(goodbye).await;
+
+            // Delete session token
+            let _ = crate::auth::session::delete_session(&self.state.db_pool, token).await;
+
+            println!("User {} timed out ({}m session)", handle, session_minutes);
+        }
+
+        // Let user read the goodbye screen
+        tokio::time::sleep(Duration::from_secs(3)).await;
+        self.disconnecting = true;
+    }
+
     /// Enter a service (with authentic BBS "loading door" delay)
     async fn enter_service(&mut self, service_name: &str) {
         let service = self.state.registry.get(service_name).cloned();
@@ -1216,6 +1682,12 @@ impl Session {
 
             // Mark as current service
             self.current_service = Some(service_name.to_string());
+
+            // Update NodeManager activity
+            if let Some(node_id) = self.node_id {
+                self.state.node_manager.update_activity(node_id, &format!("In {}", service.name())).await;
+            }
+
             self.flush_output().await;
         } else {
             self.output_buffer.set_fg(Color::LightRed);
@@ -1232,6 +1704,11 @@ impl Session {
     /// For clean disconnects (quit command), the goodbye sequence already handled
     /// time saving and token deletion.
     pub async fn on_disconnect(&mut self) {
+        // Cancel session timer
+        if let Some(timer) = self.session_timer.take() {
+            timer.cancel();
+        }
+
         // Save session time and delete token if authenticated
         if let AuthState::Authenticated {
             user_id,
@@ -1245,6 +1722,18 @@ impl Session {
             let session_secs = login_time.elapsed().as_secs();
             let session_minutes = (session_secs / 60) as i64;
             let _ = update_user_time(&self.state.db_pool, *user_id, session_minutes).await;
+
+            // Update daily time used
+            let _ = crate::db::user::update_daily_time_used(
+                &self.state.db_pool, *user_id, session_minutes,
+            ).await;
+
+            // Update session history with logout time
+            if let Some(history_id) = self.session_history_id {
+                let _ = crate::db::session_history::update_session_history_logout(
+                    &self.state.db_pool, history_id, session_minutes as i32,
+                ).await;
+            }
 
             // Delete session token
             let _ = crate::auth::session::delete_session(&self.state.db_pool, token).await;
