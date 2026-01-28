@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 5 of 14 (Email System)
-Plan: 1 of 4 in current phase
+Plan: 2 of 4 in current phase
 Status: In progress
-Last activity: 2026-01-28 -- Completed 05-01-PLAN.md (Email System Foundation)
+Last activity: 2026-01-28 -- Completed 05-02-PLAN.md (Mail Rendering & Compose State Machine)
 
-Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 25% of Phase 5 (1/4)
+Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 50% of Phase 5 (2/4)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 23
+- Total plans completed: 24
 - Average duration: 6 min
-- Total execution time: 2.3 hours
+- Total execution time: 2.4 hours
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [████████████████████] 100% of
 | 02    | 7     | 45min | 6min     | Complete (incl. integration) |
 | 03    | 3     | 16min | 5min     | Complete |
 | 04    | 6     | 49min | 8min     | Complete (incl. integration) |
-| 05    | 1     | 5min  | 5min     | In progress |
+| 05    | 2     | 11min | 6min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 8min, 4min, 7min, 7min, 5min
-- Trend: Consistently fast execution (4-8min range)
+- Last 5 plans: 4min, 7min, 7min, 5min, 6min
+- Trend: Consistently fast execution (4-7min range)
 
 *Updated after each plan completion*
 
@@ -126,6 +126,11 @@ Recent decisions affecting current work:
 | 05-01 | Newline normalization in message body | All \r\n and \r converted to \n before storage for consistency |
 | 05-01 | Ownership checks built into SQL queries | recipient_id in WHERE clauses prevents unauthorized message access |
 | 05-01 | Mail config named 'mail' (not 'email') | Avoids confusion with SMTP EmailConfig used for verification |
+| 05-02 | All mail render functions return String | Enables async session integration without blocking on terminal I/O |
+| 05-02 | ComposeFlow returns ComposeAction::NeedRecipientLookup | Keeps state machine synchronous; session.rs handles async DB queries |
+| 05-02 | Self-mail check in session.rs (not ComposeFlow) | Session compares sender_id with recipient_id after async lookup |
+| 05-02 | Reply mode de-duplicates Re: prefix | Prevents "Re: Re: Re:" accumulation by checking starts_with("Re: ") |
+| 05-02 | Slash commands for body input | /s send, /a abort, /h help, /l list - all case-insensitive |
 
 ### Pending Todos
 
@@ -222,10 +227,10 @@ Full time limits and user lists system implemented:
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Completed 05-01-PLAN.md
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
-Next action: Execute 05-02-PLAN.md
+Next action: Execute 05-03-PLAN.md
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-28 (05-01 email system foundation)*
+*Last updated: 2026-01-28 (05-02 mail rendering and compose state machine)*
