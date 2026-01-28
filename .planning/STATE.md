@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** The feeling of dialing into an exclusive, underground system — artificial scarcity, ANSI art, and social games that only work because everyone's sharing the same constrained space.
-**Current focus:** Phase 5 - Email System (PLANNED)
+**Current focus:** Phase 5 - Email System (IN PROGRESS)
 
 ## Current Position
 
 Phase: 5 of 14 (Email System)
-Plan: 0 of 4 in current phase
-Status: Phase planned, ready for execution
-Last activity: 2026-01-28 -- Phase 5 plans created and verified (4 plans, 3 waves)
+Plan: 1 of 4 in current phase
+Status: In progress
+Last activity: 2026-01-28 -- Completed 05-01-PLAN.md (Email System Foundation)
 
-Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6)
+Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 25% of Phase 5 (1/4)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 22
+- Total plans completed: 23
 - Average duration: 6 min
-- Total execution time: 2.2 hours
+- Total execution time: 2.3 hours
 
 **By Phase:**
 
@@ -31,10 +31,11 @@ Progress: [████████████████████] 100% of
 | 02    | 7     | 45min | 6min     | Complete (incl. integration) |
 | 03    | 3     | 16min | 5min     | Complete |
 | 04    | 6     | 49min | 8min     | Complete (incl. integration) |
+| 05    | 1     | 5min  | 5min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 9min, 8min, 4min, 7min, 7min
-- Trend: Consistently fast execution (4-9min range)
+- Last 5 plans: 8min, 4min, 7min, 7min, 5min
+- Trend: Consistently fast execution (4-8min range)
 
 *Updated after each plan completion*
 
@@ -120,6 +121,11 @@ Recent decisions affecting current work:
 | 04-06 | Sentinel services for Phase 4 views (__whos_online__, __last_callers__, __user_lookup__) | Lightweight state-based input routing without new AuthState variants |
 | 04-06 | Daily time tracked in quit, disconnect, and timeout exits | Complete coverage ensures no session time goes unrecorded |
 | 04-06 | 30-minute bank withdrawal on low-time prompt | Reasonable extension amount with re-prompt if consumed again |
+| 05-01 | InboxEntry projection pattern for list views | Separate struct omits body and recipient_id, reducing memory for paginated inbox display |
+| 05-01 | Self-mail validation in create_message | Prevents sender_id == recipient_id, returns Protocol error |
+| 05-01 | Newline normalization in message body | All \r\n and \r converted to \n before storage for consistency |
+| 05-01 | Ownership checks built into SQL queries | recipient_id in WHERE clauses prevents unauthorized message access |
+| 05-01 | Mail config named 'mail' (not 'email') | Avoids confusion with SMTP EmailConfig used for verification |
 
 ### Pending Todos
 
@@ -216,10 +222,10 @@ Full time limits and user lists system implemented:
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Phase 5 planned and verified
+Stopped at: Completed 05-01-PLAN.md
 Resume file: None
-Next action: Execute Phase 5 plans (/gsd:execute-phase 5)
+Next action: Execute 05-02-PLAN.md
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-28 (04-06 session lifecycle integration)*
+*Last updated: 2026-01-28 (05-01 email system foundation)*
