@@ -28,11 +28,11 @@
 
 ### Email
 
-- [ ] **MAIL-01**: User can send private messages to other users
-- [ ] **MAIL-02**: User can read inbox with unread indicators
-- [ ] **MAIL-03**: User can reply to received messages
-- [ ] **MAIL-04**: User can delete messages
-- [ ] **MAIL-05**: "You have new mail" notification on login
+- [x] **MAIL-01**: User can send private messages to other users
+- [x] **MAIL-02**: User can read inbox with unread indicators
+- [x] **MAIL-03**: User can reply to received messages
+- [x] **MAIL-04**: User can delete messages
+- [x] **MAIL-05**: "You have new mail" notification on login
 
 ### Chat
 
@@ -163,11 +163,11 @@
 | NAV-02 | Phase 3 | Complete |
 | NAV-03 | Phase 3 | Complete |
 | NAV-04 | Phase 3 | Complete |
-| MAIL-01 | Phase 5 | Pending |
-| MAIL-02 | Phase 5 | Pending |
-| MAIL-03 | Phase 5 | Pending |
-| MAIL-04 | Phase 5 | Pending |
-| MAIL-05 | Phase 5 | Pending |
+| MAIL-01 | Phase 5 | Complete |
+| MAIL-02 | Phase 5 | Complete |
+| MAIL-03 | Phase 5 | Complete |
+| MAIL-04 | Phase 5 | Complete |
+| MAIL-05 | Phase 5 | Complete |
 | CHAT-01 | Phase 6 | Pending |
 | CHAT-02 | Phase 6 | Pending |
 | CHAT-03 | Phase 6 | Pending |

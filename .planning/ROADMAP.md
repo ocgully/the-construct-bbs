@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Authentication & Connection** - User accounts, login/logout, connection experience
 - [x] **Phase 3: Navigation System** - Wildcat-style menus with ANSI art and hotkeys
 - [x] **Phase 4: Time Limits & User Lists** - Daily time caps, session timers, who's online
-- [ ] **Phase 5: Email System** - Inter-user private messaging
+- [x] **Phase 5: Email System** - Inter-user private messaging
 - [ ] **Phase 6: Chat & Real-Time Communication** - Live teleconference, user paging
 - [ ] **Phase 7: News & Bulletins** - RSS feed integration, sysop bulletins
 - [ ] **Phase 8: First Door Game (Drug Wars)** - Commodity trading game, validates game architecture
@@ -122,10 +122,10 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 05-01-PLAN.md -- Messages database table, CRUD operations, and mail config
-- [ ] 05-02-PLAN.md -- Mail ANSI rendering functions and compose state machine
-- [ ] 05-03-PLAN.md -- Session integration with sentinel handlers and login notification
-- [ ] 05-04-PLAN.md -- Status bar MAIL indicator and menu config wiring
+- [x] 05-01-PLAN.md -- Messages database table, CRUD operations, and mail config
+- [x] 05-02-PLAN.md -- Mail ANSI rendering functions and compose state machine
+- [x] 05-03-PLAN.md -- Session integration with sentinel handlers and login notification
+- [x] 05-04-PLAN.md -- Status bar MAIL indicator and menu config wiring
 
 ### Phase 6: Chat & Real-Time Communication
 **Goal**: Users can participate in live chat room and page other users
@@ -277,7 +277,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 2. Authentication & Connection | 7/7 | Complete | 2026-01-27 |
 | 3. Navigation System | 3/3 | Complete | 2026-01-27 |
 | 4. Time Limits & User Lists | 6/6 | Complete | 2026-01-28 |
-| 5. Email System | 0/4 | Not started | - |
+| 5. Email System | 4/4 | Complete | 2026-01-28 |
 | 6. Chat & Real-Time Communication | 0/TBD | Not started | - |
 | 7. News & Bulletins | 0/TBD | Not started | - |
 | 8. First Door Game (Drug Wars) | 0/TBD | Not started | - |
@@ -290,4 +290,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
 ---
 *Roadmap created: 2026-01-26*
-*Last updated: 2026-01-28 (Phase 5 planned)*
+*Last updated: 2026-01-28 (Phase 5 complete)*
