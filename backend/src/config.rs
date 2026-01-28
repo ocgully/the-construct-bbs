@@ -15,6 +15,8 @@ pub struct Config {
     pub email: Option<EmailConfig>,
     #[serde(default)]
     pub menu: MenuConfig,
+    #[serde(default)]
+    pub time_limits: TimeLimitsConfig,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -149,6 +151,79 @@ fn default_smtp_port() -> u16 {
 }
 fn default_from_name() -> String {
     "The Construct BBS".to_string()
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct TimeLevelConfig {
+    pub daily_minutes: i64,
+    pub time_bank_cap: i64,
+}
+
+impl Default for TimeLevelConfig {
+    fn default() -> Self {
+        Self {
+            daily_minutes: 60,
+            time_bank_cap: 120,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct TimeLimitsConfig {
+    #[serde(default = "default_guest_time")]
+    pub guest: TimeLevelConfig,
+    #[serde(default = "default_user_time")]
+    pub user: TimeLevelConfig,
+    #[serde(default = "default_sysop_time")]
+    pub sysop: TimeLevelConfig,
+    #[serde(default = "default_last_callers_count")]
+    pub last_callers_count: i32,
+}
+
+fn default_guest_time() -> TimeLevelConfig {
+    TimeLevelConfig {
+        daily_minutes: 30,
+        time_bank_cap: 0,
+    }
+}
+
+fn default_user_time() -> TimeLevelConfig {
+    TimeLevelConfig {
+        daily_minutes: 60,
+        time_bank_cap: 120,
+    }
+}
+
+fn default_sysop_time() -> TimeLevelConfig {
+    TimeLevelConfig {
+        daily_minutes: 0, // 0 = unlimited
+        time_bank_cap: 0,
+    }
+}
+
+fn default_last_callers_count() -> i32 {
+    15
+}
+
+impl Default for TimeLimitsConfig {
+    fn default() -> Self {
+        Self {
+            guest: default_guest_time(),
+            user: default_user_time(),
+            sysop: default_sysop_time(),
+            last_callers_count: default_last_callers_count(),
+        }
+    }
+}
+
+impl TimeLimitsConfig {
+    pub fn get_time_config(&self, user_level: &str) -> &TimeLevelConfig {
+        match user_level {
+            "Sysop" => &self.sysop,
+            "Guest" => &self.guest,
+            _ => &self.user,
+        }
+    }
 }
 
 impl Config {

@@ -28,6 +28,21 @@ ceremony_skippable = false
 tagline = "Welcome to The Construct BBS"
 show_last_callers = true
 
+[time_limits]
+last_callers_count = 15
+
+[time_limits.guest]
+daily_minutes = 30
+time_bank_cap = 0
+
+[time_limits.user]
+daily_minutes = 60
+time_bank_cap = 120
+
+[time_limits.sysop]
+daily_minutes = 0
+time_bank_cap = 0
+
 # Menu configuration
 # Main menu items
 [[menu.main]]
