@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 5 of 14 (Email System)
-Plan: 2 of 4 in current phase
-Status: In progress
-Last activity: 2026-01-28 -- Completed 05-02-PLAN.md (Mail Rendering & Compose State Machine)
+Plan: 4 of 4 in current phase
+Status: Phase complete
+Last activity: 2026-01-28 -- Completed 05-04-PLAN.md (MAIL Indicator in Status Bar)
 
-Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 50% of Phase 5 (2/4)
+Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 24
+- Total plans completed: 26
 - Average duration: 6 min
-- Total execution time: 2.4 hours
+- Total execution time: 2.6 hours
 
 **By Phase:**
 
@@ -31,11 +31,11 @@ Progress: [████████████████████] 100% of
 | 02    | 7     | 45min | 6min     | Complete (incl. integration) |
 | 03    | 3     | 16min | 5min     | Complete |
 | 04    | 6     | 49min | 8min     | Complete (incl. integration) |
-| 05    | 2     | 11min | 6min     | In progress |
+| 05    | 4     | 23min | 6min     | Complete |
 
 **Recent Trend:**
-- Last 5 plans: 4min, 7min, 7min, 5min, 6min
-- Trend: Consistently fast execution (4-7min range)
+- Last 5 plans: 7min, 5min, 6min, 6min, 6min
+- Trend: Consistently fast execution (5-7min range)
 
 *Updated after each plan completion*
 
@@ -131,6 +131,10 @@ Recent decisions affecting current work:
 | 05-02 | Self-mail check in session.rs (not ComposeFlow) | Session compares sender_id with recipient_id after async lookup |
 | 05-02 | Reply mode de-duplicates Re: prefix | Prevents "Re: Re: Re:" accumulation by checking starts_with("Re: ") |
 | 05-02 | Slash commands for body input | /s send, /a abort, /h help, /l list - all case-insensitive |
+| 05-04 | Timer checks unread mail on every tick | get_unread_count called per-minute and per-second; indexed query, negligible overhead |
+| 05-04 | Timer failures fail silently for auxiliary features | DB query errors return false has_mail flag; don't break timer for mail check |
+| 05-04 | MAIL indicator uses yellow bold ANSI styling | \x1b[33m\x1b[1m for visibility without alarm-level urgency |
+| 05-04 | Mail command accessible via M hotkey | Changed from submenu to command type in config.toml for direct access |
 
 ### Pending Todos
 
@@ -224,13 +228,35 @@ Full time limits and user lists system implemented:
 9. Graceful timeout with timeout-specific goodbye screen
 10. Session history tracking with login/logout timestamps
 
+## Phase 5 Completion Summary
+
+**Email System Phase: COMPLETE (4/4 plans complete)**
+
+All plans executed successfully:
+- 05-01: Mail database layer (messages table, CRUD operations, inbox pagination)
+- 05-02: Mail rendering and compose flow (inbox display, compose state machine, reply/delete)
+- 05-03: Mail command handlers (session integration, menu routing, sentinel services)
+- 05-04: MAIL indicator in status bar (timer has_mail flag, yellow bold indicator)
+
+Full email system implemented:
+1. Messages table with sender/recipient/subject/body/is_read fields
+2. Inbox pagination with sender handle lookup and unread count
+3. Compose flow state machine with recipient lookup and slash commands
+4. Reply mode with Re: prefix de-duplication and original message context
+5. Delete message functionality with ownership checks
+6. Self-mail validation and mailbox size limits
+7. Mail command accessible from main menu via M hotkey
+8. MAIL indicator in status bar when unread messages exist
+9. Real-time indicator updates on timer ticks without user action
+10. Ownership checks built into all SQL queries for security
+
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Completed 05-02-PLAN.md
+Stopped at: Completed 05-04-PLAN.md
 Resume file: None
-Next action: Execute 05-03-PLAN.md
+Next action: Phase 5 complete - ready for Phase 6
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-28 (05-02 mail rendering and compose state machine)*
+*Last updated: 2026-01-28 (05-04 MAIL indicator in status bar - Phase 5 complete)*
