@@ -99,10 +99,15 @@ Plans:
   5. User can view who's online from menu
   6. User can view last callers list showing recent login history
   7. User can view other users' profiles
-**Plans**: TBD
+**Plans**: 6 plans
 
 Plans:
-- [ ] TBD during planning
+- [ ] 04-01-PLAN.md -- Database schema extensions, time limits config, NodeManager idle tracking
+- [ ] 04-02-PLAN.md -- Backend session timer task with CancellationToken and timeout goodbye
+- [ ] 04-03-PLAN.md -- Frontend status bar renderer and client-side countdown timer
+- [ ] 04-04-PLAN.md -- Who's Online and Last Callers ANSI display services
+- [ ] 04-05-PLAN.md -- User profile lookup service and menu item registration
+- [ ] 04-06-PLAN.md -- Timer lifecycle integration, timeout enforcement, command routing
 
 ### Phase 5: Email System
 **Goal**: Users can send and receive private messages to other BBS users
@@ -268,7 +273,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 1. Terminal Foundation | 5/5 | Complete | 2026-01-26 |
 | 2. Authentication & Connection | 7/7 | Complete | 2026-01-27 |
 | 3. Navigation System | 3/3 | Complete | 2026-01-27 |
-| 4. Time Limits & User Lists | 0/TBD | Not started | - |
+| 4. Time Limits & User Lists | 0/6 | Planned | - |
 | 5. Email System | 0/TBD | Not started | - |
 | 6. Chat & Real-Time Communication | 0/TBD | Not started | - |
 | 7. News & Bulletins | 0/TBD | Not started | - |
@@ -282,4 +287,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
 ---
 *Roadmap created: 2026-01-26*
-*Last updated: 2026-01-27 (Phase 3 complete)*
+*Last updated: 2026-01-27 (Phase 4 planned)*
