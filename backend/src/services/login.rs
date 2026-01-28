@@ -585,7 +585,10 @@ mod tests {
                     total_logins INTEGER NOT NULL DEFAULT 0,
                     total_time_minutes INTEGER NOT NULL DEFAULT 0,
                     messages_sent INTEGER NOT NULL DEFAULT 0,
-                    games_played INTEGER NOT NULL DEFAULT 0
+                    games_played INTEGER NOT NULL DEFAULT 0,
+                    daily_time_used INTEGER NOT NULL DEFAULT 0,
+                    banked_time INTEGER NOT NULL DEFAULT 0,
+                    last_daily_reset TEXT
                 )",
             )
             .execute(&pool)
@@ -635,6 +638,7 @@ mod tests {
                 connection: crate::config::ConnectionConfig::default(),
                 email: None,
                 menu: crate::menu::MenuConfig::default(),
+                time_limits: crate::config::TimeLimitsConfig::default(),
             }
         }
 

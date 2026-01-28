@@ -21,6 +21,9 @@ pub struct User {
     pub total_time_minutes: i32,
     pub messages_sent: i32,
     pub games_played: i32,
+    pub daily_time_used: i32,
+    pub banked_time: i32,
+    pub last_daily_reset: Option<String>,
 }
 
 pub async fn create_user(
@@ -158,4 +161,102 @@ pub async fn delete_user(pool: &SqlitePool, user_id: i64) -> Result<(), sqlx::Er
         .execute(pool)
         .await?;
     Ok(())
+}
+
+pub async fn check_daily_reset(pool: &SqlitePool, user_id: i64) -> Result<bool, sqlx::Error> {
+    let row: (i32,) = sqlx::query_as(
+        "SELECT CASE
+            WHEN last_daily_reset IS NULL THEN 1
+            WHEN date(last_daily_reset) < date('now', '-5 hours') THEN 1
+            ELSE 0
+        END FROM users WHERE id = ?"
+    )
+    .bind(user_id)
+    .fetch_one(pool)
+    .await?;
+    Ok(row.0 == 1)
+}
+
+pub async fn reset_daily_time(
+    pool: &SqlitePool,
+    user_id: i64,
+    daily_limit: i64,
+    bank_cap: i64,
+) -> Result<i64, sqlx::Error> {
+    let row: (i32, i32) = sqlx::query_as(
+        "SELECT daily_time_used, banked_time FROM users WHERE id = ?"
+    )
+    .bind(user_id)
+    .fetch_one(pool)
+    .await?;
+
+    let used = row.0 as i64;
+    let current_bank = row.1 as i64;
+    let unused = (daily_limit - used).max(0);
+    let new_bank = (current_bank + unused).min(bank_cap);
+    let banked_amount = new_bank - current_bank;
+
+    sqlx::query(
+        "UPDATE users SET daily_time_used = 0, banked_time = ?, last_daily_reset = datetime('now', '-5 hours') WHERE id = ?"
+    )
+    .bind(new_bank)
+    .bind(user_id)
+    .execute(pool)
+    .await?;
+
+    Ok(banked_amount)
+}
+
+pub async fn update_daily_time_used(
+    pool: &SqlitePool,
+    user_id: i64,
+    minutes: i64,
+) -> Result<(), sqlx::Error> {
+    sqlx::query("UPDATE users SET daily_time_used = daily_time_used + ? WHERE id = ?")
+        .bind(minutes)
+        .bind(user_id)
+        .execute(pool)
+        .await?;
+    Ok(())
+}
+
+pub async fn get_user_time_info(
+    pool: &SqlitePool,
+    user_id: i64,
+) -> Result<(i64, i64, i64), sqlx::Error> {
+    let row: (i32, i32) = sqlx::query_as(
+        "SELECT daily_time_used, banked_time FROM users WHERE id = ?"
+    )
+    .bind(user_id)
+    .fetch_one(pool)
+    .await?;
+    Ok((row.0 as i64, row.1 as i64, 0)) // daily_limit filled by caller from config
+}
+
+pub async fn withdraw_banked_time(
+    pool: &SqlitePool,
+    user_id: i64,
+    minutes: i64,
+) -> Result<i64, sqlx::Error> {
+    let row: (i32,) = sqlx::query_as(
+        "SELECT banked_time FROM users WHERE id = ?"
+    )
+    .bind(user_id)
+    .fetch_one(pool)
+    .await?;
+
+    let available = row.0 as i64;
+    let withdraw = minutes.min(available);
+
+    sqlx::query(
+        "UPDATE users SET banked_time = banked_time - ?, daily_time_used = CASE WHEN daily_time_used >= ? THEN daily_time_used - ? ELSE 0 END WHERE id = ?"
+    )
+    .bind(withdraw)
+    .bind(withdraw)
+    .bind(withdraw)
+    .bind(user_id)
+    .execute(pool)
+    .await?;
+
+    Ok(withdraw)
 }

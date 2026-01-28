@@ -8,6 +8,8 @@ pub struct NodeInfo {
     pub user_id: i64,
     pub handle: String,
     pub connected_at: chrono::DateTime<chrono::Utc>,
+    pub current_activity: String,
+    pub last_input: chrono::DateTime<chrono::Utc>,
 }
 
 /// Manages active BBS node connections with thread-safe access.
@@ -44,12 +46,15 @@ impl NodeManager {
             .find(|id| !nodes.contains_key(id))
             .expect("capacity check passed but no slot found");
 
+        let now = chrono::Utc::now();
         nodes.insert(
             node_id,
             NodeInfo {
                 user_id,
                 handle,
-                connected_at: chrono::Utc::now(),
+                connected_at: now,
+                current_activity: "Connecting".to_string(),
+                last_input: now,
             },
         );
 
@@ -93,6 +98,33 @@ impl NodeManager {
             .find(|(_, info)| info.user_id == user_id)
             .map(|(&id, _)| id)
     }
+
+    /// Update the current activity for a node.
+    pub async fn update_activity(&self, node_id: usize, activity: &str) {
+        let mut nodes = self.active_nodes.write().await;
+        if let Some(info) = nodes.get_mut(&node_id) {
+            info.current_activity = activity.to_string();
+        }
+    }
+
+    /// Update the last input time for a node.
+    pub async fn update_last_input(&self, node_id: usize) {
+        let mut nodes = self.active_nodes.write().await;
+        if let Some(info) = nodes.get_mut(&node_id) {
+            info.last_input = chrono::Utc::now();
+        }
+    }
+
+    /// Get all active nodes with full NodeInfo, sorted by node_id.
+    pub async fn get_active_nodes_full(&self) -> Vec<(usize, NodeInfo)> {
+        let nodes = self.active_nodes.read().await;
+        let mut result: Vec<(usize, NodeInfo)> = nodes
+            .iter()
+            .map(|(&id, info)| (id, info.clone()))
+            .collect();
+        result.sort_by_key(|(id, _)| *id);
+        result
+    }
 }
 
 #[cfg(test)]
@@ -110,6 +142,11 @@ mod tests {
         assert_eq!(n1, 1);
         assert_eq!(n2, 2);
         assert_eq!(n3, 3);
+
+        // Verify NodeInfo fields are set correctly
+        let nodes = mgr.get_active_nodes_full().await;
+        assert_eq!(nodes.len(), 3);
+        assert_eq!(nodes[0].1.current_activity, "Connecting");
     }
 
     #[tokio::test]
@@ -203,5 +240,37 @@ mod tests {
         // Next assignment should reuse node 1
         let n4 = mgr.assign_node(4, "D".into()).await.unwrap();
         assert_eq!(n4, 1, "should reuse first available node number");
+    }
+
+    #[tokio::test]
+    async fn update_activity_works() {
+        let mgr = NodeManager::new(4);
+
+        let n1 = mgr.assign_node(1, "Alice".into()).await.unwrap();
+        mgr.update_activity(n1, "Playing Drug Wars").await;
+
+        let nodes = mgr.get_active_nodes_full().await;
+        assert_eq!(nodes[0].1.current_activity, "Playing Drug Wars");
+    }
+
+    #[tokio::test]
+    async fn update_last_input_works() {
+        let mgr = NodeManager::new(4);
+
+        let n1 = mgr.assign_node(1, "Alice".into()).await.unwrap();
+
+        // Get initial last_input
+        let nodes_before = mgr.get_active_nodes_full().await;
+        let before = nodes_before[0].1.last_input;
+
+        // Small delay to ensure time difference
+        tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+
+        mgr.update_last_input(n1).await;
+
+        let nodes_after = mgr.get_active_nodes_full().await;
+        let after = nodes_after[0].1.last_input;
+
+        assert!(after > before, "last_input should be updated");
     }
 }

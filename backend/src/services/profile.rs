@@ -452,33 +452,29 @@ pub fn render_profile_edit_menu_string() -> String {
     w.flush()
 }
 
-/// Render the profile edit menu (prep for future profile editing).
+/// Render the profile edit menu as a single horizontal row.
 pub fn render_profile_edit_menu(writer: &mut AnsiWriter) {
     writer.writeln("");
-    writer.set_fg(Color::Yellow);
-    writer.bold();
-    writer.writeln("Edit Profile:");
-    writer.reset_color();
     writer.set_fg(Color::LightCyan);
     writer.write_str("  [1] ");
     writer.set_fg(Color::White);
-    writer.write_str("Real Name    ");
+    writer.write_str("Name  ");
     writer.set_fg(Color::LightCyan);
     writer.write_str("[2] ");
     writer.set_fg(Color::White);
-    writer.writeln("Location");
+    writer.write_str("Location  ");
     writer.set_fg(Color::LightCyan);
-    writer.write_str("  [3] ");
+    writer.write_str("[3] ");
     writer.set_fg(Color::White);
-    writer.write_str("Signature    ");
+    writer.write_str("Signature  ");
     writer.set_fg(Color::LightCyan);
     writer.write_str("[4] ");
     writer.set_fg(Color::White);
-    writer.writeln("Bio");
+    writer.write_str("Bio  ");
     writer.set_fg(Color::LightCyan);
-    writer.write_str("  [Q] ");
+    writer.write_str("[Q] ");
     writer.set_fg(Color::White);
-    writer.writeln("Return to menu");
+    writer.writeln("Back");
     writer.reset_color();
 }
 
@@ -603,6 +599,9 @@ mod tests {
             total_time_minutes: 332,
             messages_sent: 23,
             games_played: 12,
+            daily_time_used: 0,
+            banked_time: 0,
+            last_daily_reset: None,
         }
     }
 }
