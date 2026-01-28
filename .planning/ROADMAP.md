@@ -26,6 +26,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [ ] **Phase 12: MUD Door Game (Kyrandia)** - Multi-User Dungeon
 - [ ] **Phase 13: Sysop Administration** - Admin panel, user management, system config
 - [ ] **Phase 14: Easter Eggs & Polish** - Hidden lore, secret commands, final polish
+- [ ] **Phase 15: End-to-End Play Testing** - Automating and validating all functionality
 
 ## Phase Details
 
@@ -138,10 +139,14 @@ Plans:
   4. User can use action commands like /me waves
   5. User can page another online user to request private chat
   6. User can view who's online list from chat and main menu
-**Plans**: TBD
+**Plans**: 5 plans
 
 Plans:
-- [ ] TBD during planning
+- [ ] 06-01-PLAN.md -- ChatManager with broadcast channel and participant tracking
+- [ ] 06-02-PLAN.md -- Chat command parser and ANSI rendering functions
+- [ ] 06-03-PLAN.md -- Session integration with broadcast receiver task
+- [ ] 06-04-PLAN.md -- Bell sound for page/DM notifications (frontend)
+- [ ] 06-05-PLAN.md -- Menu integration and command routing
 
 ### Phase 7: News & Bulletins
 **Goal**: Users see current news and sysop bulletins on login or from menu
@@ -266,10 +271,24 @@ Plans:
 Plans:
 - [ ] TBD during planning
 
+### Phase 15: End-to-End Play Testing
+**Goal**: Automated and manual validation of all BBS functionality end-to-end
+**Depends on**: Phase 14
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. All user flows (register, login, navigate, mail, chat, games) tested end-to-end
+  2. Automated test suite validates critical paths
+  3. Edge cases and error paths verified (full nodes, expired sessions, mailbox full, etc.)
+  4. Performance validated under concurrent user load
+**Plans**: TBD
+
+Plans:
+- [ ] TBD during planning
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 -> 14
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -278,7 +297,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 3. Navigation System | 3/3 | Complete | 2026-01-27 |
 | 4. Time Limits & User Lists | 6/6 | Complete | 2026-01-28 |
 | 5. Email System | 4/4 | Complete | 2026-01-28 |
-| 6. Chat & Real-Time Communication | 0/TBD | Not started | - |
+| 6. Chat & Real-Time Communication | 0/5 | Planned | - |
 | 7. News & Bulletins | 0/TBD | Not started | - |
 | 8. First Door Game (Drug Wars) | 0/TBD | Not started | - |
 | 9. Second Door Game (LORD) | 0/TBD | Not started | - |
@@ -287,7 +306,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 12. MUD Door Game (Kyrandia) | 0/TBD | Not started | - |
 | 13. Sysop Administration | 0/TBD | Not started | - |
 | 14. Easter Eggs & Polish | 0/TBD | Not started | - |
+| 15. End-to-End Play Testing | 0/TBD | Not started | - |
 
 ---
 *Roadmap created: 2026-01-26*
-*Last updated: 2026-01-28 (Phase 5 complete)*
+*Last updated: 2026-01-28 (Phase 15 added)*
