@@ -17,6 +17,8 @@ pub struct Config {
     pub menu: MenuConfig,
     #[serde(default)]
     pub time_limits: TimeLimitsConfig,
+    #[serde(default)]
+    pub mail: MailConfig,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -222,6 +224,24 @@ impl TimeLimitsConfig {
             "Sysop" => &self.sysop,
             "Guest" => &self.guest,
             _ => &self.user,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct MailConfig {
+    #[serde(default = "default_mailbox_size_limit")]
+    pub mailbox_size_limit: i64,
+}
+
+fn default_mailbox_size_limit() -> i64 {
+    100
+}
+
+impl Default for MailConfig {
+    fn default() -> Self {
+        Self {
+            mailbox_size_limit: default_mailbox_size_limit(),
         }
     }
 }

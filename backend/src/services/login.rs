@@ -639,6 +639,7 @@ mod tests {
                 email: None,
                 menu: crate::menu::MenuConfig::default(),
                 time_limits: crate::config::TimeLimitsConfig::default(),
+                mail: crate::config::MailConfig::default(),
             }
         }
 
