@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 4 of 14 (Time Limits & User Lists)
-Plan: 1 of 6 in current phase
+Plan: 5 of 6 in current phase
 Status: In progress
-Last activity: 2026-01-27 -- Completed 04-01-PLAN.md (Time Limits Foundation)
+Last activity: 2026-01-27 -- Completed 04-05-PLAN.md (User Lists Menu Integration)
 
-Progress: [█████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 17% of Phase 4 (1/6)
+Progress: [█████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 83% of Phase 4 (5/6)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16
+- Total plans completed: 20
 - Average duration: 6 min
-- Total execution time: 1.8 hours
+- Total execution time: 2.0 hours
 
 **By Phase:**
 
@@ -30,10 +30,10 @@ Progress: [█████████████] 100% of Phase 1 (5/5), 100% 
 | 01    | 5     | 24min | 5min     | Complete |
 | 02    | 7     | 45min | 6min     | Complete (incl. integration) |
 | 03    | 3     | 16min | 5min     | Complete |
-| 04    | 1     | 8min  | 8min     | In progress |
+| 04    | 5     | 35min | 7min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 8min, 4min, 3min, 9min, 8min
+- Last 5 plans: 4min, 3min, 9min, 8min, 4min
 - Trend: Consistently fast execution (3-9min range)
 
 *Updated after each plan completion*
@@ -107,6 +107,8 @@ Recent decisions affecting current work:
 | 04-01 | Session history uses datetime('now', '-5 hours') for EST timezone consistency | All datetime fields maintain EST timezone offset |
 | 04-01 | Time banking with daily reset detection using SQLite date() comparison | Daily reset triggered by comparing date(last_daily_reset) < date('now', '-5 hours') |
 | 04-01 | NodeManager tracks current_activity string and last_input timestamp | Enables Who's Online display and idle detection |
+| 04-05 | Phase 4 features as main menu commands (not submenu) | W/L/U hotkeys provide direct access to Who's Online, Last Callers, User Lookup |
+| 04-05 | User lookup reuses render_profile_card with is_own_profile=false | Consistent profile display without edit options when viewing others |
 
 ### Pending Todos
 
@@ -178,25 +180,25 @@ Full navigation system implemented:
 
 ## Phase 4 Progress
 
-**Time Limits & User Lists Phase: IN PROGRESS (1/6 plans complete)**
+**Time Limits & User Lists Phase: IN PROGRESS (5/6 plans complete)**
 
 Completed:
 - 04-01: Time Limits Foundation (TimeLimitsConfig, session_history table, time banking queries, NodeManager extensions)
+- 04-02: Session Timer & Status Bar (Timer task spawning, status bar renderer, client-side countdown)
+- 04-03: Status Bar Integration (WebSocket timer messages, status bar positioning, warning colors)
+- 04-04: User Lists Display (Who's Online, Last Callers services)
+- 04-05: User Lists Menu Integration (User profile lookup renders, main menu registration W/L/U)
 
-Foundation complete for remaining Phase 4 plans:
-- Session timer can use TimeLimitsConfig for per-level time limits
-- Last Callers display can query session_history table
-- Who's Online can use NodeInfo.current_activity and last_input
-- Time banking can use daily reset detection and withdrawal queries
-- Graceful timeout can track session_history on disconnect
+Remaining:
+- 04-06: Session lifecycle integration (timeout handling, time banking withdrawal, graceful disconnect)
 
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed 04-01-PLAN.md (Time Limits Foundation)
+Stopped at: Completed 04-05-PLAN.md (User Lists Menu Integration)
 Resume file: None
-Next action: Phase 4 plan 04-02 (Session Timer & Status Bar)
+Next action: Phase 4 plan 04-06 (Session Lifecycle Integration)
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-27 (04-01 time limits foundation)*
+*Last updated: 2026-01-27 (04-05 user lists menu integration)*
