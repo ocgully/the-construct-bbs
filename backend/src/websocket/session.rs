@@ -1882,6 +1882,92 @@ impl Session {
         }
     }
 
+    /// Handle input while in chat mode
+    async fn handle_chat_input(&mut self, input: &str) {
+        let handle = match &self.auth_state {
+            AuthState::Authenticated { handle, .. } => handle.clone(),
+            _ => return,
+        };
+
+        let cmd = parse_chat_command(input);
+
+        match cmd {
+            ChatCommand::Empty => {
+                // Do nothing on empty input
+            }
+            ChatCommand::Message(text) => {
+                self.state.chat_manager.broadcast(ChatMessage::Public {
+                    sender: handle,
+                    text,
+                });
+            }
+            ChatCommand::Quit => {
+                self.exit_chat().await;
+                // Return to main menu
+                if let Some(ms) = &mut self.menu_session {
+                    ms.reset_to_main();
+                }
+                self.show_menu().await;
+            }
+            ChatCommand::Help => {
+                let _ = self.tx.send(render_chat_help()).await;
+            }
+            ChatCommand::Who => {
+                let participants = self.state.chat_manager.get_participants().await;
+                let _ = self.tx.send(render_chat_who(&participants)).await;
+            }
+            ChatCommand::Action(action) => {
+                self.state.chat_manager.broadcast(ChatMessage::Action {
+                    sender: handle,
+                    action,
+                });
+            }
+            ChatCommand::Page(target) => {
+                // Check if target is in chat
+                let participants = self.state.chat_manager.get_participants().await;
+                let target_lower = target.to_lowercase();
+                if let Some(found) = participants.iter().find(|h| h.to_lowercase() == target_lower) {
+                    self.state.chat_manager.broadcast(ChatMessage::Page {
+                        from: handle,
+                        to: found.clone(),
+                    });
+                    let _ = self.tx.send(render_chat_error(&format!("Paged {}", found))).await;
+                } else {
+                    let _ = self.tx.send(render_chat_error(&format!("{} is not in chat", target))).await;
+                }
+            }
+            ChatCommand::DirectMessage { target, text } => {
+                // Find target in chat (case-insensitive)
+                let participants = self.state.chat_manager.get_participants().await;
+                let target_lower = target.to_lowercase();
+                if let Some(found) = participants.iter().find(|h| h.to_lowercase() == target_lower) {
+                    // Can't DM yourself
+                    if found.to_lowercase() == handle.to_lowercase() {
+                        let _ = self.tx.send(render_chat_error("Cannot message yourself")).await;
+                    } else {
+                        self.state.chat_manager.broadcast(ChatMessage::Direct {
+                            from: handle,
+                            to: found.clone(),
+                            text,
+                        });
+                    }
+                } else {
+                    let _ = self.tx.send(render_chat_error(&format!("{} is not in chat", target))).await;
+                }
+            }
+            ChatCommand::Reply(_text) => {
+                // Simplified: suggest using /msg instead
+                let _ = self.tx.send(render_chat_error("Use /msg <handle> <message> to send direct messages")).await;
+            }
+            ChatCommand::Unknown(cmd) => {
+                let _ = self.tx.send(render_chat_error(&format!("Unknown command: {}. Type /help for available commands.", cmd))).await;
+            }
+            ChatCommand::Error(msg) => {
+                let _ = self.tx.send(render_chat_error(&msg)).await;
+            }
+        }
+    }
+
     /// Show inbox (mail command handler from menu)
     async fn show_inbox(&mut self) {
         if let AuthState::Authenticated { user_id, .. } = &self.auth_state {
