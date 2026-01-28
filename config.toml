@@ -63,11 +63,12 @@ command = "mail"
 order = 2
 
 [[menu.main]]
-type = "submenu"
+type = "command"
 hotkey = "C"
 name = "Chat"
-submenu_key = "chat"
+command = "chat"
 order = 3
+min_level = 0
 
 [[menu.main]]
 type = "submenu"
