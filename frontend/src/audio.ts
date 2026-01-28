@@ -1,44 +1,109 @@
-// Modem handshake sound - Web Audio API playback with user gesture handling
+// Modem handshake sounds - Web Audio API playback
 //
-// Browser autoplay policy requires a user gesture before AudioContext can play.
-// Since we auto-connect on page load (no keypress required), the modem sound
-// is triggered on the FIRST user interaction (keypress) after connection.
-// This satisfies the browser autoplay policy while maintaining atmosphere.
+// Loads both modem-success.mp3 and modem-fail.mp3 at startup.
+// The backend sends a JSON signal { type: "modem", status: "success"|"fail" }
+// after determining whether a node was assigned, and the frontend plays the
+// appropriate sound via the websocket message handler.
+//
+// playModemSuccess/Fail return a Promise that resolves when playback ENDS,
+// so callers can wait for the sound to finish before proceeding.
 
 let audioContext: AudioContext | null = null;
-let modemBuffer: AudioBuffer | null = null;
+let successBuffer: AudioBuffer | null = null;
+let failBuffer: AudioBuffer | null = null;
+let bellBuffer: AudioBuffer | null = null;
 let loaded = false;
 
-export async function loadModemSound(): Promise<void> {
+// Generate a simple terminal bell tone (~800Hz, 150ms) programmatically
+// No external file needed - classic BBS bell sound
+async function generateBellBuffer(): Promise<AudioBuffer | null> {
+  if (!audioContext) return null;
+
+  const sampleRate = audioContext.sampleRate;
+  const duration = 0.15; // 150ms
+  const frequency = 800; // Hz
+  const numSamples = Math.floor(sampleRate * duration);
+
+  const buffer = audioContext.createBuffer(1, numSamples, sampleRate);
+  const data = buffer.getChannelData(0);
+
+  for (let i = 0; i < numSamples; i++) {
+    // Sine wave with exponential decay envelope
+    const t = i / sampleRate;
+    const envelope = Math.exp(-t * 20); // Decay factor
+    data[i] = Math.sin(2 * Math.PI * frequency * t) * envelope * 0.3;
+  }
+
+  return buffer;
+}
+
+export async function loadModemSounds(): Promise<void> {
   try {
-    const response = await fetch('/audio/modem.mp3');
-    if (!response.ok) {
-      console.warn('Modem sound not found, skipping audio');
-      return;
-    }
-    const arrayBuffer = await response.arrayBuffer();
     audioContext = new AudioContext();
-    modemBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+    const [successResp, failResp] = await Promise.all([
+      fetch('/audio/modem-success.mp3'),
+      fetch('/audio/modem-fail.mp3'),
+    ]);
+
+    if (successResp.ok) {
+      const buf = await successResp.arrayBuffer();
+      successBuffer = await audioContext.decodeAudioData(buf);
+    } else {
+      console.warn('modem-success.mp3 not found, skipping');
+    }
+
+    if (failResp.ok) {
+      const buf = await failResp.arrayBuffer();
+      failBuffer = await audioContext.decodeAudioData(buf);
+    } else {
+      console.warn('modem-fail.mp3 not found, skipping');
+    }
+
+    // Generate bell sound programmatically (no external file needed)
+    bellBuffer = await generateBellBuffer();
+
     loaded = true;
   } catch (e) {
-    console.warn('Failed to load modem sound:', e);
+    console.warn('Failed to load modem sounds:', e);
   }
 }
 
-export async function playModemSound(): Promise<void> {
-  if (!loaded || !audioContext || !modemBuffer) return;
+async function playBuffer(buffer: AudioBuffer | null): Promise<void> {
+  if (!loaded || !audioContext || !buffer) return;
 
   // Resume AudioContext if suspended (browser autoplay policy)
   if (audioContext.state === 'suspended') {
     await audioContext.resume();
   }
 
-  const source = audioContext.createBufferSource();
-  source.buffer = modemBuffer;
-  source.connect(audioContext.destination);
-  source.start(0);
+  // Return a Promise that resolves when the sound finishes playing
+  return new Promise<void>((resolve) => {
+    const source = audioContext!.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioContext!.destination);
+    source.onended = () => resolve();
+    source.start(0);
+  });
 }
 
-export function isAudioLoaded(): boolean {
-  return loaded;
+export async function playModemSuccess(): Promise<void> {
+  return playBuffer(successBuffer);
+}
+
+export async function playModemFail(): Promise<void> {
+  return playBuffer(failBuffer);
+}
+
+export async function playBellSound(): Promise<void> {
+  return playBuffer(bellBuffer);
+}
+
+/// Resume the AudioContext. Must be called during a user gesture (e.g. keydown)
+/// to satisfy browser autoplay policy.
+export async function ensureAudioReady(): Promise<void> {
+  if (!audioContext) return;
+  if (audioContext.state === 'suspended') {
+    await audioContext.resume();
+  }
 }

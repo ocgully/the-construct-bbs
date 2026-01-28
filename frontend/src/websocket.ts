@@ -1,5 +1,5 @@
 import { Terminal } from '@xterm/xterm';
-import { playModemSuccess, playModemFail } from './audio';
+import { playModemSuccess, playModemFail, playBellSound } from './audio';
 import { SessionTimer } from './timer';
 
 export function connectWebSocket(terminal: Terminal, opts?: { timer?: SessionTimer }): WebSocket {
@@ -72,13 +72,23 @@ export function connectWebSocket(terminal: Terminal, opts?: { timer?: SessionTim
             }
             return;
           }
+          if (parsed.type === 'bell') {
+            // Play bell sound for page/DM notification
+            playBellSound();
+            return; // Don't write JSON to terminal
+          }
         }
       } catch {
         // Not JSON -- this is normal terminal output, fall through
       }
 
-      // Write received data to terminal
-      terminal.write(data);
+      // Write received data to terminal, then re-render status bar
+      // (screen clears erase row 24 where the status bar lives)
+      terminal.write(data, () => {
+        if (opts?.timer) {
+          opts.timer.refreshBar();
+        }
+      });
     };
 
     ws.onerror = (error) => {
