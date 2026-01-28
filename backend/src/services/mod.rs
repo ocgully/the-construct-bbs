@@ -3,6 +3,7 @@ pub mod example;
 pub mod goodbye;
 pub mod last_callers;
 pub mod login;
+pub mod mail;
 pub mod profile;
 pub mod registration;
 pub mod user_profile;
