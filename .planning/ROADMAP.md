@@ -119,10 +119,13 @@ Plans:
   3. User can reply to received messages
   4. User can delete messages from inbox
   5. User sees "You have new mail" notification on login
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] TBD during planning
+- [ ] 05-01-PLAN.md -- Messages database table, CRUD operations, and mail config
+- [ ] 05-02-PLAN.md -- Mail ANSI rendering functions and compose state machine
+- [ ] 05-03-PLAN.md -- Session integration with sentinel handlers and login notification
+- [ ] 05-04-PLAN.md -- Status bar MAIL indicator and menu config wiring
 
 ### Phase 6: Chat & Real-Time Communication
 **Goal**: Users can participate in live chat room and page other users
@@ -274,7 +277,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 2. Authentication & Connection | 7/7 | Complete | 2026-01-27 |
 | 3. Navigation System | 3/3 | Complete | 2026-01-27 |
 | 4. Time Limits & User Lists | 6/6 | Complete | 2026-01-28 |
-| 5. Email System | 0/TBD | Not started | - |
+| 5. Email System | 0/4 | Not started | - |
 | 6. Chat & Real-Time Communication | 0/TBD | Not started | - |
 | 7. News & Bulletins | 0/TBD | Not started | - |
 | 8. First Door Game (Drug Wars) | 0/TBD | Not started | - |
@@ -287,4 +290,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
 ---
 *Roadmap created: 2026-01-26*
-*Last updated: 2026-01-28 (Phase 4 complete)*
+*Last updated: 2026-01-28 (Phase 5 planned)*
