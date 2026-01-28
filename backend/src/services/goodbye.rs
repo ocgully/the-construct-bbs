@@ -259,3 +259,238 @@ mod tests {
         assert!(output.contains("1 minute"));
     }
 }
+
+/// Render the timeout goodbye screen with session stats.
+///
+/// Displays a box-drawn ANSI card showing:
+/// - "TIME EXPIRED" title (instead of "GOODBYE")
+/// - User's handle with timeout messaging
+/// - Session time (this visit)
+/// - Total calls (lifetime)
+/// - Total time online (lifetime, including this session)
+/// - "NO CARRIER" modem disconnect indicator
+///
+/// Uses LightRed border color to indicate timeout (warning feel).
+pub fn render_timeout_goodbye(
+    handle: &str,
+    session_minutes: i64,
+    total_calls: i64,
+    total_time_minutes: i64,
+) -> String {
+    let mut w = AnsiWriter::new();
+
+    let border_color = Color::LightRed; // Red for timeout warning
+    let inner = 78; // 80 - 2 border chars
+
+    // Helper: pad a string to a given width (left-aligned)
+    let pad = |s: &str, width: usize| -> String {
+        if s.len() >= width {
+            s[..width].to_string()
+        } else {
+            format!("{}{}", s, " ".repeat(width - s.len()))
+        }
+    };
+
+    // Blank line before card
+    w.writeln("");
+
+    // Top border
+    w.set_fg(border_color);
+    w.writeln(&format!("\u{2554}{}\u{2557}", "\u{2550}".repeat(inner)));
+
+    // Blank line
+    w.set_fg(border_color);
+    w.write_str("\u{2551}");
+    w.write_str(&" ".repeat(inner));
+    w.set_fg(border_color);
+    w.writeln("\u{2551}");
+
+    // TIME EXPIRED title line
+    {
+        let msg = "TIME EXPIRED";
+        // Center the message: pad left to center it within inner width
+        let left_pad = if msg.len() < inner - 4 {
+            (inner - msg.len()) / 2
+        } else {
+            2
+        };
+        let right_pad = inner - left_pad - msg.len();
+
+        w.set_fg(border_color);
+        w.write_str("\u{2551}");
+        w.write_str(&" ".repeat(left_pad));
+        w.set_fg(Color::Yellow);
+        w.bold();
+        w.write_str(msg);
+        w.reset_color();
+        w.write_str(&" ".repeat(right_pad));
+        w.set_fg(border_color);
+        w.writeln("\u{2551}");
+    }
+
+    // Blank line
+    w.set_fg(border_color);
+    w.write_str("\u{2551}");
+    w.write_str(&" ".repeat(inner));
+    w.set_fg(border_color);
+    w.writeln("\u{2551}");
+
+    // Timeout message line
+    {
+        let msg = format!("{}, your daily time has expired.", handle);
+        // Center the message: pad left to center it within inner width
+        let left_pad = if msg.len() < inner - 4 {
+            (inner - msg.len()) / 2
+        } else {
+            2
+        };
+        let right_pad = inner - left_pad - msg.len();
+
+        w.set_fg(border_color);
+        w.write_str("\u{2551}");
+        w.write_str(&" ".repeat(left_pad));
+        w.set_fg(Color::LightGray);
+        w.write_str(&msg);
+        w.reset_color();
+        w.write_str(&" ".repeat(right_pad));
+        w.set_fg(border_color);
+        w.writeln("\u{2551}");
+    }
+
+    // Blank line
+    w.set_fg(border_color);
+    w.write_str("\u{2551}");
+    w.write_str(&" ".repeat(inner));
+    w.set_fg(border_color);
+    w.writeln("\u{2551}");
+
+    // Separator
+    w.set_fg(border_color);
+    w.writeln(&format!("\u{2560}{}\u{2563}", "\u{2550}".repeat(inner)));
+
+    // Blank line
+    w.set_fg(border_color);
+    w.write_str("\u{2551}");
+    w.write_str(&" ".repeat(inner));
+    w.set_fg(border_color);
+    w.writeln("\u{2551}");
+
+    // Session stats
+    let session_time_str = if session_minutes == 1 {
+        "1 minute".to_string()
+    } else {
+        format!("{} minutes", session_minutes)
+    };
+    let total_calls_str = format!("{}", total_calls);
+    let total_time_str = format_duration_minutes(total_time_minutes);
+
+    let stats: Vec<(&str, &str)> = vec![
+        ("Session Time:", &session_time_str),
+        ("Total Calls:", &total_calls_str),
+        ("Total Time:", &total_time_str),
+    ];
+
+    for (label, value) in &stats {
+        let label_padded = pad(label, 16);
+        let content_len = 3 + 16 + value.len();
+        let right_pad = if content_len < inner {
+            inner - content_len
+        } else {
+            0
+        };
+
+        w.set_fg(border_color);
+        w.write_str("\u{2551}   ");
+        w.set_fg(Color::LightGray);
+        w.write_str(&label_padded);
+        w.set_fg(Color::White);
+        w.bold();
+        w.write_str(value);
+        w.reset_color();
+        w.write_str(&" ".repeat(right_pad));
+        w.set_fg(border_color);
+        w.writeln("\u{2551}");
+    }
+
+    // Blank line
+    w.set_fg(border_color);
+    w.write_str("\u{2551}");
+    w.write_str(&" ".repeat(inner));
+    w.set_fg(border_color);
+    w.writeln("\u{2551}");
+
+    // Separator
+    w.set_fg(border_color);
+    w.writeln(&format!("\u{2560}{}\u{2563}", "\u{2550}".repeat(inner)));
+
+    // Blank line
+    w.set_fg(border_color);
+    w.write_str("\u{2551}");
+    w.write_str(&" ".repeat(inner));
+    w.set_fg(border_color);
+    w.writeln("\u{2551}");
+
+    // "Come back tomorrow" message (centered)
+    {
+        let msg = "Come back tomorrow for more time!";
+        let left_pad = if msg.len() < inner - 4 {
+            (inner - msg.len()) / 2
+        } else {
+            2
+        };
+        let right_pad = inner - left_pad - msg.len();
+
+        w.set_fg(border_color);
+        w.write_str("\u{2551}");
+        w.write_str(&" ".repeat(left_pad));
+        w.set_fg(Color::LightGreen);
+        w.write_str(msg);
+        w.reset_color();
+        w.write_str(&" ".repeat(right_pad));
+        w.set_fg(border_color);
+        w.writeln("\u{2551}");
+    }
+
+    // Blank line
+    w.set_fg(border_color);
+    w.write_str("\u{2551}");
+    w.write_str(&" ".repeat(inner));
+    w.set_fg(border_color);
+    w.writeln("\u{2551}");
+
+    // "NO CARRIER" (centered)
+    {
+        let msg = "\u{2500}\u{2500} NO CARRIER \u{2500}\u{2500}";
+        let left_pad = if msg.len() < inner - 4 {
+            (inner - msg.len()) / 2
+        } else {
+            2
+        };
+        let right_pad = inner - left_pad - msg.len();
+
+        w.set_fg(border_color);
+        w.write_str("\u{2551}");
+        w.write_str(&" ".repeat(left_pad));
+        w.set_fg(Color::LightRed);
+        w.bold();
+        w.write_str(msg);
+        w.reset_color();
+        w.write_str(&" ".repeat(right_pad));
+        w.set_fg(border_color);
+        w.writeln("\u{2551}");
+    }
+
+    // Blank line
+    w.set_fg(border_color);
+    w.write_str("\u{2551}");
+    w.write_str(&" ".repeat(inner));
+    w.set_fg(border_color);
+    w.writeln("\u{2551}");
+
+    // Bottom border
+    w.set_fg(border_color);
+    w.writeln(&format!("\u{255A}{}\u{255D}", "\u{2550}".repeat(inner)));
+    w.reset_color();
+
+    w.flush()
+}
