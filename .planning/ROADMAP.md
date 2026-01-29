@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Navigation System** - Wildcat-style menus with ANSI art and hotkeys
 - [x] **Phase 4: Time Limits & User Lists** - Daily time caps, session timers, who's online
 - [x] **Phase 5: Email System** - Inter-user private messaging
-- [ ] **Phase 6: Chat & Real-Time Communication** - Live teleconference, user paging
+- [x] **Phase 6: Chat & Real-Time Communication** - Live teleconference, user paging
 - [ ] **Phase 7: News & Bulletins** - RSS feed integration, sysop bulletins
 - [ ] **Phase 8: First Door Game (Drug Wars)** - Commodity trading game, validates game architecture
 - [ ] **Phase 9: Second Door Game (LORD)** - Complex RPG with combat, PvP, dragon boss
@@ -142,24 +142,28 @@ Plans:
 **Plans**: 5 plans
 
 Plans:
-- [ ] 06-01-PLAN.md -- ChatManager with broadcast channel and participant tracking
-- [ ] 06-02-PLAN.md -- Chat command parser and ANSI rendering functions
-- [ ] 06-03-PLAN.md -- Session integration with broadcast receiver task
-- [ ] 06-04-PLAN.md -- Bell sound for page/DM notifications (frontend)
-- [ ] 06-05-PLAN.md -- Menu integration and command routing
+- [x] 06-01-PLAN.md -- ChatManager with broadcast channel and participant tracking
+- [x] 06-02-PLAN.md -- Chat command parser and ANSI rendering functions
+- [x] 06-03-PLAN.md -- Session integration with broadcast receiver task
+- [x] 06-04-PLAN.md -- Bell sound for page/DM notifications (frontend)
+- [x] 06-05-PLAN.md -- Menu integration and command routing
 
 ### Phase 7: News & Bulletins
-**Goal**: Users see current news and sysop bulletins on login or from menu
+**Goal**: Users can access RSS news feeds from menu with list navigation and article viewing
 **Depends on**: Phase 6
-**Requirements**: NEWS-01, NEWS-02, NEWS-03
+**Requirements**: NEWS-01, NEWS-02
 **Success Criteria** (what must be TRUE):
-  1. User sees news feed on login or can access from menu
-  2. News is sourced from configurable RSS feed (world news)
-  3. Sysop-posted bulletins appear alongside RSS news
-**Plans**: TBD
+  1. User can access news from main menu via N hotkey
+  2. News is sourced from configurable RSS feeds
+  3. User can navigate article list with arrow keys
+  4. User can view full article content
+  5. Feed errors are handled gracefully
+**Plans**: 3 plans
 
 Plans:
-- [ ] TBD during planning
+- [ ] 07-01-PLAN.md -- Add feed-rs dependency, NewsConfig, and news fetching module
+- [ ] 07-02-PLAN.md -- News rendering functions (list, article, loading, errors) and NewsState
+- [ ] 07-03-PLAN.md -- Session integration with input handling and menu routing
 
 ### Phase 8: First Door Game (Drug Wars)
 **Goal**: Users can play Drug Wars clone with state persistence and leaderboards
@@ -297,8 +301,8 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 3. Navigation System | 3/3 | Complete | 2026-01-27 |
 | 4. Time Limits & User Lists | 6/6 | Complete | 2026-01-28 |
 | 5. Email System | 4/4 | Complete | 2026-01-28 |
-| 6. Chat & Real-Time Communication | 0/5 | Planned | - |
-| 7. News & Bulletins | 0/TBD | Not started | - |
+| 6. Chat & Real-Time Communication | 5/5 | Complete | 2026-01-28 |
+| 7. News & Bulletins | 0/3 | Planned | - |
 | 8. First Door Game (Drug Wars) | 0/TBD | Not started | - |
 | 9. Second Door Game (LORD) | 0/TBD | Not started | - |
 | 10. Third Door Game (Usurper) | 0/TBD | Not started | - |
@@ -310,4 +314,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
 ---
 *Roadmap created: 2026-01-26*
-*Last updated: 2026-01-28 (Phase 15 added)*
+*Last updated: 2026-01-28 (Phase 7 planned)*
