@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 8 of 15 (First Door Game - Drug Wars)
-Plan: 2 of 9 in current phase
+Plan: 4 of 9 in current phase
 Status: In progress
-Last activity: 2026-01-29 - Completed 08-02-PLAN.md (Game Data Structures)
+Last activity: 2026-01-29 - Completed 08-04-PLAN.md (ANSI Rendering Layer)
 
-Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 100% of Phase 7 (3/3), 22% of Phase 8 (2/9)
+Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 100% of Phase 7 (3/3), 44% of Phase 8 (4/9)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 35
+- Total plans completed: 36
 - Average duration: 6 min
-- Total execution time: 3.5 hours
+- Total execution time: 3.6 hours
 
 **By Phase:**
 
@@ -34,11 +34,11 @@ Progress: [████████████████████] 100% of
 | 05    | 4     | 31min | 8min     | Complete |
 | 06    | 5     | 18min | 4min     | Complete |
 | 07    | 3     | 13min | 4min     | Complete |
-| 08    | 2     | 8min  | 4min     | In progress |
+| 08    | 3     | 12min | 4min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 5min, 4min, 4min, 3min, 5min
-- Trend: Very fast execution maintained (3-5min range)
+- Last 5 plans: 4min, 4min, 3min, 5min, 4min
+- Trend: Consistent 4min execution (very fast)
 
 *Updated after each plan completion*
 
@@ -180,6 +180,11 @@ Recent decisions affecting current work:
 | 08-02 | GameState::new() initial conditions | Start in Bronx, NYC with $2,000 cash, $5,500 debt, 100 HP, 5 actions/day, coat tier 0 (100 capacity) |
 | 08-02 | Coat tier system: 0=100, 1=125, 2=150, 3=250 units | Upgrade costs escalate: $500, $1000, $2500 for progressively larger carrying capacity |
 | 08-02 | Travel modes with cost/time tradeoffs | Intra-city taxi=$20 instant, inter-city bus=$100+1day, plane=$500 instant |
+| 08-03 | GtmFlow returns GtmAction enum for session to handle | Following ComposeFlow pattern from mail.rs - keeps state machine synchronous, session.rs handles async DB/rendering |
+| 08-03 | Single-key vs buffered input handling | Most screens use single-key input (menus), quantity entry uses buffered - is_single_key_screen determines mode |
+| 08-03 | 15% random event chance after travel | Called in handle_travel after moving to new borough - ~1 event every 7 moves on average |
+| 08-03 | Weighted event selection with dynamic difficulty | WeightedIndex samples events with adjusted weights based on game state (debt increases enforcer encounters, gang relations affect gang encounters) |
+| 08-03 | use_action triggers advance_day when actions hit 0 | Centralized day progression - applies debt interest (10%), bank interest (5%), notoriety decay, game over check at day 90 |
 
 ### Roadmap Evolution
 
@@ -346,10 +351,10 @@ Full news system implemented:
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Completed 08-02-PLAN.md (Game Data Structures)
+Stopped at: Completed 08-03-PLAN.md (Game State Machine)
 Resume file: None
-Next action: Execute 08-03-PLAN.md (GTM Database Layer Integration)
+Next action: Execute 08-04-PLAN.md (Rendering functions)
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-29 (08-02 Game Data Structures complete)*
+*Last updated: 2026-01-29 (08-03 Game State Machine complete)*
