@@ -161,9 +161,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 07-01-PLAN.md -- Add feed-rs dependency, NewsConfig, and news fetching module
-- [ ] 07-02-PLAN.md -- News rendering functions (list, article, loading, errors) and NewsState
-- [ ] 07-03-PLAN.md -- Session integration with input handling and menu routing
+- [x] 07-01-PLAN.md -- Add feed-rs dependency, NewsConfig, and news fetching module
+- [x] 07-02-PLAN.md -- News rendering functions (list, article, loading, errors) and NewsState
+- [x] 07-03-PLAN.md -- Session integration with input handling and menu routing
 
 ### Phase 8: First Door Game (Drug Wars)
 **Goal**: Users can play Drug Wars clone with state persistence and leaderboards
@@ -302,7 +302,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 4. Time Limits & User Lists | 6/6 | Complete | 2026-01-28 |
 | 5. Email System | 4/4 | Complete | 2026-01-28 |
 | 6. Chat & Real-Time Communication | 5/5 | Complete | 2026-01-28 |
-| 7. News & Bulletins | 0/3 | Planned | - |
+| 7. News & Bulletins | 3/3 | Complete | 2026-01-28 |
 | 8. First Door Game (Drug Wars) | 0/TBD | Not started | - |
 | 9. Second Door Game (LORD) | 0/TBD | Not started | - |
 | 10. Third Door Game (Usurper) | 0/TBD | Not started | - |
@@ -314,4 +314,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
 ---
 *Roadmap created: 2026-01-26*
-*Last updated: 2026-01-28 (Phase 7 planned)*
+*Last updated: 2026-01-28 (Phase 7 complete)*
