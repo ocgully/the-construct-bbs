@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 8 of 15 (First Door Game - Drug Wars)
-Plan: 1 of 9 in current phase
+Plan: 2 of 9 in current phase
 Status: In progress
-Last activity: 2026-01-29 - Completed 08-01-PLAN.md (Game Database Foundation)
+Last activity: 2026-01-29 - Completed 08-02-PLAN.md (Game Data Structures)
 
-Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 100% of Phase 7 (3/3), 11% of Phase 8 (1/9)
+Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 100% of Phase 7 (3/3), 22% of Phase 8 (2/9)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 34
+- Total plans completed: 35
 - Average duration: 6 min
-- Total execution time: 3.4 hours
+- Total execution time: 3.5 hours
 
 **By Phase:**
 
@@ -34,10 +34,10 @@ Progress: [████████████████████] 100% of
 | 05    | 4     | 31min | 8min     | Complete |
 | 06    | 5     | 18min | 4min     | Complete |
 | 07    | 3     | 13min | 4min     | Complete |
-| 08    | 1     | 3min  | 3min     | In progress |
+| 08    | 2     | 8min  | 4min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 4min, 5min, 4min, 4min, 3min
+- Last 5 plans: 5min, 4min, 4min, 3min, 5min
 - Trend: Very fast execution maintained (3-5min range)
 
 *Updated after each plan completion*
@@ -173,6 +173,13 @@ Recent decisions affecting current work:
 | 08-01 | GtmDb struct encapsulates game's database | Game module owns its pool, schema, CRUD - initialized on first launch, not at BBS startup |
 | 08-01 | EST timezone offset (-5 hours) in game datetime() calls | Matches BBS convention for consistent datetime fields across all databases |
 | 08-01 | Leaderboard uses RANK() window function | Proper ranking with ties vs ROW_NUMBER which would arbitrarily order ties |
+| 08-02 | Currency stored as i64 cents (not float dollars) | Avoids floating point precision issues - $2,000 = 200000 cents |
+| 08-02 | Basis points arithmetic for interest calculations | Integer math avoids floats: 10% debt = (debt * 11000) / 10000, 5% bank = (balance * 10500) / 10000 |
+| 08-02 | Static game data with &'static lifetimes | Zero-allocation game world - cities, commodities, weapons, gangs live in binary with static slices |
+| 08-02 | HashMap for dynamic game collections | inventory (commodity->quantity), gang_relations (gang->relation), addiction (commodity->level) use HashMap since keys vary per game |
+| 08-02 | GameState::new() initial conditions | Start in Bronx, NYC with $2,000 cash, $5,500 debt, 100 HP, 5 actions/day, coat tier 0 (100 capacity) |
+| 08-02 | Coat tier system: 0=100, 1=125, 2=150, 3=250 units | Upgrade costs escalate: $500, $1000, $2500 for progressively larger carrying capacity |
+| 08-02 | Travel modes with cost/time tradeoffs | Intra-city taxi=$20 instant, inter-city bus=$100+1day, plane=$500 instant |
 
 ### Roadmap Evolution
 
@@ -339,10 +346,10 @@ Full news system implemented:
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Completed 08-01-PLAN.md (Game Database Foundation)
+Stopped at: Completed 08-02-PLAN.md (Game Data Structures)
 Resume file: None
-Next action: Execute 08-02-PLAN.md (Game State & Logic)
+Next action: Execute 08-03-PLAN.md (GTM Database Layer Integration)
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-29 (08-01 Game Database Foundation complete)*
+*Last updated: 2026-01-29 (08-02 Game Data Structures complete)*
