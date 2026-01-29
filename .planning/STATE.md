@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 7 of 15 (News & Bulletins)
-Plan: 2 of 3 in current phase
-Status: In progress
-Last activity: 2026-01-28 -- Completed 07-02-PLAN.md (NewsState and ANSI rendering functions)
+Plan: 3 of 3 in current phase
+Status: Phase complete
+Last activity: 2026-01-28 -- Completed 07-03-PLAN.md (News menu integration and session routing)
 
-Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 67% of Phase 7 (2/3)
+Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 100% of Phase 7 (3/3)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 32
+- Total plans completed: 33
 - Average duration: 6 min
-- Total execution time: 3.2 hours
+- Total execution time: 3.3 hours
 
 **By Phase:**
 
@@ -33,11 +33,11 @@ Progress: [████████████████████] 100% of
 | 04    | 6     | 49min | 8min     | Complete (incl. integration) |
 | 05    | 4     | 31min | 8min     | Complete |
 | 06    | 5     | 18min | 4min     | Complete |
-| 07    | 2     | 9min  | 5min     | In progress |
+| 07    | 3     | 13min | 4min     | Complete |
 
 **Recent Trend:**
-- Last 5 plans: 7min, 8min, 2min, 4min, 5min
-- Trend: Consistently fast execution (2-8min range)
+- Last 5 plans: 2min, 4min, 5min, 4min, 4min
+- Trend: Very fast execution maintained (2-5min range)
 
 *Updated after each plan completion*
 
@@ -165,6 +165,9 @@ Recent decisions affecting current work:
 | 07-02 | Articles grouped by source (not chronologically merged) | Per context: source attribution before each title in list |
 | 07-02 | 15 items per visible page with auto page offset | NewsState navigation with select_prev/next adjusting offset |
 | 07-02 | Selected article shows snippet preview | Snippet displayed below title for selected item in list view |
+| 07-03 | N hotkey triggers news directly (not submenu) matching M for mail and C for chat | Direct command pattern for primary services |
+| 07-03 | Arrow key escape sequences handled in session input for list navigation | check for \x1b[A/\x1bOA (up) and \x1b[B/\x1bOB (down) |
+| 07-03 | Separate sentinels for news list view (__news__) and error screen (__news_error__) | Distinct state handling for normal operation vs all-feeds-failed case |
 
 ### Roadmap Evolution
 
@@ -306,24 +309,35 @@ Full chat system implemented:
 8. WebSocket bell message interception (JSON not shown in terminal)
 9. Chat accessible from main menu via C hotkey (command type, not submenu)
 
-## Phase 7 Progress
+## Phase 7 Completion Summary
 
-**News & Bulletins Phase: IN PROGRESS (2/3 plans complete)**
+**News & Bulletins Phase: COMPLETE (3/3 plans complete)**
 
-Completed plans:
+All plans executed successfully:
 - 07-01: RSS feed fetching foundation (feed-rs integration, NewsConfig, fetch_feeds function)
 - 07-02: NewsState and ANSI rendering functions (THE WIRE header, list/article views, navigation)
+- 07-03: Menu integration and session routing (N hotkey, sentinel services, arrow key navigation)
 
-Remaining plans:
-- 07-03: Menu integration (N hotkey, sentinel routing, input handling)
+Full news system implemented:
+1. RSS feed fetching via feed-rs with reqwest (RSS/Atom/JSON Feed support)
+2. NewsConfig with configurable feeds in config.toml
+3. NewsState navigation with page offset and article selection
+4. THE WIRE header with CGA color ANSI art styling
+5. List view with articles grouped by source, snippet preview for selected item
+6. Article view with full content display and navigation
+7. Arrow key navigation (up/down) in list view
+8. N/P paging for list navigation and article jumping
+9. Enter to select article, Q to return to list, Q from list to main menu
+10. Loading screen shown during async feed fetch
+11. Graceful error handling when feeds fail to load
 
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Completed 07-02-PLAN.md (NewsState and ANSI rendering functions)
+Stopped at: Completed 07-03-PLAN.md (News menu integration and session routing)
 Resume file: None
-Next action: Phase 7 Plan 3 (Menu integration and session routing)
+Next action: Phase 8 Plan 1 (First Door Game - Drug Wars)
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-28 (07-02 NewsState and rendering)*
+*Last updated: 2026-01-28 (07-03 News integration complete, Phase 7 complete)*
