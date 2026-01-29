@@ -1,0 +1,1014 @@
+use crate::terminal::{AnsiWriter, Color};
+use crate::game::{GameState, TradeMode, EnemyType, GameEvent, CITIES, COMMODITIES, WEAPONS, get_city, get_borough, get_commodity, get_weapon};
+use std::collections::HashMap;
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/// Format cents as dollars: 123456 -> "$1,234.56"
+fn format_money(cents: i64) -> String {
+    let dollars = cents / 100;
+    let remainder = (cents % 100).abs();
+    let sign = if cents < 0 { "-" } else { "" };
+    let abs_dollars = dollars.abs();
+
+    // Add thousand separators
+    let dollar_str = format!("{}", abs_dollars);
+    let mut result = String::new();
+    for (i, c) in dollar_str.chars().rev().enumerate() {
+        if i > 0 && i % 3 == 0 {
+            result.insert(0, ',');
+        }
+        result.insert(0, c);
+    }
+
+    format!("{}${}.{:02}", sign, result, remainder)
+}
+
+/// Render the game header with title art
+fn render_header(w: &mut AnsiWriter) {
+    w.clear_screen();
+    w.set_fg(Color::LightRed);
+    w.bold();
+    w.writeln("");
+    w.writeln("   ██████╗ ██████╗  █████╗ ███╗   ██╗██████╗     ████████╗██╗  ██╗███████╗███████╗████████╗");
+    w.writeln("  ██╔════╝ ██╔══██╗██╔══██╗████╗  ██║██╔══██╗    ╚══██╔══╝██║  ██║██╔════╝██╔════╝╚══██╔══╝");
+    w.writeln("  ██║  ███╗██████╔╝███████║██╔██╗ ██║██║  ██║       ██║   ███████║█████╗  █████╗     ██║   ");
+    w.writeln("  ██║   ██║██╔══██╗██╔══██║██║╚██╗██║██║  ██║       ██║   ██╔══██║██╔══╝  ██╔══╝     ██║   ");
+    w.writeln("  ╚██████╔╝██║  ██║██║  ██║██║ ╚████║██████╔╝       ██║   ██║  ██║███████╗██║        ██║   ");
+    w.writeln("   ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝        ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝        ╚═╝   ");
+    w.set_fg(Color::Yellow);
+    w.writeln("                              ███╗   ███╗███████╗████████╗██╗  ██╗");
+    w.writeln("                              ████╗ ████║██╔════╝╚══██╔══╝██║  ██║");
+    w.writeln("                              ██╔████╔██║█████╗     ██║   ███████║");
+    w.writeln("                              ██║╚██╔╝██║██╔══╝     ██║   ██╔══██║");
+    w.writeln("                              ██║ ╚═╝ ██║███████╗   ██║   ██║  ██║");
+    w.writeln("                              ╚═╝     ╚═╝╚══════╝   ╚═╝   ╚═╝  ╚═╝");
+    w.reset_color();
+}
+
+// ============================================================================
+// PUBLIC RENDER FUNCTIONS
+// ============================================================================
+
+/// Render status bar with current game state
+pub fn render_status_bar(state: &GameState, prices: &HashMap<String, i64>) -> String {
+    let mut w = AnsiWriter::new();
+
+    // Location info
+    let city = get_city(&state.city).map(|c| c.name).unwrap_or("Unknown");
+    let borough = get_borough(&state.city, &state.location).map(|b| b.name).unwrap_or("Unknown");
+
+    // Status line
+    w.set_fg(Color::DarkGray);
+    w.writeln(&"\u{2500}".repeat(80));
+
+    w.set_fg(Color::LightCyan);
+    w.write_str(&format!(" Day {:2}/90", state.day));
+    w.set_fg(Color::DarkGray);
+    w.write_str(" | ");
+
+    w.set_fg(Color::LightGreen);
+    w.write_str(&format!("Cash: {}", format_money(state.cash)));
+    w.set_fg(Color::DarkGray);
+    w.write_str(" | ");
+
+    if state.debt > 0 {
+        w.set_fg(Color::LightRed);
+        w.write_str(&format!("Debt: {}", format_money(state.debt)));
+        w.set_fg(Color::DarkGray);
+        w.write_str(" | ");
+    }
+
+    // Health with color coding
+    let health_color = if state.health > 70 {
+        Color::LightGreen
+    } else if state.health > 30 {
+        Color::Yellow
+    } else {
+        Color::LightRed
+    };
+    w.set_fg(health_color);
+    w.write_str(&format!("HP: {}/{}", state.health, state.max_health));
+    w.set_fg(Color::DarkGray);
+    w.write_str(" | ");
+
+    w.set_fg(Color::White);
+    w.writeln(&format!("{}, {}", borough, city));
+
+    // Inventory line
+    w.set_fg(Color::LightGray);
+    w.write_str(&format!(" Coat: {}/{}", state.inventory_count(), state.coat_capacity()));
+    w.set_fg(Color::DarkGray);
+    w.write_str(" | ");
+
+    w.set_fg(Color::Yellow);
+    w.write_str(&format!("Net Worth: {}", format_money(state.net_worth(prices))));
+    w.set_fg(Color::DarkGray);
+    w.write_str(" | ");
+
+    w.set_fg(Color::LightCyan);
+    w.writeln(&format!("Actions: {}", state.actions_remaining));
+
+    w.set_fg(Color::DarkGray);
+    w.writeln(&"\u{2500}".repeat(80));
+    w.reset_color();
+
+    w.flush()
+}
+
+/// Render intro story
+pub fn render_intro() -> String {
+    let mut w = AnsiWriter::new();
+    render_header(&mut w);
+
+    w.writeln("");
+    w.set_fg(Color::LightGray);
+    w.writeln("  You used to be somebody. A kingpin. The one they all feared.");
+    w.writeln("");
+    w.writeln("  But that was before. Before the bust. Before the betrayal.");
+    w.writeln("  Before you lost everything.");
+    w.writeln("");
+    w.set_fg(Color::White);
+    w.writeln("  Now you're starting over. $2,000 in your pocket.");
+    w.writeln("  $5,500 owed to a loan shark who doesn't do extensions.");
+    w.writeln("");
+    w.set_fg(Color::Yellow);
+    w.writeln("  You have 90 days to rebuild your empire.");
+    w.writeln("  Or die trying.");
+    w.writeln("");
+    w.reset_color();
+    w.set_fg(Color::LightCyan);
+    w.writeln("  Press any key to begin...");
+    w.reset_color();
+
+    w.flush()
+}
+
+/// Render main game menu
+pub fn render_main_menu(state: &GameState, prices: &HashMap<String, i64>) -> String {
+    let mut w = AnsiWriter::new();
+
+    w.clear_screen();
+    w.set_fg(Color::LightRed);
+    w.bold();
+    w.writeln("  GRAND THEFT METH");
+    w.reset_color();
+
+    w.write_str(&render_status_bar(state, prices));
+
+    w.writeln("");
+    w.set_fg(Color::Yellow);
+    w.bold();
+    w.writeln("  What do you want to do?");
+    w.reset_color();
+    w.writeln("");
+
+    w.set_fg(Color::LightCyan);
+    w.write_str("    [T] ");
+    w.set_fg(Color::White);
+    w.writeln("Travel");
+
+    w.set_fg(Color::LightCyan);
+    w.write_str("    [B] ");
+    w.set_fg(Color::White);
+    w.writeln("Buy/Sell");
+
+    w.set_fg(Color::LightCyan);
+    w.write_str("    [L] ");
+    w.set_fg(Color::White);
+    w.writeln(&format!("Loan Shark (Debt: {})", format_money(state.debt)));
+
+    if state.bank_unlocked {
+        w.set_fg(Color::LightCyan);
+        w.write_str("    [K] ");
+        w.set_fg(Color::White);
+        w.writeln(&format!("Bank (Balance: {})", format_money(state.bank_balance)));
+    }
+
+    let borough = get_borough(&state.city, &state.location);
+    if borough.map(|b| b.has_hospital || b.has_mob_doctor).unwrap_or(false) {
+        w.set_fg(Color::LightCyan);
+        w.write_str("    [H] ");
+        w.set_fg(Color::White);
+        let doc_type = if borough.map(|b| b.has_mob_doctor).unwrap_or(false) { "Mob Doctor" } else { "Hospital" };
+        w.writeln(doc_type);
+    }
+
+    if borough.map(|b| b.has_gun_shop).unwrap_or(false) {
+        w.set_fg(Color::LightCyan);
+        w.write_str("    [G] ");
+        w.set_fg(Color::White);
+        w.writeln("Gun Shop");
+    }
+
+    if get_city(&state.city).map(|c| c.has_casino).unwrap_or(false) {
+        w.set_fg(Color::LightCyan);
+        w.write_str("    [C] ");
+        w.set_fg(Color::White);
+        w.writeln("Casino");
+    }
+
+    w.writeln("");
+    w.set_fg(Color::LightCyan);
+    w.write_str("    [Q] ");
+    w.set_fg(Color::White);
+    w.writeln("Quests");
+
+    w.set_fg(Color::LightCyan);
+    w.write_str("    [S] ");
+    w.set_fg(Color::White);
+    w.writeln("Stats & Leaderboard");
+
+    w.set_fg(Color::LightCyan);
+    w.write_str("    [X] ");
+    w.set_fg(Color::White);
+    w.writeln("Save & Quit");
+
+    w.reset_color();
+    w.writeln("");
+    w.write_str("  > ");
+
+    w.flush()
+}
+
+/// Render travel screen
+pub fn render_travel(state: &GameState, prices: &HashMap<String, i64>, selecting_city: bool) -> String {
+    let mut w = AnsiWriter::new();
+
+    w.clear_screen();
+    w.set_fg(Color::LightRed);
+    w.bold();
+    w.writeln("  TRAVEL");
+    w.reset_color();
+
+    w.write_str(&render_status_bar(state, prices));
+
+    w.writeln("");
+
+    if selecting_city {
+        w.set_fg(Color::Yellow);
+        w.bold();
+        w.writeln("  Select a city:");
+        w.reset_color();
+        w.writeln("");
+
+        for (i, city) in CITIES.iter().enumerate() {
+            let is_current = city.key == state.city;
+            if is_current {
+                w.set_fg(Color::LightGreen);
+                w.write_str(&format!("    [{}] {} (current)", i + 1, city.name));
+            } else {
+                w.set_fg(Color::LightCyan);
+                w.write_str(&format!("    [{}] ", i + 1));
+                w.set_fg(Color::White);
+                w.write_str(city.name);
+                w.set_fg(Color::DarkGray);
+                w.write_str(" - $500 by plane");
+            }
+            w.writeln("");
+        }
+    } else {
+        if let Some(city) = get_city(&state.city) {
+            w.set_fg(Color::Yellow);
+            w.bold();
+            w.writeln(&format!("  {} - Select a borough:", city.name));
+            w.reset_color();
+            w.writeln("");
+
+            for (i, borough) in city.boroughs.iter().enumerate() {
+                let is_current = borough.key == state.location;
+                if is_current {
+                    w.set_fg(Color::LightGreen);
+                    w.write_str(&format!("    [{}] {} (here)", i + 1, borough.name));
+                } else {
+                    w.set_fg(Color::LightCyan);
+                    w.write_str(&format!("    [{}] ", i + 1));
+                    w.set_fg(Color::White);
+                    w.write_str(borough.name);
+
+                    // Show features
+                    let mut features = Vec::new();
+                    if borough.has_hospital { features.push("Hospital"); }
+                    if borough.has_gun_shop { features.push("Guns"); }
+                    if borough.has_mob_doctor { features.push("Mob Doc"); }
+                    if let Some(gang) = borough.gang_territory {
+                        features.push(match gang {
+                            "triads" => "Triads",
+                            "cartel" => "Cartel",
+                            "mafia" => "Mafia",
+                            _ => gang,
+                        });
+                    }
+
+                    if !features.is_empty() {
+                        w.set_fg(Color::DarkGray);
+                        w.write_str(&format!(" [{}]", features.join(", ")));
+                    }
+                }
+                w.writeln("");
+            }
+        }
+
+        w.writeln("");
+        w.set_fg(Color::LightCyan);
+        w.write_str("    [C] ");
+        w.set_fg(Color::White);
+        w.writeln("Change City");
+    }
+
+    w.writeln("");
+    w.set_fg(Color::LightCyan);
+    w.write_str("    [Q] ");
+    w.set_fg(Color::White);
+    w.writeln("Back");
+
+    w.reset_color();
+    w.writeln("");
+    w.write_str("  > ");
+
+    w.flush()
+}
+
+/// Render trade screen
+pub fn render_trade(state: &GameState, prices: &HashMap<String, i64>, mode: &TradeMode) -> String {
+    let mut w = AnsiWriter::new();
+
+    w.clear_screen();
+    w.set_fg(Color::LightRed);
+    w.bold();
+    w.writeln("  TRADE");
+    w.reset_color();
+
+    w.write_str(&render_status_bar(state, prices));
+
+    match mode {
+        TradeMode::Menu => {
+            w.writeln("");
+            w.set_fg(Color::Yellow);
+            w.bold();
+            w.writeln("  What would you like to do?");
+            w.reset_color();
+            w.writeln("");
+
+            w.set_fg(Color::LightCyan);
+            w.write_str("    [B] ");
+            w.set_fg(Color::White);
+            w.writeln("Buy");
+
+            w.set_fg(Color::LightCyan);
+            w.write_str("    [S] ");
+            w.set_fg(Color::White);
+            w.writeln("Sell");
+
+            w.set_fg(Color::LightCyan);
+            w.write_str("    [Q] ");
+            w.set_fg(Color::White);
+            w.writeln("Back");
+        }
+        TradeMode::Buying | TradeMode::Selling => {
+            let is_buying = matches!(mode, TradeMode::Buying);
+
+            w.writeln("");
+            w.set_fg(Color::Yellow);
+            w.bold();
+            if is_buying {
+                w.writeln("  Select product to BUY:");
+            } else {
+                w.writeln("  Select product to SELL:");
+            }
+            w.reset_color();
+            w.writeln("");
+
+            // Price list
+            w.set_fg(Color::DarkGray);
+            w.writeln("     #   Product        Price          You Have");
+            w.writeln(&format!("    {}", "\u{2500}".repeat(50)));
+            w.reset_color();
+
+            for (i, commodity) in COMMODITIES.iter().enumerate() {
+                let price = prices.get(commodity.key).copied().unwrap_or(0);
+                let owned = state.inventory.get(commodity.key).copied().unwrap_or(0);
+
+                // Skip if selling and don't own any
+                if !is_buying && owned == 0 {
+                    continue;
+                }
+
+                w.set_fg(Color::LightCyan);
+                w.write_str(&format!("    [{:2}] ", i + 1));
+                w.set_fg(Color::White);
+                w.write_str(&format!("{:<14}", commodity.name));
+                w.set_fg(Color::LightGreen);
+                w.write_str(&format!("{:>12}", format_money(price)));
+                w.set_fg(Color::LightGray);
+                w.writeln(&format!("     {:>4}", owned));
+            }
+
+            w.writeln("");
+            w.set_fg(Color::LightCyan);
+            w.write_str("    [Q] ");
+            w.set_fg(Color::White);
+            w.writeln("Back");
+        }
+        TradeMode::BuyAmount { commodity } | TradeMode::SellAmount { commodity } => {
+            let is_buying = matches!(mode, TradeMode::BuyAmount { .. });
+            let price = prices.get(commodity.as_str()).copied().unwrap_or(0);
+            let owned = state.inventory.get(commodity.as_str()).copied().unwrap_or(0);
+            let capacity_left = state.coat_capacity() - state.inventory_count();
+            let name = get_commodity(commodity).map(|c| c.name).unwrap_or("Unknown");
+
+            w.writeln("");
+            w.set_fg(Color::Yellow);
+            w.bold();
+            if is_buying {
+                w.writeln(&format!("  Buying {} at {} each", name, format_money(price)));
+            } else {
+                w.writeln(&format!("  Selling {} at {} each", name, format_money(price)));
+            }
+            w.reset_color();
+            w.writeln("");
+
+            if is_buying {
+                let max_afford = if price > 0 { state.cash / price } else { 0 };
+                let max_fit = capacity_left;
+                let max = max_afford.min(max_fit as i64) as u32;
+                w.set_fg(Color::LightGray);
+                w.writeln(&format!("  You can afford: {} units", max_afford));
+                w.writeln(&format!("  Coat space left: {} units", capacity_left));
+                w.set_fg(Color::White);
+                w.writeln(&format!("  Max you can buy: {}", max));
+            } else {
+                w.set_fg(Color::LightGray);
+                w.writeln(&format!("  You have: {} units", owned));
+                w.set_fg(Color::White);
+                w.writeln(&format!("  Sale value: {}", format_money(price * (owned as i64))));
+            }
+
+            w.writeln("");
+            w.set_fg(Color::LightCyan);
+            w.write_str("  Enter quantity (or Q to cancel): ");
+            w.reset_color();
+        }
+    }
+
+    w.writeln("");
+    w.write_str("  > ");
+
+    w.flush()
+}
+
+/// Render combat screen
+pub fn render_combat(state: &GameState, prices: &HashMap<String, i64>, enemy_type: &EnemyType, enemy_hp: u32) -> String {
+    let mut w = AnsiWriter::new();
+
+    w.clear_screen();
+    w.set_fg(Color::LightRed);
+    w.bold();
+    w.writeln("  COMBAT!");
+    w.reset_color();
+
+    w.write_str(&render_status_bar(state, prices));
+
+    w.writeln("");
+
+    let enemy_name = match enemy_type {
+        EnemyType::Police => "POLICE OFFICER",
+        EnemyType::Mugger => "MUGGER",
+        EnemyType::Gang { gang_key } => match gang_key.as_str() {
+            "triads" => "TRIAD ENFORCER",
+            "cartel" => "CARTEL SOLDIER",
+            "mafia" => "MAFIA GOON",
+            _ => "GANG MEMBER",
+        },
+        EnemyType::LoanSharkEnforcer => "LOAN SHARK ENFORCER",
+    };
+
+    w.set_fg(Color::LightRed);
+    w.bold();
+    w.writeln(&format!("  {} approaches!", enemy_name));
+    w.reset_color();
+    w.writeln("");
+
+    w.set_fg(Color::Yellow);
+    w.writeln(&format!("  Enemy HP: {}", enemy_hp));
+    w.writeln(&format!("  Your HP: {}/{}", state.health, state.max_health));
+    w.reset_color();
+
+    // Weapon info
+    if let Some(ref gun) = state.weapons.gun {
+        if let Some(weapon) = get_weapon(gun) {
+            w.set_fg(Color::LightCyan);
+            w.writeln(&format!("  Weapon: {} (Damage: {})", weapon.name, weapon.damage));
+        }
+    } else if let Some(ref melee) = state.weapons.melee {
+        if let Some(weapon) = get_weapon(melee) {
+            w.set_fg(Color::LightCyan);
+            w.writeln(&format!("  Weapon: {} (Damage: {})", weapon.name, weapon.damage));
+        }
+    } else {
+        w.set_fg(Color::DarkGray);
+        w.writeln("  Weapon: Bare Fists (Damage: 3)");
+    }
+    w.reset_color();
+
+    w.writeln("");
+    w.set_fg(Color::Yellow);
+    w.bold();
+    w.writeln("  What do you do?");
+    w.reset_color();
+    w.writeln("");
+
+    w.set_fg(Color::LightCyan);
+    w.write_str("    [F] ");
+    w.set_fg(Color::White);
+    w.writeln("Fight!");
+
+    w.set_fg(Color::LightCyan);
+    w.write_str("    [R] ");
+    w.set_fg(Color::White);
+    w.writeln("Run away");
+
+    if matches!(enemy_type, EnemyType::Police) {
+        w.set_fg(Color::LightCyan);
+        w.write_str("    [T] ");
+        w.set_fg(Color::White);
+        w.writeln("Try to talk your way out");
+
+        w.set_fg(Color::LightCyan);
+        w.write_str("    [B] ");
+        w.set_fg(Color::White);
+        w.writeln("Bribe the officer");
+    }
+
+    w.reset_color();
+    w.writeln("");
+    w.write_str("  > ");
+
+    w.flush()
+}
+
+/// Render event screen
+pub fn render_event(state: &GameState, prices: &HashMap<String, i64>, event: &GameEvent) -> String {
+    let mut w = AnsiWriter::new();
+
+    w.clear_screen();
+    w.set_fg(Color::Yellow);
+    w.bold();
+    w.writeln("  RANDOM EVENT!");
+    w.reset_color();
+
+    w.write_str(&render_status_bar(state, prices));
+
+    w.writeln("");
+
+    match event {
+        GameEvent::PriceDrop { commodity, .. } => {
+            let name = get_commodity(commodity).map(|c| c.name).unwrap_or("Unknown");
+            w.set_fg(Color::LightGreen);
+            w.bold();
+            w.writeln(&format!("  Prices have CRASHED on {}!", name));
+            w.reset_color();
+            w.writeln("");
+            w.set_fg(Color::White);
+            w.writeln("  A major bust flooded the market. Buy low!");
+        }
+        GameEvent::PriceSpike { commodity, .. } => {
+            let name = get_commodity(commodity).map(|c| c.name).unwrap_or("Unknown");
+            w.set_fg(Color::LightRed);
+            w.bold();
+            w.writeln(&format!("  Prices are SPIKING on {}!", name));
+            w.reset_color();
+            w.writeln("");
+            w.set_fg(Color::White);
+            w.writeln("  A premium buyer is in town. Sell high!");
+        }
+        GameEvent::TrenchcoatGuy => {
+            w.set_fg(Color::LightMagenta);
+            w.bold();
+            w.writeln("  A shady figure approaches...");
+            w.reset_color();
+            w.writeln("");
+            w.set_fg(Color::White);
+            w.writeln("  \"Hey kid, want a bigger coat?\"");
+            w.writeln("");
+            w.writeln("  He offers you a coat upgrade, but you'll have to");
+            w.writeln("  dump everything you're carrying.");
+        }
+        GameEvent::FindCash { amount } => {
+            w.set_fg(Color::LightGreen);
+            w.bold();
+            w.writeln("  Lucky find!");
+            w.reset_color();
+            w.writeln("");
+            w.set_fg(Color::White);
+            w.writeln(&format!("  You found {} on the ground!", format_money(*amount)));
+        }
+        GameEvent::FindDrugs { commodity, amount } => {
+            let name = get_commodity(commodity).map(|c| c.name).unwrap_or("Unknown");
+            w.set_fg(Color::LightGreen);
+            w.bold();
+            w.writeln("  Score!");
+            w.reset_color();
+            w.writeln("");
+            w.set_fg(Color::White);
+            w.writeln(&format!("  Someone dropped {} units of {}!", amount, name));
+        }
+    }
+
+    w.reset_color();
+    w.writeln("");
+    w.set_fg(Color::LightCyan);
+    w.writeln("  Press any key to continue...");
+    w.reset_color();
+
+    w.flush()
+}
+
+/// Render game over screen
+pub fn render_game_over(state: &GameState, prices: &HashMap<String, i64>) -> String {
+    let mut w = AnsiWriter::new();
+
+    w.clear_screen();
+
+    let net_worth = state.net_worth(prices);
+    let won = net_worth > 0 && state.health > 0;
+
+    if won {
+        w.set_fg(Color::LightGreen);
+        w.bold();
+        w.writeln("");
+        w.writeln("  ██╗   ██╗ ██████╗ ██╗   ██╗    ██╗    ██╗ ██████╗ ███╗   ██╗██╗");
+        w.writeln("  ╚██╗ ██╔╝██╔═══██╗██║   ██║    ██║    ██║██╔═══██╗████╗  ██║██║");
+        w.writeln("   ╚████╔╝ ██║   ██║██║   ██║    ██║ █╗ ██║██║   ██║██╔██╗ ██║██║");
+        w.writeln("    ╚██╔╝  ██║   ██║██║   ██║    ██║███╗██║██║   ██║██║╚██╗██║╚═╝");
+        w.writeln("     ██║   ╚██████╔╝╚██████╔╝    ╚███╔███╔╝╚██████╔╝██║ ╚████║██╗");
+        w.writeln("     ╚═╝    ╚═════╝  ╚═════╝      ╚══╝╚══╝  ╚═════╝ ╚═╝  ╚═══╝╚═╝");
+    } else {
+        w.set_fg(Color::LightRed);
+        w.bold();
+        w.writeln("");
+        w.writeln("   ██████╗  █████╗ ███╗   ███╗███████╗     ██████╗ ██╗   ██╗███████╗██████╗ ");
+        w.writeln("  ██╔════╝ ██╔══██╗████╗ ████║██╔════╝    ██╔═══██╗██║   ██║██╔════╝██╔══██╗");
+        w.writeln("  ██║  ███╗███████║██╔████╔██║█████╗      ██║   ██║██║   ██║█████╗  ██████╔╝");
+        w.writeln("  ██║   ██║██╔══██║██║╚██╔╝██║██╔══╝      ██║   ██║╚██╗ ██╔╝██╔══╝  ██╔══██╗");
+        w.writeln("  ╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗    ╚██████╔╝ ╚████╔╝ ███████╗██║  ██║");
+        w.writeln("   ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝     ╚═════╝   ╚═══╝  ╚══════╝╚═╝  ╚═╝");
+    }
+    w.reset_color();
+
+    w.writeln("");
+    if let Some(ref reason) = state.game_over_reason {
+        w.set_fg(Color::LightGray);
+        w.writeln(&format!("  {}", reason));
+    }
+
+    w.writeln("");
+    w.set_fg(Color::Yellow);
+    w.bold();
+    w.writeln("  FINAL STATS");
+    w.reset_color();
+    w.writeln("");
+
+    w.set_fg(Color::White);
+    w.writeln(&format!("  Days Survived: {}/90", state.day.min(90)));
+    w.writeln(&format!("  Final Net Worth: {}", format_money(net_worth)));
+    w.writeln(&format!("  Total Profit: {}", format_money(state.stats.total_profit)));
+    w.writeln(&format!("  Max Net Worth: {}", format_money(state.stats.max_net_worth)));
+    w.writeln("");
+    w.writeln(&format!("  Police Encounters: {}", state.stats.police_encounters));
+    w.writeln(&format!("  Muggings Survived: {}", state.stats.muggings_survived));
+    w.writeln(&format!("  Hospital Visits: {}", state.stats.hospital_visits));
+
+    if state.quest_state.story_step >= 15 {
+        w.writeln("");
+        w.set_fg(Color::LightMagenta);
+        w.bold();
+        w.writeln("  STORY COMPLETED - You are the Kingpin!");
+    }
+
+    w.reset_color();
+    w.writeln("");
+    w.set_fg(Color::LightCyan);
+    w.writeln("  Press any key to continue...");
+    w.reset_color();
+
+    w.flush()
+}
+
+/// Render confirm quit dialog
+pub fn render_confirm_quit() -> String {
+    let mut w = AnsiWriter::new();
+
+    w.clear_screen();
+    w.set_fg(Color::Yellow);
+    w.bold();
+    w.writeln("");
+    w.writeln("  SAVE & QUIT");
+    w.reset_color();
+    w.writeln("");
+    w.set_fg(Color::White);
+    w.writeln("  Your game will be saved and you can resume later.");
+    w.writeln("");
+    w.set_fg(Color::LightCyan);
+    w.write_str("  Are you sure? [Y/N] ");
+    w.reset_color();
+
+    w.flush()
+}
+
+/// Render loan shark menu
+pub fn render_loan_shark(state: &GameState, prices: &HashMap<String, i64>) -> String {
+    let mut w = AnsiWriter::new();
+
+    w.clear_screen();
+    w.set_fg(Color::LightRed);
+    w.bold();
+    w.writeln("  THE LOAN SHARK");
+    w.reset_color();
+
+    w.write_str(&render_status_bar(state, prices));
+
+    w.writeln("");
+    w.set_fg(Color::Yellow);
+    w.writeln("  A thick-necked man in a cheap suit grins at you.");
+    w.reset_color();
+    w.writeln("");
+    w.set_fg(Color::White);
+    w.writeln(&format!("  \"You owe me {}. Plus 10% per day.\"", format_money(state.debt)));
+    w.writeln(&format!("  \"You got {} on you. Feeling generous?\"", format_money(state.cash)));
+    w.writeln("");
+
+    w.set_fg(Color::LightCyan);
+    w.write_str("    [P] ");
+    w.set_fg(Color::White);
+    w.writeln("Pay back some debt");
+
+    w.set_fg(Color::LightCyan);
+    w.write_str("    [B] ");
+    w.set_fg(Color::White);
+    w.writeln("Borrow more (you sure about that?)");
+
+    w.set_fg(Color::LightCyan);
+    w.write_str("    [Q] ");
+    w.set_fg(Color::White);
+    w.writeln("Back");
+
+    w.reset_color();
+    w.writeln("");
+    w.write_str("  > ");
+
+    w.flush()
+}
+
+/// Render bank menu
+pub fn render_bank(state: &GameState, prices: &HashMap<String, i64>) -> String {
+    let mut w = AnsiWriter::new();
+
+    w.clear_screen();
+    w.set_fg(Color::LightGreen);
+    w.bold();
+    w.writeln("  THE BANK");
+    w.reset_color();
+
+    w.write_str(&render_status_bar(state, prices));
+
+    w.writeln("");
+    w.set_fg(Color::Yellow);
+    w.writeln("  A respectable establishment. They don't ask questions.");
+    w.reset_color();
+    w.writeln("");
+    w.set_fg(Color::White);
+    w.writeln(&format!("  Account Balance: {}", format_money(state.bank_balance)));
+    w.writeln(&format!("  Cash on Hand: {}", format_money(state.cash)));
+    w.writeln("");
+    w.set_fg(Color::LightGray);
+    w.writeln("  Interest Rate: 5% per day (compounded daily)");
+    w.writeln("");
+
+    w.set_fg(Color::LightCyan);
+    w.write_str("    [D] ");
+    w.set_fg(Color::White);
+    w.writeln("Deposit");
+
+    w.set_fg(Color::LightCyan);
+    w.write_str("    [W] ");
+    w.set_fg(Color::White);
+    w.writeln("Withdraw");
+
+    w.set_fg(Color::LightCyan);
+    w.write_str("    [Q] ");
+    w.set_fg(Color::White);
+    w.writeln("Back");
+
+    w.reset_color();
+    w.writeln("");
+    w.write_str("  > ");
+
+    w.flush()
+}
+
+/// Render hospital/doctor menu
+pub fn render_hospital(state: &GameState, prices: &HashMap<String, i64>, is_mob_doctor: bool) -> String {
+    let mut w = AnsiWriter::new();
+
+    w.clear_screen();
+    if is_mob_doctor {
+        w.set_fg(Color::LightMagenta);
+        w.bold();
+        w.writeln("  THE MOB DOCTOR");
+    } else {
+        w.set_fg(Color::LightCyan);
+        w.bold();
+        w.writeln("  THE HOSPITAL");
+    }
+    w.reset_color();
+
+    w.write_str(&render_status_bar(state, prices));
+
+    w.writeln("");
+    if is_mob_doctor {
+        w.set_fg(Color::Yellow);
+        w.writeln("  A back-alley surgeon. No records, no questions.");
+        w.writeln("  Handy when the heat is too high for the ER.");
+    } else {
+        w.set_fg(Color::Yellow);
+        w.writeln("  Clean beds, real doctors. They might report you");
+        w.writeln("  if you look too suspicious.");
+    }
+    w.reset_color();
+    w.writeln("");
+    w.set_fg(Color::White);
+    w.writeln(&format!("  Your Health: {}/{}", state.health, state.max_health));
+
+    let heal_cost = if is_mob_doctor { 15000 } else { 10000 }; // Mob doc costs more
+    let damage = state.max_health - state.health;
+
+    if damage > 0 {
+        w.writeln(&format!("  Heal Cost: {} (Full heal)", format_money(heal_cost)));
+    } else {
+        w.set_fg(Color::LightGreen);
+        w.writeln("  You're in perfect health!");
+    }
+    w.writeln("");
+
+    if damage > 0 {
+        w.set_fg(Color::LightCyan);
+        w.write_str("    [H] ");
+        w.set_fg(Color::White);
+        w.writeln("Heal me up, doc");
+    }
+
+    w.set_fg(Color::LightCyan);
+    w.write_str("    [Q] ");
+    w.set_fg(Color::White);
+    w.writeln("Back");
+
+    w.reset_color();
+    w.writeln("");
+    w.write_str("  > ");
+
+    w.flush()
+}
+
+/// Render gun shop menu
+pub fn render_gun_shop(state: &GameState, prices: &HashMap<String, i64>) -> String {
+    let mut w = AnsiWriter::new();
+
+    w.clear_screen();
+    w.set_fg(Color::LightRed);
+    w.bold();
+    w.writeln("  THE GUN SHOP");
+    w.reset_color();
+
+    w.write_str(&render_status_bar(state, prices));
+
+    w.writeln("");
+    w.set_fg(Color::Yellow);
+    w.writeln("  \"Protection for the discerning customer.\"");
+    w.reset_color();
+    w.writeln("");
+
+    // Current weapons
+    w.set_fg(Color::White);
+    w.write_str("  Your Melee: ");
+    if let Some(ref melee) = state.weapons.melee {
+        if let Some(weapon) = get_weapon(melee) {
+            w.set_fg(Color::LightCyan);
+            w.writeln(&format!("{} (Damage: {})", weapon.name, weapon.damage));
+        }
+    } else {
+        w.set_fg(Color::DarkGray);
+        w.writeln("None");
+    }
+
+    w.set_fg(Color::White);
+    w.write_str("  Your Gun: ");
+    if let Some(ref gun) = state.weapons.gun {
+        if let Some(weapon) = get_weapon(gun) {
+            w.set_fg(Color::LightCyan);
+            w.writeln(&format!("{} (Damage: {})", weapon.name, weapon.damage));
+        }
+    } else {
+        w.set_fg(Color::DarkGray);
+        w.writeln("None");
+    }
+
+    w.writeln("");
+    w.set_fg(Color::Yellow);
+    w.bold();
+    w.writeln("  MELEE WEAPONS:");
+    w.reset_color();
+
+    for weapon in WEAPONS.iter().filter(|w| !w.is_gun) {
+        w.set_fg(Color::LightCyan);
+        w.write_str(&format!("    [{}] ", &weapon.key[0..1].to_uppercase()));
+        w.set_fg(Color::White);
+        w.write_str(&format!("{:<18}", weapon.name));
+        w.set_fg(Color::LightGray);
+        w.write_str(&format!("Dmg: {:>3}  ", weapon.damage));
+        w.set_fg(Color::LightGreen);
+        w.writeln(&format_money(weapon.price));
+    }
+
+    w.writeln("");
+    w.set_fg(Color::Yellow);
+    w.bold();
+    w.writeln("  FIREARMS:");
+    w.reset_color();
+
+    for weapon in WEAPONS.iter().filter(|w| w.is_gun) {
+        w.set_fg(Color::LightCyan);
+        w.write_str(&format!("    [{}] ", &weapon.key[0..1].to_uppercase()));
+        w.set_fg(Color::White);
+        w.write_str(&format!("{:<18}", weapon.name));
+        w.set_fg(Color::LightGray);
+        w.write_str(&format!("Dmg: {:>3}  ", weapon.damage));
+        w.set_fg(Color::LightGreen);
+        w.writeln(&format_money(weapon.price));
+    }
+
+    w.writeln("");
+    w.set_fg(Color::LightCyan);
+    w.write_str("    [Q] ");
+    w.set_fg(Color::White);
+    w.writeln("Back");
+
+    w.reset_color();
+    w.writeln("");
+    w.write_str("  > ");
+
+    w.flush()
+}
+
+/// Render leaderboard
+pub fn render_leaderboard_screen(entries: &[(String, i64, i64, bool)]) -> String {
+    let mut w = AnsiWriter::new();
+
+    w.clear_screen();
+    w.set_fg(Color::Yellow);
+    w.bold();
+    w.writeln("");
+    w.writeln("  GRAND THEFT METH - HALL OF INFAMY");
+    w.reset_color();
+
+    w.writeln("");
+    w.set_fg(Color::DarkGray);
+    w.writeln(&format!("    {:<4} {:<20} {:>15} {:>8} {}", "Rank", "Handle", "Net Worth", "Days", "Story"));
+    w.writeln(&format!("    {}", "\u{2500}".repeat(60)));
+    w.reset_color();
+
+    if entries.is_empty() {
+        w.set_fg(Color::LightGray);
+        w.writeln("    No champions yet. Will you be the first?");
+    } else {
+        for (i, (handle, score, days, story)) in entries.iter().enumerate() {
+            let rank = i + 1;
+            let rank_color = match rank {
+                1 => Color::Yellow,
+                2 => Color::White,
+                3 => Color::Brown,
+                _ => Color::LightGray,
+            };
+            w.set_fg(rank_color);
+            w.write_str(&format!("    {:<4} ", rank));
+            w.set_fg(Color::LightCyan);
+            w.write_str(&format!("{:<20}", handle));
+            w.set_fg(Color::LightGreen);
+            w.write_str(&format!("{:>15}", format_money(*score)));
+            w.set_fg(Color::White);
+            w.write_str(&format!("{:>8}", days));
+            w.set_fg(if *story { Color::LightMagenta } else { Color::DarkGray });
+            w.writeln(if *story { " KINGPIN" } else { "" });
+        }
+    }
+
+    w.reset_color();
+    w.writeln("");
+    w.set_fg(Color::LightCyan);
+    w.writeln("  Press any key to continue...");
+    w.reset_color();
+
+    w.flush()
+}
