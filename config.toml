@@ -71,10 +71,10 @@ order = 3
 min_level = 0
 
 [[menu.main]]
-type = "submenu"
+type = "command"
 hotkey = "N"
-name = "News & Bulletins"
-submenu_key = "news"
+name = "News"
+command = "news"
 order = 4
 
 # Phase 4: User Lists (main menu commands)
