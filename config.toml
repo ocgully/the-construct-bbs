@@ -113,14 +113,14 @@ name = "Quit"
 command = "quit"
 order = 100
 
-# Games submenu -- items appear when their phase ships
-# [[menu.games]]
-# type = "service"
-# hotkey = "1"
-# name = "Drug Wars"
-# service_name = "drug_wars"
-# order = 1
-# Phase 8: Commodity trading game
+# Games submenu -- Door Games
+[[menu.games]]
+type = "service"
+hotkey = "1"
+name = "Grand Theft Meth"
+service_name = "grand_theft_meth"
+order = 1
+# Door game: commodity trading with random events
 
 # [[menu.games]]
 # type = "service"
