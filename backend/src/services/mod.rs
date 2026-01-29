@@ -1,6 +1,7 @@
 pub mod chat;
 pub mod example;
 pub mod goodbye;
+pub mod grand_theft_meth;
 pub mod last_callers;
 pub mod login;
 pub mod mail;
