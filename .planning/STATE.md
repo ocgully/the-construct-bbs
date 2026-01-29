@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 7 of 15 (News & Bulletins)
-Plan: 1 of 3 in current phase
+Plan: 2 of 3 in current phase
 Status: In progress
-Last activity: 2026-01-28 -- Completed 07-01-PLAN.md (RSS feed fetching foundation)
+Last activity: 2026-01-28 -- Completed 07-02-PLAN.md (NewsState and ANSI rendering functions)
 
-Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 33% of Phase 7 (1/3)
+Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 67% of Phase 7 (2/3)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 31
+- Total plans completed: 32
 - Average duration: 6 min
-- Total execution time: 3.1 hours
+- Total execution time: 3.2 hours
 
 **By Phase:**
 
@@ -33,10 +33,10 @@ Progress: [████████████████████] 100% of
 | 04    | 6     | 49min | 8min     | Complete (incl. integration) |
 | 05    | 4     | 31min | 8min     | Complete |
 | 06    | 5     | 18min | 4min     | Complete |
-| 07    | 1     | 4min  | 4min     | In progress |
+| 07    | 2     | 9min  | 5min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 8min, 7min, 8min, 2min, 4min
+- Last 5 plans: 7min, 8min, 2min, 4min, 5min
 - Trend: Consistently fast execution (2-8min range)
 
 *Updated after each plan completion*
@@ -161,6 +161,10 @@ Recent decisions affecting current work:
 | 07-01 | 10 articles per feed (not global limit) | Per-feed limit based on context requirements |
 | 07-01 | Fetch fresh on every access (no caching) | Per context requirement: always fetch live feed content |
 | 07-01 | Simple regex-free HTML stripping | Character-by-character approach with common entity decoding |
+| 07-02 | THE WIRE header styling for news display | Atmospheric BBS news presentation with yellow box-drawing |
+| 07-02 | Articles grouped by source (not chronologically merged) | Per context: source attribution before each title in list |
+| 07-02 | 15 items per visible page with auto page offset | NewsState navigation with select_prev/next adjusting offset |
+| 07-02 | Selected article shows snippet preview | Snippet displayed below title for selected item in list view |
 
 ### Roadmap Evolution
 
@@ -304,22 +308,22 @@ Full chat system implemented:
 
 ## Phase 7 Progress
 
-**News & Bulletins Phase: IN PROGRESS (1/3 plans complete)**
+**News & Bulletins Phase: IN PROGRESS (2/3 plans complete)**
 
 Completed plans:
 - 07-01: RSS feed fetching foundation (feed-rs integration, NewsConfig, fetch_feeds function)
+- 07-02: NewsState and ANSI rendering functions (THE WIRE header, list/article views, navigation)
 
 Remaining plans:
-- 07-02: News display and navigation (ANSI rendering, article browsing)
-- 07-03: Menu integration (N hotkey, sentinel routing)
+- 07-03: Menu integration (N hotkey, sentinel routing, input handling)
 
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Completed 07-01-PLAN.md (RSS feed fetching foundation)
+Stopped at: Completed 07-02-PLAN.md (NewsState and ANSI rendering functions)
 Resume file: None
-Next action: Phase 7 Plan 2 (News display and navigation)
+Next action: Phase 7 Plan 3 (Menu integration and session routing)
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-28 (07-01 RSS feed fetching foundation)*
+*Last updated: 2026-01-28 (07-02 NewsState and rendering)*
