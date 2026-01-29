@@ -1012,3 +1012,132 @@ pub fn render_leaderboard_screen(entries: &[(String, i64, i64, bool)]) -> String
 
     w.flush()
 }
+
+/// Render quest screen
+pub fn render_quest(state: &GameState, prices: &HashMap<String, i64>) -> String {
+    use crate::game::quest::{get_current_story, can_complete_story_step, gang_status, STORY_STEPS};
+
+    let mut w = AnsiWriter::new();
+
+    w.clear_screen();
+    w.set_fg(Color::LightMagenta);
+    w.bold();
+    w.writeln("  QUESTS");
+    w.reset_color();
+
+    w.write_str(&render_status_bar(state, prices));
+
+    // Story Quest
+    w.writeln("");
+    w.set_fg(Color::Yellow);
+    w.bold();
+    w.writeln("  STORY QUEST");
+    w.reset_color();
+
+    if let Some(step) = get_current_story(state) {
+        w.set_fg(Color::White);
+        w.writeln(&format!("  Chapter {}: {}", step.step, step.title));
+        w.set_fg(Color::LightGray);
+        w.writeln(&format!("  \"{}\"", step.narrative));
+
+        if let Some(loc) = step.location {
+            let parts: Vec<&str> = loc.split('/').collect();
+            if parts.len() == 2 {
+                w.set_fg(Color::LightCyan);
+                w.writeln(&format!("  Location: {}/{}", parts[0], parts[1]));
+            }
+        }
+
+        if let Some(req) = step.requirement {
+            let parts: Vec<&str> = req.split(':').collect();
+            if parts.len() == 2 {
+                w.set_fg(Color::Yellow);
+                w.writeln(&format!("  Requires: {} {}", parts[1], parts[0]));
+            }
+        }
+
+        if let Some(min_worth) = step.min_net_worth {
+            w.set_fg(Color::Yellow);
+            w.writeln(&format!("  Requires Net Worth: {}", format_money(min_worth)));
+        }
+
+        if step.reward > 0 {
+            w.set_fg(Color::LightGreen);
+            w.writeln(&format!("  Reward: {}", format_money(step.reward)));
+        }
+
+        if can_complete_story_step(state, prices) {
+            w.writeln("");
+            w.set_fg(Color::LightGreen);
+            w.bold();
+            w.writeln("  [S] Complete this step!");
+            w.reset_color();
+        }
+    } else {
+        w.set_fg(Color::LightGreen);
+        w.bold();
+        w.writeln("  STORY COMPLETE - You are the KINGPIN!");
+        w.reset_color();
+    }
+
+    // Active Deliveries
+    w.writeln("");
+    w.set_fg(Color::Yellow);
+    w.bold();
+    w.writeln("  ACTIVE DELIVERIES");
+    w.reset_color();
+
+    if state.quest_state.active_deliveries.is_empty() {
+        w.set_fg(Color::LightGray);
+        w.writeln("  No active deliveries.");
+    } else {
+        for (i, quest) in state.quest_state.active_deliveries.iter().enumerate() {
+            w.set_fg(Color::LightCyan);
+            w.write_str(&format!("  {}. ", i + 1));
+            w.set_fg(Color::White);
+            w.write_str(&format!("{} {} -> ", quest.quantity, quest.commodity));
+            w.set_fg(Color::Yellow);
+            w.write_str(&quest.to_location);
+            w.set_fg(Color::LightGray);
+            w.write_str(&format!(" (Day {})", quest.expires_day));
+            w.set_fg(Color::LightGreen);
+            w.writeln(&format!(" {}", format_money(quest.reward)));
+        }
+    }
+
+    // Gang Relations
+    w.writeln("");
+    w.set_fg(Color::Yellow);
+    w.bold();
+    w.writeln("  GANG RELATIONS");
+    w.reset_color();
+
+    for gang in crate::game::GANGS {
+        let relation = state.gang_relations.get(gang.key).copied().unwrap_or(0);
+        let status = gang_status(relation);
+        let color = if relation >= 50 {
+            Color::LightGreen
+        } else if relation >= 0 {
+            Color::Yellow
+        } else {
+            Color::LightRed
+        };
+
+        w.set_fg(Color::White);
+        w.write_str(&format!("  {}: ", gang.name));
+        w.set_fg(color);
+        w.writeln(&format!("{} ({})", status, relation));
+    }
+
+    w.writeln("");
+    w.set_fg(Color::LightCyan);
+    w.write_str("    [Q] ");
+    w.set_fg(Color::White);
+    w.writeln("Back");
+
+    w.reset_color();
+    w.writeln("");
+    w.write_str("  > ");
+
+    w.flush()
+}

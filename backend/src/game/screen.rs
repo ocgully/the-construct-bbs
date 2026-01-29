@@ -180,6 +180,7 @@ impl GtmFlow {
                 | GameScreen::Bank
                 | GameScreen::Hospital { .. }
                 | GameScreen::GunShop
+                | GameScreen::Quest
                 | GameScreen::Casino { game_type: None }
                 | GameScreen::GameOver
                 | GameScreen::ConfirmQuit
@@ -572,9 +573,29 @@ impl GtmFlow {
         GtmAction::Continue
     }
 
-    fn handle_quest(&mut self, _input: &str) -> GtmAction {
-        self.screen = GameScreen::MainMenu;
-        GtmAction::Continue
+    fn handle_quest(&mut self, input: &str) -> GtmAction {
+        use crate::game::quest::{complete_story_step, can_complete_story_step};
+
+        match input {
+            "S" => {
+                if can_complete_story_step(&self.state, &self.prices) {
+                    match complete_story_step(&mut self.state, &self.prices) {
+                        Ok((_title, _reward)) => {
+                            // Story step completed
+                            self.screen = GameScreen::MainMenu;
+                            return GtmAction::SaveGame;
+                        }
+                        Err(_) => {}
+                    }
+                }
+                GtmAction::Continue
+            }
+            "Q" | "X" => {
+                self.screen = GameScreen::MainMenu;
+                GtmAction::Continue
+            }
+            _ => GtmAction::Continue,
+        }
     }
 
     fn handle_casino(&mut self, input: &str, game_type: Option<CasinoGame>) -> GtmAction {
