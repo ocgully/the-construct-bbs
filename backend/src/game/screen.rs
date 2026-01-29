@@ -289,6 +289,12 @@ impl GtmFlow {
                         self.state.location = city.boroughs[0].key.to_string();
                         self.use_action();
                         self.prices = generate_prices(&self.state.city, &self.state.location);
+
+                        // Check for random event after travel
+                        if let Some(event_screen) = crate::game::events::maybe_trigger_event(&self.state) {
+                            self.screen = event_screen;
+                            return GtmAction::SaveGame;
+                        }
                     }
                     self.screen = GameScreen::MainMenu;
                     return GtmAction::SaveGame;
@@ -311,7 +317,7 @@ impl GtmFlow {
                             self.prices = generate_prices(&self.state.city, &self.state.location);
 
                             // Check for random event after travel
-                            if let Some(event_screen) = self.maybe_trigger_event() {
+                            if let Some(event_screen) = crate::game::events::maybe_trigger_event(&self.state) {
                                 self.screen = event_screen;
                                 return GtmAction::SaveGame;
                             }
@@ -428,42 +434,84 @@ impl GtmFlow {
         }
     }
 
-    fn handle_combat(&mut self, input: &str, _enemy_type: EnemyType, _enemy_hp: u32) -> GtmAction {
-        // Simplified combat - R to run, F to fight
-        match input {
-            "R" => {
-                // Run away - 50% chance, lose some cash if caught
-                self.screen = GameScreen::MainMenu;
-                GtmAction::Continue
+    fn handle_combat(&mut self, input: &str, enemy_type: EnemyType, enemy_hp: u32) -> GtmAction {
+        use crate::game::events::{CombatAction, resolve_combat, apply_combat_result};
+
+        let action = match input {
+            "F" => CombatAction::Fight,
+            "R" => CombatAction::Run,
+            "T" => CombatAction::Talk,
+            "B" => {
+                // Bribe with 10% of cash
+                let bribe_amount = self.state.cash / 10;
+                if bribe_amount < 1000 {
+                    return GtmAction::Continue; // Not enough to bribe
+                }
+                CombatAction::Bribe { amount: bribe_amount }
             }
-            "F" => {
-                // Fight - simplified resolution
-                self.screen = GameScreen::MainMenu;
-                GtmAction::Continue
-            }
-            _ => GtmAction::Continue,
+            _ => return GtmAction::Continue,
+        };
+
+        let result = resolve_combat(&self.state, &enemy_type, enemy_hp, action);
+        apply_combat_result(&mut self.state, &result);
+
+        // Check for death
+        if self.state.game_over {
+            self.screen = GameScreen::GameOver;
+        } else {
+            self.screen = GameScreen::MainMenu;
         }
+
+        GtmAction::SaveGame
     }
 
-    fn handle_event(&mut self, _input: &str, _event: GameEvent) -> GtmAction {
-        // Any key continues
+    fn handle_event(&mut self, _input: &str, event: GameEvent) -> GtmAction {
+        use crate::game::events::{apply_find_event, apply_price_event, handle_trenchcoat_upgrade};
+
+        match &event {
+            GameEvent::FindCash { .. } | GameEvent::FindDrugs { .. } => {
+                apply_find_event(&event, &mut self.state);
+            }
+            GameEvent::PriceDrop { .. } | GameEvent::PriceSpike { .. } => {
+                apply_price_event(&event, &mut self.prices);
+            }
+            GameEvent::TrenchcoatGuy => {
+                // Handle in separate screen transition
+                // For now, auto-accept if have inventory to dump
+                let _msg = handle_trenchcoat_upgrade(&mut self.state, true);
+                // Could show message screen, but for now just continue
+            }
+        }
+
         self.screen = GameScreen::MainMenu;
-        GtmAction::Continue
+        GtmAction::SaveGame
     }
 
     fn handle_loan_shark(&mut self, input: &str) -> GtmAction {
+        use crate::game::economy::{borrow_money, pay_all_debt};
+
         match input {
             "P" => {
-                // Pay back debt
-                // TODO: implement payment flow
-                self.screen = GameScreen::MainMenu;
-                GtmAction::Continue
+                // Pay all debt if possible
+                match pay_all_debt(&mut self.state) {
+                    Ok(_) => {
+                        self.screen = GameScreen::MainMenu;
+                        GtmAction::SaveGame
+                    }
+                    Err(_) => {
+                        // Not enough cash - stay on screen
+                        GtmAction::Continue
+                    }
+                }
             }
             "B" => {
-                // Borrow more
-                // TODO: implement borrow flow
+                // Borrow 50% of current debt
+                let borrow_amount = self.state.debt / 2;
+                if borrow_amount > 0 {
+                    let _ = borrow_money(&mut self.state, borrow_amount);
+                }
                 self.screen = GameScreen::MainMenu;
-                GtmAction::Continue
+                GtmAction::SaveGame
             }
             "Q" | "X" => {
                 self.screen = GameScreen::MainMenu;
@@ -474,16 +522,20 @@ impl GtmFlow {
     }
 
     fn handle_bank(&mut self, input: &str) -> GtmAction {
+        use crate::game::economy::{deposit_all, withdraw_all};
+
         match input {
             "D" => {
-                // Deposit
+                // Deposit all cash
+                let _ = deposit_all(&mut self.state);
                 self.screen = GameScreen::MainMenu;
-                GtmAction::Continue
+                GtmAction::SaveGame
             }
             "W" => {
-                // Withdraw
+                // Withdraw all
+                let _ = withdraw_all(&mut self.state);
                 self.screen = GameScreen::MainMenu;
-                GtmAction::Continue
+                GtmAction::SaveGame
             }
             "Q" | "X" => {
                 self.screen = GameScreen::MainMenu;
@@ -525,13 +577,67 @@ impl GtmFlow {
         GtmAction::Continue
     }
 
-    fn handle_casino(&mut self, input: &str, _game_type: Option<CasinoGame>) -> GtmAction {
+    fn handle_casino(&mut self, input: &str, game_type: Option<CasinoGame>) -> GtmAction {
+        use crate::game::economy::{play_blackjack, play_roulette, RouletteBet, bet_on_horse};
+
         if input == "Q" || input == "X" {
-            self.screen = GameScreen::MainMenu;
+            if game_type.is_none() {
+                self.screen = GameScreen::MainMenu;
+            } else {
+                self.screen = GameScreen::Casino { game_type: None };
+            }
             return GtmAction::Continue;
         }
-        // TODO: implement casino games
-        GtmAction::Continue
+
+        match game_type {
+            None => {
+                // Casino menu
+                match input {
+                    "1" | "B" => {
+                        self.screen = GameScreen::Casino { game_type: Some(CasinoGame::Blackjack) };
+                    }
+                    "2" | "R" => {
+                        self.screen = GameScreen::Casino { game_type: Some(CasinoGame::Roulette) };
+                    }
+                    "3" | "H" => {
+                        self.screen = GameScreen::Casino { game_type: Some(CasinoGame::Horses) };
+                    }
+                    _ => {}
+                }
+                GtmAction::Continue
+            }
+            Some(CasinoGame::Blackjack) => {
+                // Bet 10% of cash
+                let bet = (self.state.cash / 10).max(100);
+                if self.state.cash >= bet {
+                    let _ = play_blackjack(&mut self.state, bet);
+                }
+                GtmAction::SaveGame
+            }
+            Some(CasinoGame::Roulette) => {
+                let bet = (self.state.cash / 10).max(100);
+                if self.state.cash >= bet {
+                    let bet_type = match input {
+                        "R" => RouletteBet::Red,
+                        "B" => RouletteBet::Black,
+                        "O" => RouletteBet::Odd,
+                        "E" => RouletteBet::Even,
+                        _ => RouletteBet::Red,
+                    };
+                    let _ = play_roulette(&mut self.state, bet, bet_type);
+                }
+                GtmAction::SaveGame
+            }
+            Some(CasinoGame::Horses) => {
+                let bet = (self.state.cash / 10).max(100);
+                if let Ok(horse) = input.parse::<u8>() {
+                    if horse >= 1 && horse <= 6 && self.state.cash >= bet {
+                        let _ = bet_on_horse(&mut self.state, bet, horse);
+                    }
+                }
+                GtmAction::SaveGame
+            }
+        }
     }
 
     fn handle_game_over(&mut self, _input: &str) -> GtmAction {
