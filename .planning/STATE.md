@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** The feeling of dialing into an exclusive, underground system — artificial scarcity, ANSI art, and social games that only work because everyone's sharing the same constrained space.
-**Current focus:** Phase 7 - News & Bulletins
+**Current focus:** Phase 8 - First Door Game (Grand Theft Meth)
 
 ## Current Position
 
-Phase: 7 of 15 (News & Bulletins)
-Plan: 3 of 3 in current phase
-Status: Phase complete
-Last activity: 2026-01-28 -- Completed 07-03-PLAN.md (News menu integration and session routing)
+Phase: 8 of 15 (First Door Game - Drug Wars)
+Plan: 1 of 9 in current phase
+Status: In progress
+Last activity: 2026-01-29 - Completed 08-01-PLAN.md (Game Database Foundation)
 
-Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 100% of Phase 7 (3/3)
+Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 100% of Phase 7 (3/3), 11% of Phase 8 (1/9)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 33
+- Total plans completed: 34
 - Average duration: 6 min
-- Total execution time: 3.3 hours
+- Total execution time: 3.4 hours
 
 **By Phase:**
 
@@ -34,10 +34,11 @@ Progress: [████████████████████] 100% of
 | 05    | 4     | 31min | 8min     | Complete |
 | 06    | 5     | 18min | 4min     | Complete |
 | 07    | 3     | 13min | 4min     | Complete |
+| 08    | 1     | 3min  | 3min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 2min, 4min, 5min, 4min, 4min
-- Trend: Very fast execution maintained (2-5min range)
+- Last 5 plans: 4min, 5min, 4min, 4min, 3min
+- Trend: Very fast execution maintained (3-5min range)
 
 *Updated after each plan completion*
 
@@ -168,6 +169,10 @@ Recent decisions affecting current work:
 | 07-03 | N hotkey triggers news directly (not submenu) matching M for mail and C for chat | Direct command pattern for primary services |
 | 07-03 | Arrow key escape sequences handled in session input for list navigation | check for \x1b[A/\x1bOA (up) and \x1b[B/\x1bOB (down) |
 | 07-03 | Separate sentinels for news list view (__news__) and error screen (__news_error__) | Distinct state handling for normal operation vs all-feeds-failed case |
+| 08-01 | **Door games use self-contained databases (not BBS db)** | Each game has its own .db file (e.g., grand_theft_meth.db) with dedicated SqlitePool - fully pluggable, no coupling to BBS core. Pattern for all future games. |
+| 08-01 | GtmDb struct encapsulates game's database | Game module owns its pool, schema, CRUD - initialized on first launch, not at BBS startup |
+| 08-01 | EST timezone offset (-5 hours) in game datetime() calls | Matches BBS convention for consistent datetime fields across all databases |
+| 08-01 | Leaderboard uses RANK() window function | Proper ranking with ties vs ROW_NUMBER which would arbitrarily order ties |
 
 ### Roadmap Evolution
 
@@ -333,11 +338,11 @@ Full news system implemented:
 
 ## Session Continuity
 
-Last session: 2026-01-28
-Stopped at: Completed 07-03-PLAN.md (News menu integration and session routing)
+Last session: 2026-01-29
+Stopped at: Completed 08-01-PLAN.md (Game Database Foundation)
 Resume file: None
-Next action: Phase 8 Plan 1 (First Door Game - Drug Wars)
+Next action: Execute 08-02-PLAN.md (Game State & Logic)
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-28 (07-03 News integration complete, Phase 7 complete)*
+*Last updated: 2026-01-29 (08-01 Game Database Foundation complete)*
