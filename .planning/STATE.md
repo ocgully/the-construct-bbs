@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 8 of 15 (First Door Game - Drug Wars)
-Plan: 4 of 9 in current phase
+Plan: 5 of 9 in current phase
 Status: In progress
-Last activity: 2026-01-29 - Completed 08-04-PLAN.md (ANSI Rendering Layer)
+Last activity: 2026-01-29 - Completed 08-05-PLAN.md (Event System)
 
-Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 100% of Phase 7 (3/3), 44% of Phase 8 (4/9)
+Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 100% of Phase 7 (3/3), 56% of Phase 8 (5/9)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 36
+- Total plans completed: 38
 - Average duration: 6 min
-- Total execution time: 3.7 hours
+- Total execution time: 3.9 hours
 
 **By Phase:**
 
@@ -34,10 +34,10 @@ Progress: [████████████████████] 100% of
 | 05    | 4     | 31min | 8min     | Complete |
 | 06    | 5     | 18min | 4min     | Complete |
 | 07    | 3     | 13min | 4min     | Complete |
-| 08    | 4     | 17min | 4min     | In progress |
+| 08    | 6     | 27min | 4min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 4min, 3min, 5min, 4min, 5min
+- Last 5 plans: 3min, 5min, 4min, 5min, 5min
 - Trend: Consistent 4-5min execution (very fast)
 
 *Updated after each plan completion*
@@ -192,6 +192,13 @@ Recent decisions affecting current work:
 | 08-03 | 15% random event chance after travel | Called in handle_travel after moving to new borough - ~1 event every 7 moves on average |
 | 08-03 | Weighted event selection with dynamic difficulty | WeightedIndex samples events with adjusted weights based on game state (debt increases enforcer encounters, gang relations affect gang encounters) |
 | 08-03 | use_action triggers advance_day when actions hit 0 | Centralized day progression - applies debt interest (10%), bank interest (5%), notoriety decay, game over check at day 90 |
+| 08-06 | Loan shark max borrow is 2x current debt | Prevents runaway borrowing while providing liquidity for gameplay |
+| 08-06 | Bank unlocks at $50,000 cash (check_bank_unlock function) | Reward threshold for successful players, requires significant progress |
+| 08-06 | Casino games bet 10% of cash with $1.00 minimum | Simple auto-bet removes friction, percentage keeps bets reasonable |
+| 08-06 | Blackjack: simplified 2-card comparison with 3:2 natural payout | Fast gameplay without hit/stand complexity, authentic casino odds |
+| 08-06 | Roulette: 35:1 for numbers, 1:1 for colors/odd/even | Standard casino payouts, 0 is green house advantage |
+| 08-06 | Horse betting: 6 horses with odds 2x-8x, chances 40%-10% | Risk/reward spectrum from safe favorites to long shots |
+| 08-06 | format_money exported as public for economy module use | Code reuse pattern - render helper available to all game modules |
 
 ### Roadmap Evolution
 
@@ -358,10 +365,10 @@ Full news system implemented:
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Completed 08-04-PLAN.md (ANSI Rendering Layer)
+Stopped at: Completed 08-06-PLAN.md (Economy Systems)
 Resume file: None
-Next action: Execute 08-05-PLAN.md (Screen Integration)
+Next action: Execute 08-07-PLAN.md (next in sequence)
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-29 (08-04 ANSI Rendering Layer complete)*
+*Last updated: 2026-01-29 (08-06 Economy Systems complete)*
