@@ -81,9 +81,9 @@
 
 ### News & Bulletins
 
-- [ ] **NEWS-01**: News feed displayed on login or accessible from menu
-- [ ] **NEWS-02**: News sourced from configurable RSS feed (world news)
-- [ ] **NEWS-03**: Sysop can post custom bulletins alongside RSS news
+- [x] **NEWS-01**: News feed displayed on login or accessible from menu
+- [x] **NEWS-02**: News sourced from configurable RSS feed (world news)
+- [ ] **NEWS-03**: Sysop can post custom bulletins alongside RSS news (deferred)
 
 ### Architecture
 
@@ -198,9 +198,9 @@
 | SYSO-04 | Phase 13 | Pending |
 | SYSO-05 | Phase 13 | Pending |
 | SYSO-06 | Phase 13 | Pending |
-| NEWS-01 | Phase 7 | Pending |
-| NEWS-02 | Phase 7 | Pending |
-| NEWS-03 | Phase 7 | Pending |
+| NEWS-01 | Phase 7 | Complete |
+| NEWS-02 | Phase 7 | Complete |
+| NEWS-03 | Phase 7 | Deferred |
 | ARCH-01 | Phase 1 | Complete |
 | ARCH-02 | Phase 1 | Complete |
 | ARCH-03 | Phase 1 | Complete |
@@ -221,4 +221,4 @@
 
 ---
 *Requirements defined: 2026-01-26*
-*Last updated: 2026-01-27 (Phase 3 complete)*
+*Last updated: 2026-01-28 (Phase 7 complete)*
