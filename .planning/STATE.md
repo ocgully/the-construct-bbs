@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 8 of 15 (First Door Game - Drug Wars)
-Plan: 5 of 9 in current phase
+Plan: 7 of 9 in current phase
 Status: In progress
-Last activity: 2026-01-29 - Completed 08-05-PLAN.md (Event System)
+Last activity: 2026-01-29 - Completed 08-07-PLAN.md (Quest System)
 
-Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 100% of Phase 7 (3/3), 56% of Phase 8 (5/9)
+Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 100% of Phase 7 (3/3), 78% of Phase 8 (7/9)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 37
+- Total plans completed: 38
 - Average duration: 6 min
-- Total execution time: 3.7 hours
+- Total execution time: 3.8 hours
 
 **By Phase:**
 
@@ -34,11 +34,11 @@ Progress: [████████████████████] 100% of
 | 05    | 4     | 31min | 8min     | Complete |
 | 06    | 5     | 18min | 4min     | Complete |
 | 07    | 3     | 13min | 4min     | Complete |
-| 08    | 5     | 22min | 4min     | In progress |
+| 08    | 7     | 30min | 4min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 5min, 4min, 5min, 5min, 5min
-- Trend: Consistent 4-5min execution (very fast)
+- Last 5 plans: 4min, 5min, 5min, 5min, 8min
+- Trend: Mostly 4-5min, occasional 8min for complex modules
 
 *Updated after each plan completion*
 
@@ -197,6 +197,12 @@ Recent decisions affecting current work:
 | 08-06 | Casino games bet 10% of cash with $1.00 minimum | Simple auto-bet removes friction, percentage keeps bets reasonable |
 | 08-06 | Blackjack: simplified 2-card comparison with 3:2 natural payout | Fast gameplay without hit/stand complexity, authentic casino odds |
 | 08-06 | Roulette: 35:1 for numbers, 1:1 for colors/odd/even | Standard casino payouts, 0 is green house advantage |
+| 08-07 | Gang tribute costs +30 relation (capped at 100) | Meaningful but not instant alliance - requires multiple tributes for Allied status |
+| 08-07 | Delivery quests max 3 active | Prevents quest spam, forces prioritization, creates inventory management pressure |
+| 08-07 | Delivery expiry hurts gang relations -10 | Consequences for failed commitments, creates risk/reward for quest acceptance |
+| 08-07 | Story step 12 requires $500k net worth | Mid-game wealth gate ensures progression isn't rushed, forces economic engagement |
+| 08-07 | Story completion boosts all gang relations +5 | Reward for advancing narrative, makes story progression valuable beyond just money |
+| 08-07 | 15-step story across 5 cities | Epic scope traversing full game world NYC->Miami->London->Tokyo->Bogota, Marcus betrayal narrative |
 | 08-06 | Horse betting: 6 horses with odds 2x-8x, chances 40%-10% | Risk/reward spectrum from safe favorites to long shots |
 | 08-06 | format_money exported as public for economy module use | Code reuse pattern - render helper available to all game modules |
 
@@ -365,8 +371,9 @@ Full news system implemented:
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Completed 08-05-PLAN.md (Event System)
+Stopped at: Completed 08-07-PLAN.md (Quest System)
 Resume file: None
+Next action: Execute 08-08-PLAN.md (Screen Integration)
 Next action: Execute 08-06-PLAN.md (next in sequence)
 
 ---
