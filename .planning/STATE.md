@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-26)
 
 **Core value:** The feeling of dialing into an exclusive, underground system — artificial scarcity, ANSI art, and social games that only work because everyone's sharing the same constrained space.
-**Current focus:** Phase 6 - Chat & Real-Time Communication
+**Current focus:** Phase 7 - News & Bulletins
 
 ## Current Position
 
-Phase: 6 of 15 (Chat & Real-Time Communication)
-Plan: 5 of 5 in current phase
-Status: Phase complete
-Last activity: 2026-01-28 -- Completed 06-05-PLAN.md (Menu integration and command routing)
+Phase: 7 of 15 (News & Bulletins)
+Plan: 1 of 3 in current phase
+Status: In progress
+Last activity: 2026-01-28 -- Completed 07-01-PLAN.md (RSS feed fetching foundation)
 
-Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5)
+Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 33% of Phase 7 (1/3)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 30
+- Total plans completed: 31
 - Average duration: 6 min
-- Total execution time: 3.0 hours
+- Total execution time: 3.1 hours
 
 **By Phase:**
 
@@ -33,9 +33,10 @@ Progress: [████████████████████] 100% of
 | 04    | 6     | 49min | 8min     | Complete (incl. integration) |
 | 05    | 4     | 31min | 8min     | Complete |
 | 06    | 5     | 18min | 4min     | Complete |
+| 07    | 1     | 4min  | 4min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 6min, 8min, 7min, 8min, 2min
+- Last 5 plans: 8min, 7min, 8min, 2min, 4min
 - Trend: Consistently fast execution (2-8min range)
 
 *Updated after each plan completion*
@@ -155,6 +156,11 @@ Recent decisions affecting current work:
 | 06-04 | Programmatic bell sound generation via Web Audio API | 800Hz sine wave with exponential decay, no external file needed |
 | 06-04 | Bell message interception in WebSocket handler | JSON { type: "bell" } triggers sound without terminal output |
 | 06-05 | Chat as command type (not submenu) for direct access | C hotkey enters chat directly like M for mail |
+| 07-01 | feed-rs 2.3 for RSS/Atom/JSON Feed parsing | Handles all formats automatically without format detection |
+| 07-01 | reqwest 0.12 with rustls-tls for async HTTP | Avoids OpenSSL system dependency, 10-second timeout |
+| 07-01 | 10 articles per feed (not global limit) | Per-feed limit based on context requirements |
+| 07-01 | Fetch fresh on every access (no caching) | Per context requirement: always fetch live feed content |
+| 07-01 | Simple regex-free HTML stripping | Character-by-character approach with common entity decoding |
 
 ### Roadmap Evolution
 
@@ -296,13 +302,24 @@ Full chat system implemented:
 8. WebSocket bell message interception (JSON not shown in terminal)
 9. Chat accessible from main menu via C hotkey (command type, not submenu)
 
+## Phase 7 Progress
+
+**News & Bulletins Phase: IN PROGRESS (1/3 plans complete)**
+
+Completed plans:
+- 07-01: RSS feed fetching foundation (feed-rs integration, NewsConfig, fetch_feeds function)
+
+Remaining plans:
+- 07-02: News display and navigation (ANSI rendering, article browsing)
+- 07-03: Menu integration (N hotkey, sentinel routing)
+
 ## Session Continuity
 
 Last session: 2026-01-28
-Stopped at: Completed 06-05-PLAN.md (Menu integration and command routing)
+Stopped at: Completed 07-01-PLAN.md (RSS feed fetching foundation)
 Resume file: None
-Next action: Phase 7 (Message Boards)
+Next action: Phase 7 Plan 2 (News display and navigation)
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-28 (06-05 Menu integration and command routing)*
+*Last updated: 2026-01-28 (07-01 RSS feed fetching foundation)*
