@@ -26,6 +26,8 @@ pub(crate) struct AppState {
     pub(crate) db_pool: SqlitePool,
     pub(crate) node_manager: NodeManager,
     pub(crate) chat_manager: ChatManager,
+    /// Grand Theft Meth game database (self-contained)
+    pub(crate) gtm_db: Arc<services::grand_theft_meth::GtmDb>,
 }
 
 #[tokio::main]
@@ -56,12 +58,21 @@ async fn main() {
     let chat_manager = ChatManager::new(config.chat.capacity);
     println!("Chat capacity: {} users", config.chat.capacity);
 
+    // Initialize game database (creates grand_theft_meth.db if needed)
+    let gtm_db = Arc::new(
+        services::grand_theft_meth::GtmDb::new(
+            std::path::Path::new("data/grand_theft_meth.db")
+        ).await.expect("Failed to initialize GTM database")
+    );
+    println!("Game database initialized");
+
     let state = Arc::new(AppState {
         config,
         registry,
         db_pool,
         node_manager,
         chat_manager,
+        gtm_db,
     });
 
     let app = Router::new()

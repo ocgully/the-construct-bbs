@@ -110,6 +110,8 @@ pub struct Session {
     chat_cancel: Option<CancellationToken>,
     /// Current news viewing state
     news_state: Option<NewsState>,
+    /// Active Grand Theft Meth game state
+    gtm_flow: Option<crate::game::GtmFlow>,
 }
 
 /// Map user level string to numeric level for menu filtering
@@ -148,6 +150,7 @@ impl Session {
             last_dm_sender: None,
             chat_cancel: None,
             news_state: None,
+            gtm_flow: None,
         }
     }
 
@@ -1063,6 +1066,14 @@ impl Session {
             }
         }
 
+        // Grand Theft Meth game
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::grand_theft_meth::SENTINEL {
+                self.handle_gtm_input(input).await;
+                return;
+            }
+        }
+
         // News error screen: any input returns to menu
         if let Some(service_name) = &self.current_service {
             if service_name == "__news_error__" {
@@ -1395,6 +1406,27 @@ impl Session {
                                 let _ = self.tx.send(list).await;
                                 self.news_state = Some(state);
                                 self.current_service = Some("__news__".to_string());
+                            }
+                            return;
+                        }
+                        "grand_theft_meth" => {
+                            use crate::services::grand_theft_meth::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.gtm_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.gtm_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
                             }
                             return;
                         }
@@ -2034,6 +2066,102 @@ impl Session {
             }
             ChatCommand::Error(msg) => {
                 let _ = self.tx.send(render_chat_error(&msg)).await;
+            }
+        }
+    }
+
+    /// Handle input for Grand Theft Meth game
+    async fn handle_gtm_input(&mut self, input: &str) {
+        use crate::services::grand_theft_meth::{
+            render_screen, save_game_state, record_game_completion, get_game_leaderboard,
+        };
+        use crate::game::{GtmAction, GameScreen};
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.gtm_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                GtmAction::Continue => {}
+                GtmAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                GtmAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                GtmAction::SaveGame => {
+                    // Save to game's own database
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.gtm_flow {
+                            let _ = save_game_state(&self.state.gtm_db, *user_id, handle, flow).await;
+                        }
+                    }
+                    // Render new screen
+                    if let Some(flow) = &self.gtm_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                GtmAction::GameOver { final_score: _, story_completed: _ } => {
+                    // Record completion
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.gtm_flow {
+                            let _ = record_game_completion(
+                                &self.state.gtm_db,
+                                *user_id,
+                                handle,
+                                flow,
+                            ).await;
+                        }
+                    }
+
+                    // Show game over screen
+                    if let Some(flow) = &self.gtm_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+
+                    // Exit game on next input
+                    self.gtm_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                }
+                GtmAction::Quit => {
+                    // Save and exit
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.gtm_flow {
+                            let _ = save_game_state(&self.state.gtm_db, *user_id, handle, flow).await;
+                        }
+                    }
+
+                    self.gtm_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+            }
+        }
+
+        // Handle leaderboard screen specially (needs async data)
+        if let Some(flow) = &self.gtm_flow {
+            if matches!(flow.current_screen(), GameScreen::Leaderboard) {
+                let entries = get_game_leaderboard(&self.state.gtm_db).await;
+                let leaderboard_entries: Vec<_> = entries.iter()
+                    .map(|e| (e.handle.clone(), e.final_score, e.days_played, e.story_completed))
+                    .collect();
+                let screen = crate::game::render::render_leaderboard_screen(&leaderboard_entries);
+                let _ = self.tx.send(screen).await;
             }
         }
     }
