@@ -29,6 +29,10 @@ use crate::{
             render_message, render_new_mail_notification, render_self_mail_error,
             render_user_not_found_error, ComposeAction, ComposeFlow, format_body_lines,
         },
+        news::{
+            fetch_feeds, render_news_list, render_news_article,
+            render_news_loading, render_news_errors, NewsState,
+        },
         profile::{render_profile_card, render_profile_edit_menu_string},
         registration::{RegistrationFlow, RegistrationResult, render_registration_header},
     },
@@ -104,6 +108,8 @@ pub struct Session {
     last_dm_sender: Option<String>,
     /// Cancellation token for chat broadcast receiver task
     chat_cancel: Option<CancellationToken>,
+    /// Current news viewing state
+    news_state: Option<NewsState>,
 }
 
 /// Map user level string to numeric level for menu filtering
@@ -141,6 +147,7 @@ impl Session {
             mail_input_buffer: None,
             last_dm_sender: None,
             chat_cancel: None,
+            news_state: None,
         }
     }
 
@@ -1048,6 +1055,29 @@ impl Session {
             }
         }
 
+        // News mode: process news input
+        if let Some(service_name) = &self.current_service {
+            if service_name == "__news__" {
+                self.handle_news_input(input).await;
+                return;
+            }
+        }
+
+        // News error screen: any input returns to menu
+        if let Some(service_name) = &self.current_service {
+            if service_name == "__news_error__" {
+                if !input.is_empty() && !input.starts_with('\x1b') {
+                    self.news_state = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                }
+                return;
+            }
+        }
+
         // Profile edit mode needs raw input (spaces, Enter) -- check BEFORE trimming
         if let Some(service_name) = &self.current_service {
             if service_name.starts_with("__profile_edit_") {
@@ -1342,6 +1372,32 @@ impl Session {
                         "user_lookup" => { self.handle_user_lookup_start().await; return; }
                         "mail" => { self.show_inbox().await; return; }
                         "chat" => { self.enter_chat().await; return; }
+                        "news" => {
+                            // Show loading screen
+                            let loading = render_news_loading();
+                            let _ = self.tx.send(loading).await;
+
+                            // Fetch feeds
+                            let feeds = &self.state.config.news.feeds;
+                            let result = fetch_feeds(feeds).await;
+
+                            // Create state and show list
+                            let state = NewsState::new(result);
+                            if state.articles.is_empty() && !state.errors.is_empty() {
+                                // All feeds failed
+                                let error_screen = render_news_errors(&state.errors);
+                                let _ = self.tx.send(error_screen).await;
+                                // Wait for any key to return
+                                self.news_state = Some(state);
+                                self.current_service = Some("__news_error__".to_string());
+                            } else {
+                                let list = render_news_list(&state);
+                                let _ = self.tx.send(list).await;
+                                self.news_state = Some(state);
+                                self.current_service = Some("__news__".to_string());
+                            }
+                            return;
+                        }
                         _ => {}
                     }
                 }
@@ -2513,6 +2569,108 @@ impl Session {
         }
 
         println!("Session disconnected");
+    }
+
+    /// Handle input while in news view
+    async fn handle_news_input(&mut self, input: &str) {
+        let Some(ref mut state) = self.news_state else {
+            // No state, return to menu
+            self.current_service = None;
+            if let Some(ms) = &mut self.menu_session {
+                ms.reset_to_main();
+            }
+            self.show_menu().await;
+            return;
+        };
+
+        // Check for escape sequences (arrow keys)
+        // Up arrow: \x1b[A or \x1bOA
+        // Down arrow: \x1b[B or \x1bOB
+        let is_up = input == "\x1b[A" || input == "\x1bOA";
+        let is_down = input == "\x1b[B" || input == "\x1bOB";
+
+        if state.viewing_article {
+            // Article view mode
+            match input.to_uppercase().as_str() {
+                "Q" => {
+                    // Return to list
+                    state.exit_article();
+                    let list = render_news_list(state);
+                    let _ = self.tx.send(list).await;
+                }
+                "N" => {
+                    // Next article
+                    state.select_next();
+                    if let Some(article) = state.current_article() {
+                        let view = render_news_article(article);
+                        let _ = self.tx.send(view).await;
+                    }
+                }
+                "P" => {
+                    // Previous article
+                    state.select_prev();
+                    if let Some(article) = state.current_article() {
+                        let view = render_news_article(article);
+                        let _ = self.tx.send(view).await;
+                    }
+                }
+                _ => {} // Ignore other input
+            }
+        } else {
+            // List view mode
+            if is_up {
+                state.select_prev();
+                let list = render_news_list(state);
+                let _ = self.tx.send(list).await;
+            } else if is_down {
+                state.select_next();
+                let list = render_news_list(state);
+                let _ = self.tx.send(list).await;
+            } else {
+                match input.to_uppercase().as_str() {
+                    "Q" => {
+                        // Quit to main menu
+                        self.news_state = None;
+                        self.current_service = None;
+                        if let Some(ms) = &mut self.menu_session {
+                            ms.reset_to_main();
+                        }
+                        self.show_menu().await;
+                    }
+                    "\r" | "\n" => {
+                        // Enter - view selected article
+                        if state.has_articles() {
+                            state.enter_article();
+                            if let Some(article) = state.current_article() {
+                                let view = render_news_article(article);
+                                let _ = self.tx.send(view).await;
+                            }
+                        }
+                    }
+                    "N" => {
+                        // Next page
+                        let page_size = 15;
+                        if state.page_offset + page_size < state.articles.len() {
+                            state.page_offset += page_size;
+                            state.selected_idx = state.page_offset;
+                            let list = render_news_list(state);
+                            let _ = self.tx.send(list).await;
+                        }
+                    }
+                    "P" => {
+                        // Previous page
+                        let page_size = 15;
+                        if state.page_offset >= page_size {
+                            state.page_offset -= page_size;
+                            state.selected_idx = state.page_offset;
+                            let list = render_news_list(state);
+                            let _ = self.tx.send(list).await;
+                        }
+                    }
+                    _ => {} // Ignore other input
+                }
+            }
+        }
     }
 }
 
