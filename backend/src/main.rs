@@ -2,6 +2,7 @@ mod auth;
 mod config;
 mod connection;
 mod db;
+mod game;
 mod menu;
 mod services;
 mod terminal;
