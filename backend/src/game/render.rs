@@ -7,7 +7,7 @@ use std::collections::HashMap;
 // ============================================================================
 
 /// Format cents as dollars: 123456 -> "$1,234.56"
-fn format_money(cents: i64) -> String {
+pub fn format_money(cents: i64) -> String {
     let dollars = cents / 100;
     let remainder = (cents % 100).abs();
     let sign = if cents < 0 { "-" } else { "" };
