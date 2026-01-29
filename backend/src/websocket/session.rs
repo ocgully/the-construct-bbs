@@ -1329,6 +1329,53 @@ impl Session {
                             self.enter_chat().await;
                             return;
                         }
+                        "news" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            // Show loading screen
+                            let loading = render_news_loading();
+                            let _ = self.tx.send(loading).await;
+
+                            // Fetch feeds
+                            let feeds = &self.state.config.news.feeds;
+                            let result = fetch_feeds(feeds).await;
+
+                            // Create state and show list
+                            let state = NewsState::new(result);
+                            if state.articles.is_empty() && !state.errors.is_empty() {
+                                // All feeds failed
+                                let error_screen = render_news_errors(&state.errors);
+                                let _ = self.tx.send(error_screen).await;
+                                self.news_state = Some(state);
+                                self.current_service = Some("__news_error__".to_string());
+                            } else {
+                                let list_screen = render_news_list(&state);
+                                let _ = self.tx.send(list_screen).await;
+                                self.news_state = Some(state);
+                                self.current_service = Some("__news__".to_string());
+                            }
+                            return;
+                        }
+                        "grand_theft_meth" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::grand_theft_meth::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.gtm_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.gtm_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
                         _ => {
                             // Unknown command, redraw
                             self.show_menu().await;

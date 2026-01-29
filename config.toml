@@ -115,10 +115,10 @@ order = 100
 
 # Games submenu -- Door Games
 [[menu.games]]
-type = "service"
+type = "command"
 hotkey = "1"
 name = "Grand Theft Meth"
-service_name = "grand_theft_meth"
+command = "grand_theft_meth"
 order = 1
 # Door game: commodity trading with random events
 
