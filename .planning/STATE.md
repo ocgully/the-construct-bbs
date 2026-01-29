@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 8 of 15 (First Door Game - Drug Wars)
-Plan: 7 of 9 in current phase
+Plan: 8 of 9 in current phase
 Status: In progress
-Last activity: 2026-01-29 - Completed 08-07-PLAN.md (Quest System)
+Last activity: 2026-01-29 - Completed 08-08-PLAN.md (Session Integration)
 
-Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 100% of Phase 7 (3/3), 78% of Phase 8 (7/9)
+Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 100% of Phase 7 (3/3), 89% of Phase 8 (8/9)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 38
+- Total plans completed: 39
 - Average duration: 6 min
-- Total execution time: 3.8 hours
+- Total execution time: 3.9 hours
 
 **By Phase:**
 
@@ -34,11 +34,11 @@ Progress: [████████████████████] 100% of
 | 05    | 4     | 31min | 8min     | Complete |
 | 06    | 5     | 18min | 4min     | Complete |
 | 07    | 3     | 13min | 4min     | Complete |
-| 08    | 7     | 30min | 4min     | In progress |
+| 08    | 8     | 38min | 5min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 4min, 5min, 5min, 5min, 8min
-- Trend: Mostly 4-5min, occasional 8min for complex modules
+- Last 5 plans: 5min, 5min, 5min, 8min, 8min
+- Trend: Consistent 5-8min for standard modules
 
 *Updated after each plan completion*
 
@@ -205,6 +205,9 @@ Recent decisions affecting current work:
 | 08-07 | 15-step story across 5 cities | Epic scope traversing full game world NYC->Miami->London->Tokyo->Bogota, Marcus betrayal narrative |
 | 08-06 | Horse betting: 6 horses with odds 2x-8x, chances 40%-10% | Risk/reward spectrum from safe favorites to long shots |
 | 08-06 | format_money exported as public for economy module use | Code reuse pattern - render helper available to all game modules |
+| 08-08 | Game-specific database (grand_theft_meth.db) separate from BBS database | Keeps game data isolated, allows independent schema evolution |
+| 08-08 | __game_gtm__ sentinel for session routing | Consistent with __chat__, __news__ pattern for service routing |
+| 08-08 | GtmAction enum drives session response | Clean separation: game returns actions (Continue, Echo, SaveGame, GameOver, Quit) for session to execute |
 
 ### Roadmap Evolution
 
@@ -371,11 +374,10 @@ Full news system implemented:
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Completed 08-07-PLAN.md (Quest System)
+Stopped at: Completed 08-08-PLAN.md (Session Integration)
 Resume file: None
-Next action: Execute 08-08-PLAN.md (Screen Integration)
-Next action: Execute 08-06-PLAN.md (next in sequence)
+Next action: Execute 08-09-PLAN.md (Integration Test)
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-29 (08-05 Event System complete)*
+*Last updated: 2026-01-29 (08-08 Session Integration complete)*
