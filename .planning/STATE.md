@@ -21,7 +21,7 @@ Progress: [████████████████████] 100% of
 **Velocity:**
 - Total plans completed: 36
 - Average duration: 6 min
-- Total execution time: 3.6 hours
+- Total execution time: 3.7 hours
 
 **By Phase:**
 
@@ -34,11 +34,11 @@ Progress: [████████████████████] 100% of
 | 05    | 4     | 31min | 8min     | Complete |
 | 06    | 5     | 18min | 4min     | Complete |
 | 07    | 3     | 13min | 4min     | Complete |
-| 08    | 3     | 12min | 4min     | In progress |
+| 08    | 4     | 17min | 4min     | In progress |
 
 **Recent Trend:**
-- Last 5 plans: 4min, 4min, 3min, 5min, 4min
-- Trend: Consistent 4min execution (very fast)
+- Last 5 plans: 4min, 3min, 5min, 4min, 5min
+- Trend: Consistent 4-5min execution (very fast)
 
 *Updated after each plan completion*
 
@@ -180,6 +180,13 @@ Recent decisions affecting current work:
 | 08-02 | GameState::new() initial conditions | Start in Bronx, NYC with $2,000 cash, $5,500 debt, 100 HP, 5 actions/day, coat tier 0 (100 capacity) |
 | 08-02 | Coat tier system: 0=100, 1=125, 2=150, 3=250 units | Upgrade costs escalate: $500, $1000, $2500 for progressively larger carrying capacity |
 | 08-02 | Travel modes with cost/time tradeoffs | Intra-city taxi=$20 instant, inter-city bus=$100+1day, plane=$500 instant |
+| 08-04 | Render functions return String (not directly write to tx) | Async-compatible pattern matching news.rs/mail.rs - session layer controls output timing |
+| 08-04 | format_money helper with thousand separators | $12,345.67 more readable than 1234567 cents in fast-paced gameplay |
+| 08-04 | Status bar as reusable component (called by other renders) | Consistent game state display across all gameplay screens without duplication |
+| 08-04 | Health color coding: green >70, yellow >30, red <30 | Visual danger indication without reading the number |
+| 08-04 | Trade screen filters sell list to owned commodities | Prevents clutter when inventory empty - only show what player can actually sell |
+| 08-04 | Mob doctor costs more ($150 vs $100) | Risk/reward: 50% premium but no notoriety increase from healing |
+| 08-04 | Leaderboard rank colors: gold/white/brown/gray for top 3 | Olympic medal styling makes hall of fame more prestigious |
 | 08-03 | GtmFlow returns GtmAction enum for session to handle | Following ComposeFlow pattern from mail.rs - keeps state machine synchronous, session.rs handles async DB/rendering |
 | 08-03 | Single-key vs buffered input handling | Most screens use single-key input (menus), quantity entry uses buffered - is_single_key_screen determines mode |
 | 08-03 | 15% random event chance after travel | Called in handle_travel after moving to new borough - ~1 event every 7 moves on average |
@@ -351,10 +358,10 @@ Full news system implemented:
 ## Session Continuity
 
 Last session: 2026-01-29
-Stopped at: Completed 08-03-PLAN.md (Game State Machine)
+Stopped at: Completed 08-04-PLAN.md (ANSI Rendering Layer)
 Resume file: None
-Next action: Execute 08-04-PLAN.md (Rendering functions)
+Next action: Execute 08-05-PLAN.md (Screen Integration)
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-29 (08-03 Game State Machine complete)*
+*Last updated: 2026-01-29 (08-04 ANSI Rendering Layer complete)*
