@@ -220,3 +220,13 @@ order = 100
 # name = "System News"
 # service_name = "news_system"
 # order = 3
+
+# News feed configuration
+[news]
+[[news.feeds]]
+name = "Hacker News"
+url = "https://hnrss.org/newest"
+
+[[news.feeds]]
+name = "Ars Technica"
+url = "https://feeds.arstechnica.com/arstechnica/index"

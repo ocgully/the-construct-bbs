@@ -21,6 +21,8 @@ pub struct Config {
     pub mail: MailConfig,
     #[serde(default)]
     pub chat: ChatConfig,
+    #[serde(default)]
+    pub news: NewsConfig,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -262,6 +264,35 @@ impl Default for ChatConfig {
     fn default() -> Self {
         Self {
             capacity: default_chat_capacity(),
+        }
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct NewsConfig {
+    #[serde(default = "default_feeds")]
+    pub feeds: Vec<NewsFeed>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct NewsFeed {
+    pub name: String,
+    pub url: String,
+}
+
+fn default_feeds() -> Vec<NewsFeed> {
+    vec![
+        NewsFeed {
+            name: "Hacker News".to_string(),
+            url: "https://hnrss.org/newest".to_string(),
+        },
+    ]
+}
+
+impl Default for NewsConfig {
+    fn default() -> Self {
+        Self {
+            feeds: default_feeds(),
         }
     }
 }

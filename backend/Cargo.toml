@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 axum = { version = "0.7", features = ["ws"] }
 tokio = { version = "1", features = ["full"] }
+tokio-util = "0.7"
 serde = { version = "1", features = ["derive"] }
 toml = "0.8"
 codepage-437 = "0.1"
@@ -20,6 +21,8 @@ rand = "0.8"
 chrono = { version = "0.4", features = ["serde"] }
 serde_json = "1"
 lettre = { version = "0.11", default-features = false, features = ["tokio1", "tokio1-native-tls", "smtp-transport", "builder"] }
+feed-rs = "2.3"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls"] }
 
 # Optimize dependencies even in debug builds (our code stays unoptimized for fast compile)
 [profile.dev.package."*"]
