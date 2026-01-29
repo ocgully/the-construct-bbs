@@ -596,6 +596,7 @@ mod tests {
                 time_limits: crate::config::TimeLimitsConfig::default(),
                 mail: crate::config::MailConfig::default(),
                 chat: crate::config::ChatConfig::default(),
+                news: crate::config::NewsConfig::default(),
             }
         }
 
