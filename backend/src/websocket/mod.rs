@@ -55,33 +55,55 @@ async fn handle_socket(socket: WebSocket, state: Arc<AppState>) {
     // The ceremony runs when the frontend sends the auth message.
     let _ = session.on_connect().await;
 
-    // Main receive loop
+    // Main receive loop with periodic timeout check
     let mut recv_task = tokio::spawn(async move {
-        while let Some(msg) = ws_receiver.next().await {
-            match msg {
-                Ok(axum::extract::ws::Message::Text(text)) => {
-                    // Handle user input
-                    session.handle_input(&text).await;
+        use tokio::time::{interval, Duration};
 
-                    // Check if session wants to disconnect (line busy, lockout, etc.)
-                    if session.is_disconnecting() {
+        // Check for timeout every 5 seconds (even when idle)
+        let mut timeout_check = interval(Duration::from_secs(5));
+        timeout_check.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
+
+        loop {
+            tokio::select! {
+                // Periodic timeout check (handles idle users)
+                _ = timeout_check.tick() => {
+                    if session.check_and_handle_timeout().await {
+                        // Session timed out
                         break;
                     }
                 }
-                Ok(axum::extract::ws::Message::Close(_)) => {
-                    // Client closed connection
-                    break;
-                }
-                Ok(axum::extract::ws::Message::Binary(_)) => {
-                    // Ignore binary messages (we only expect text input)
-                    eprintln!("Warning: Received unexpected binary message from WebSocket client");
-                }
-                Ok(axum::extract::ws::Message::Ping(_)) | Ok(axum::extract::ws::Message::Pong(_)) => {
-                    // Handled automatically by axum
-                }
-                Err(e) => {
-                    eprintln!("WebSocket error: {}", e);
-                    break;
+                // WebSocket message received
+                msg = ws_receiver.next() => {
+                    match msg {
+                        Some(Ok(axum::extract::ws::Message::Text(text))) => {
+                            // Handle user input
+                            session.handle_input(&text).await;
+
+                            // Check if session wants to disconnect (line busy, lockout, etc.)
+                            if session.is_disconnecting() {
+                                break;
+                            }
+                        }
+                        Some(Ok(axum::extract::ws::Message::Close(_))) => {
+                            // Client closed connection
+                            break;
+                        }
+                        Some(Ok(axum::extract::ws::Message::Binary(_))) => {
+                            // Ignore binary messages (we only expect text input)
+                            eprintln!("Warning: Received unexpected binary message from WebSocket client");
+                        }
+                        Some(Ok(axum::extract::ws::Message::Ping(_))) | Some(Ok(axum::extract::ws::Message::Pong(_))) => {
+                            // Handled automatically by axum
+                        }
+                        Some(Err(e)) => {
+                            eprintln!("WebSocket error: {}", e);
+                            break;
+                        }
+                        None => {
+                            // Stream ended
+                            break;
+                        }
+                    }
                 }
             }
         }

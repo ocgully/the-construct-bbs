@@ -1,0 +1,48 @@
+# === IDE / Editor ===
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# === Claude Code ===
+.claude/
+.mcp.json
+
+# === Rust / Cargo ===
+backend/target/
+**/*.rs.bk
+Cargo.lock
+
+# === Node / npm ===
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# === Frontend build ===
+frontend/dist/
+
+# === SQLite databases ===
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# === Environment / secrets ===
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# === OS generated ===
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+nul
+
+# === Logs ===
+*.log
+logs/

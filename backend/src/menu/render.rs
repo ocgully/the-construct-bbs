@@ -1,5 +1,4 @@
 use crate::menu::config::{MenuConfig, MenuItem};
-use crate::menu::quotes::random_stoic_quote;
 use crate::menu::state::MenuState;
 use crate::terminal::ansi::{AnsiWriter, Color};
 
@@ -87,18 +86,6 @@ pub fn render_main_menu(
     render_border_line(&mut w, BorderStyle::Double, "top");
     render_title_line(&mut w, BorderStyle::Double, "THE CONSTRUCT BBS");
     render_border_line(&mut w, BorderStyle::Double, "bottom");
-
-    w.writeln("");
-
-    // MOTD area with random Stoic quote
-    let quote = random_stoic_quote();
-    let quote_padding = (80_usize.saturating_sub(quote.len())) / 2;
-    w.set_fg(Color::DarkGray);
-    w.write_str(&" ".repeat(quote_padding));
-    w.set_fg(Color::LightGray);
-    w.write_str(quote);
-    w.writeln("");
-    w.reset_color();
 
     w.writeln("");
 
@@ -353,14 +340,6 @@ mod tests {
         assert!(output.contains("Your choice?"));
         assert!(output.contains("TestUser"));
         assert!(output.contains("Node 1 of 16"));
-    }
-
-    #[test]
-    fn test_render_main_menu_contains_motd_quote() {
-        let config = MenuConfig::default();
-        let output = render_main_menu(&config, 0, "TestUser", "User", Some(1), 16);
-        // Should contain at least part of a Stoic quote (e.g., "--")
-        assert!(output.contains("--"));
     }
 
     #[test]

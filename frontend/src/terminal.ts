@@ -74,6 +74,14 @@ export async function initTerminal(container: HTMLElement): Promise<Terminal> {
   // Open terminal in container
   terminal.open(container);
 
+  // Prevent mouse scroll from generating cursor key escape sequences.
+  // Without this, scroll wheel produces ESC[A / ESC[B which pollute text input.
+  // Use capture phase + stopImmediatePropagation to intercept before xterm.js.
+  container.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  }, { passive: false, capture: true });
+
   // Load WebGL addon for performance (with fallback)
   try {
     const webglAddon = new WebglAddon();

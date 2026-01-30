@@ -104,21 +104,131 @@ pub static CITIES: &[City] = &[
     },
 ];
 
+/// Commodity prices scaled for game balance while respecting real-world ratios.
+/// Prices are in cents. Game units represent "street-level" quantities.
+/// Tiers: Junk ($5-30) -> Budget ($30-100) -> Mid ($100-300) -> Premium ($300-800) -> Luxury ($800-2000) -> Elite ($2000+)
 pub static COMMODITIES: &[Commodity] = &[
-    // Classic drugs
-    Commodity { key: "cocaine", name: "Cocaine", min_price: 1500000, max_price: 3000000, addictive: true, action_boost: false },
-    Commodity { key: "heroin", name: "Heroin", min_price: 500000, max_price: 1400000, addictive: true, action_boost: false },
-    Commodity { key: "acid", name: "Acid", min_price: 100000, max_price: 450000, addictive: false, action_boost: false },
-    Commodity { key: "weed", name: "Weed", min_price: 30000, max_price: 90000, addictive: false, action_boost: false },
-    Commodity { key: "meth", name: "Meth", min_price: 200000, max_price: 550000, addictive: true, action_boost: true },
-    Commodity { key: "speed", name: "Speed", min_price: 9000, max_price: 25000, addictive: true, action_boost: true },
-    Commodity { key: "ludes", name: "Ludes", min_price: 1100, max_price: 6000, addictive: false, action_boost: false },
-    // Modern additions
-    Commodity { key: "fentanyl", name: "Fentanyl", min_price: 3000000, max_price: 8000000, addictive: true, action_boost: false },
-    Commodity { key: "bathsalts", name: "Bath Salts", min_price: 50000, max_price: 150000, addictive: true, action_boost: true },
-    Commodity { key: "krokodil", name: "Krokodil", min_price: 10000, max_price: 40000, addictive: true, action_boost: false },
-    Commodity { key: "tidepods", name: "Tide Pods", min_price: 500, max_price: 2000, addictive: false, action_boost: false },
+    // JUNK TIER - Easy entry, low margins (starter money territory)
+    Commodity { key: "tidepods", name: "Tide Pods", min_price: 500, max_price: 1500, addictive: false, action_boost: false },
+    Commodity { key: "ludes", name: "Ludes", min_price: 800, max_price: 2500, addictive: false, action_boost: false },
+
+    // BUDGET TIER - Bread and butter (early game)
+    Commodity { key: "weed", name: "Weed", min_price: 1500, max_price: 4000, addictive: false, action_boost: false },       // ~$15-40/unit
+    Commodity { key: "speed", name: "Speed", min_price: 2000, max_price: 5000, addictive: true, action_boost: true },       // ~$20-50/unit
+    Commodity { key: "krokodil", name: "Krokodil", min_price: 2500, max_price: 6000, addictive: true, action_boost: false }, // Cheap heroin alt
+    Commodity { key: "fentanyl", name: "Fentanyl", min_price: 3000, max_price: 8000, addictive: true, action_boost: false }, // Cheap per dose
+
+    // MID TIER - Real money starts here (mid game)
+    Commodity { key: "bathsalts", name: "Bath Salts", min_price: 5000, max_price: 15000, addictive: true, action_boost: true },
+    Commodity { key: "meth", name: "Meth", min_price: 8000, max_price: 25000, addictive: true, action_boost: true },        // ~$80-250/unit
+    Commodity { key: "acid", name: "Acid", min_price: 10000, max_price: 30000, addictive: false, action_boost: false },
+
+    // PREMIUM TIER - High risk, high reward
+    Commodity { key: "heroin", name: "Heroin", min_price: 25000, max_price: 80000, addictive: true, action_boost: false },  // ~$250-800/unit
+    Commodity { key: "ketamine", name: "Ketamine", min_price: 30000, max_price: 90000, addictive: true, action_boost: false }, // Club scene ~$300-900
+
+    // LUXURY TIER - Kingpin territory
+    Commodity { key: "cocaine", name: "Cocaine", min_price: 80000, max_price: 200000, addictive: true, action_boost: false }, // ~$800-2000/unit
+    Commodity { key: "mdma", name: "MDMA", min_price: 90000, max_price: 250000, addictive: true, action_boost: true },      // Pure molly, party scene
+
+    // ELITE TIER - Wall Street, tech bros, trust fund kids
+    Commodity { key: "oxy", name: "Oxy", min_price: 200000, max_price: 500000, addictive: true, action_boost: false },      // Prescription opioid ~$2000-5000
+    Commodity { key: "adderall", name: "Adderall", min_price: 150000, max_price: 400000, addictive: true, action_boost: true }, // Focus drug ~$1500-4000
+    Commodity { key: "dmt", name: "DMT", min_price: 300000, max_price: 800000, addictive: false, action_boost: false },     // "Spirit molecule" ~$3000-8000
 ];
+
+/// Location-specific shop inventory - what's available varies by area
+/// Each tuple: (commodity_key, price_modifier) - modifier is 80-120 (percentage)
+/// Max 10 items per shop for clean UI
+pub static SHOP_INVENTORY: &[(&str, &str, &[(&str, u8)])] = &[
+    // NYC
+    ("nyc", "bronx", &[
+        ("tidepods", 100), ("weed", 95), ("speed", 100), ("krokodil", 90),
+        ("fentanyl", 95), ("meth", 100), ("acid", 105), ("heroin", 100),
+    ]),
+    ("nyc", "brooklyn", &[
+        ("weed", 100), ("speed", 105), ("fentanyl", 100), ("bathsalts", 95),
+        ("meth", 95), ("ketamine", 100), ("heroin", 95), ("cocaine", 90),  // Mafia territory
+    ]),
+    ("nyc", "manhattan", &[  // Wall Street - elite drugs
+        ("weed", 115), ("acid", 95), ("ketamine", 90), ("cocaine", 95),
+        ("mdma", 95), ("oxy", 85), ("adderall", 80), ("dmt", 100),  // Finance bros
+    ]),
+    ("nyc", "queens", &[
+        ("tidepods", 95), ("weed", 100), ("speed", 95), ("krokodil", 100),
+        ("fentanyl", 100), ("meth", 95), ("ketamine", 105), ("heroin", 100),  // Triads
+    ]),
+
+    // MIAMI
+    ("miami", "little_havana", &[
+        ("weed", 90), ("speed", 95), ("fentanyl", 105), ("meth", 100),
+        ("heroin", 95), ("cocaine", 80),  // Cartel - cheap cocaine
+    ]),
+    ("miami", "south_beach", &[  // Party scene - club drugs
+        ("ludes", 90), ("weed", 110), ("bathsalts", 90), ("acid", 85),
+        ("ketamine", 85), ("cocaine", 95), ("mdma", 80), ("adderall", 95),  // Club kids
+    ]),
+    ("miami", "downtown_miami", &[
+        ("weed", 100), ("speed", 100), ("krokodil", 105), ("fentanyl", 100),
+        ("meth", 100), ("acid", 100), ("heroin", 100), ("cocaine", 95),
+    ]),
+
+    // LONDON
+    ("london", "east_end", &[
+        ("weed", 110), ("speed", 100), ("krokodil", 95), ("fentanyl", 110),
+        ("meth", 105), ("heroin", 90), ("cocaine", 95),  // Mafia
+    ]),
+    ("london", "soho", &[  // Trendy nightlife - designer drugs
+        ("ludes", 95), ("weed", 105), ("bathsalts", 95), ("acid", 85),
+        ("ketamine", 85), ("cocaine", 95), ("mdma", 90), ("dmt", 95),  // Artsy crowd
+    ]),
+    ("london", "brixton", &[
+        ("tidepods", 100), ("weed", 85), ("speed", 95), ("krokodil", 100),
+        ("fentanyl", 100), ("meth", 100), ("heroin", 100),
+    ]),
+
+    // TOKYO
+    ("tokyo", "shinjuku", &[  // Yakuza territory
+        ("speed", 85), ("bathsalts", 90), ("meth", 80),  // Meth capital
+        ("acid", 100), ("ketamine", 95), ("heroin", 110), ("cocaine", 115),
+    ]),
+    ("tokyo", "shibuya", &[  // Youth fashion district - party drugs
+        ("ludes", 100), ("weed", 115), ("bathsalts", 85), ("acid", 90),
+        ("ketamine", 90), ("mdma", 85), ("adderall", 90),  // Young professionals
+    ]),
+    ("tokyo", "roppongi", &[  // Expat nightlife - everything available
+        ("weed", 110), ("meth", 90), ("acid", 95), ("ketamine", 85),
+        ("cocaine", 100), ("mdma", 90), ("oxy", 100), ("dmt", 90),  // International scene
+    ]),
+
+    // BOGOTA
+    ("bogota", "chapinero", &[
+        ("weed", 85), ("speed", 90), ("fentanyl", 115), ("meth", 95),
+        ("heroin", 90), ("cocaine", 70),  // Cartel HQ - cheapest cocaine
+    ]),
+    ("bogota", "la_candelaria", &[
+        ("tidepods", 110), ("weed", 80), ("krokodil", 90), ("fentanyl", 110),
+        ("acid", 90), ("heroin", 85), ("cocaine", 75), ("dmt", 80),  // Ayahuasca country
+    ]),
+    ("bogota", "usaquen", &[  // Upscale diplomatic area
+        ("weed", 100), ("acid", 95), ("ketamine", 95), ("cocaine", 75),
+        ("mdma", 100), ("oxy", 90), ("adderall", 85),  // Rich expats
+    ]),
+];
+
+/// Get available commodities and their price modifiers for a location
+pub fn get_shop_inventory(city: &str, borough: &str) -> Vec<(&'static str, u8)> {
+    SHOP_INVENTORY.iter()
+        .find(|(c, b, _)| *c == city && *b == borough)
+        .map(|(_, _, items)| items.to_vec())
+        .unwrap_or_else(|| {
+            // Default inventory if not found
+            vec![
+                ("weed", 100), ("speed", 100), ("meth", 100),
+                ("heroin", 100), ("cocaine", 100),
+            ]
+        })
+}
 
 pub static WEAPONS: &[Weapon] = &[
     // Melee weapons

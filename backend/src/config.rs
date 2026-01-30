@@ -119,7 +119,7 @@ fn default_idle_warning_bell() -> bool {
     true
 }
 fn default_tagline() -> String {
-    "Welcome to The Construct BBS".to_string()
+    "A haven for travelers, near and far".to_string()
 }
 fn default_show_last_callers() -> bool {
     true

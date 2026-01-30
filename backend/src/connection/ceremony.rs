@@ -25,6 +25,10 @@ pub async fn run_connection_ceremony(
     // Check node availability first
     let (active, max) = node_manager.get_status().await;
     if active >= max {
+        // Signal frontend to play modem-fail sound
+        let _ = tx
+            .send(r#"{"type":"modem","status":"fail"}"#.to_string())
+            .await;
         send_line_busy(tx, max).await;
         return Err("All lines busy".to_string());
     }
@@ -40,66 +44,133 @@ pub async fn run_connection_ceremony(
 
     let (_, max_nodes) = node_manager.get_status().await;
 
-    // Build and send ceremony lines with typewriter pacing
-    // Blank line
+    // Signal frontend to play modem-success sound
+    let _ = tx
+        .send(r#"{"type":"modem","status":"success"}"#.to_string())
+        .await;
+
+    // Build and send ceremony lines with typewriter pacing.
+    // These fill the visual space while the modem sound plays (~8-10 seconds).
+
+    // Helper: send a green-colored ceremony log line
+    macro_rules! log_line {
+        ($tx:expr, $color:expr, $text:expr) => {{
+            let mut w = AnsiWriter::new();
+            w.set_fg($color);
+            w.write_str($text);
+            w.reset_color();
+            send_ceremony_line($tx, &w.flush()).await;
+        }};
+        ($tx:expr, $color:expr, bold, $text:expr) => {{
+            let mut w = AnsiWriter::new();
+            w.set_fg($color);
+            w.bold();
+            w.write_str($text);
+            w.reset_color();
+            send_ceremony_line($tx, &w.flush()).await;
+        }};
+    }
+
     send_ceremony_line(tx, "").await;
 
-    // Modem dial command
-    let mut w = AnsiWriter::new();
-    w.set_fg(Color::LightGreen);
-    w.write_str("ATDT 555-0199");
-    w.reset_color();
-    send_ceremony_line(tx, &w.flush()).await;
-    sleep(Duration::from_millis(500)).await;
+    // Modem dial
+    log_line!(tx, Color::LightGreen, "ATDT 555-0199");
+    sleep(Duration::from_millis(800)).await;
+
+    // Ring
+    log_line!(tx, Color::Green, "RING... RING...");
+    sleep(Duration::from_millis(1000)).await;
 
     // Connect speed
-    let mut w = AnsiWriter::new();
-    w.set_fg(Color::Yellow);
-    w.bold();
-    w.write_str("CONNECT 38400");
-    w.reset_color();
-    send_ceremony_line(tx, &w.flush()).await;
-    sleep(Duration::from_millis(300)).await;
+    log_line!(tx, Color::Yellow, bold, "CONNECT 38400/ARQ/V.34/LAPM/V.42BIS");
+    sleep(Duration::from_millis(600)).await;
 
-    // Blank line
     send_ceremony_line(tx, "").await;
 
+    // Carrier detect
+    log_line!(tx, Color::Green, "Checking carrier detect... OK");
+    sleep(Duration::from_millis(500)).await;
+
     // Protocol negotiation
-    let mut w = AnsiWriter::new();
-    w.set_fg(Color::Green);
-    w.write_str("Negotiating protocols...");
-    w.reset_color();
-    send_ceremony_line(tx, &w.flush()).await;
+    log_line!(tx, Color::Green, "Negotiating protocols...");
+    sleep(Duration::from_millis(600)).await;
+
+    log_line!(tx, Color::Green, "ZModem protocol initialized.");
     sleep(Duration::from_millis(400)).await;
 
     // Terminal detection
-    let mut w = AnsiWriter::new();
-    w.set_fg(Color::Green);
-    w.write_str("ANSI/CP437 terminal detected.");
-    w.reset_color();
-    send_ceremony_line(tx, &w.flush()).await;
-    sleep(Duration::from_millis(300)).await;
+    log_line!(tx, Color::Green, "Detecting terminal type...");
+    sleep(Duration::from_millis(500)).await;
 
-    // Blank line
+    log_line!(tx, Color::Green, "ANSI/CP437 terminal detected. 80x24 mode.");
+    sleep(Duration::from_millis(400)).await;
+
     send_ceremony_line(tx, "").await;
 
-    // Connecting message
-    let mut w = AnsiWriter::new();
-    w.set_fg(Color::LightCyan);
-    w.bold();
-    w.write_str("Connecting to The Construct BBS...");
-    w.reset_color();
-    send_ceremony_line(tx, &w.flush()).await;
+    // System handshake with blinking dots animation (~15 seconds)
+    {
+        let green = "\x1B[32m";
+        let reset = "\x1B[0m";
+        let base = format!("{}Performing system handshake", green);
+
+        // Send initial text without newline
+        let _ = tx.send(base.clone()).await;
+
+        // Animate dots: cycle through ., .., ... for ~15 seconds
+        // 10 cycles × 3 states × 500ms = 15 seconds
+        for _ in 0..10 {
+            for num_dots in 1..=3u8 {
+                sleep(Duration::from_millis(500)).await;
+                let dots: String = ".".repeat(num_dots as usize);
+                let pad = " ".repeat(3 - num_dots as usize);
+                let _ = tx.send(format!("\r{}{}{}", base, dots, pad)).await;
+            }
+        }
+
+        // Final: show OK and complete the line
+        sleep(Duration::from_millis(500)).await;
+        let _ = tx
+            .send(format!(
+                "\r{}Performing system handshake... OK{}\r\n",
+                green, reset
+            ))
+            .await;
+    }
+
+    send_ceremony_line(tx, "").await;
+
+    // Connection established (before loading)
+    log_line!(tx, Color::LightCyan, bold, "Connection established.");
+    sleep(Duration::from_millis(400)).await;
+
+    // Verify before loading
+    log_line!(tx, Color::Green, "Verifying connection integrity... OK");
+    sleep(Duration::from_millis(400)).await;
+
+    send_ceremony_line(tx, "").await;
+
+    // Loading
+    log_line!(tx, Color::LightCyan, bold, "Loading The Construct BBS v0.1.0...");
     sleep(Duration::from_millis(600)).await;
 
-    // Node assignment info
-    let mut w = AnsiWriter::new();
-    w.set_fg(Color::Yellow);
-    w.write_str(&format!("Connected to Node {} of {}", node_id, max_nodes));
-    w.reset_color();
-    send_ceremony_line(tx, &w.flush()).await;
+    log_line!(tx, Color::Green, "Allocating session resources...");
+    sleep(Duration::from_millis(400)).await;
 
-    // Blank line
+    log_line!(tx, Color::Green, "Synchronizing system clock... EST");
+    sleep(Duration::from_millis(400)).await;
+
+    send_ceremony_line(tx, "").await;
+
+    // Node assignment (last entry)
+    {
+        let mut w = AnsiWriter::new();
+        w.set_fg(Color::Yellow);
+        w.write_str(&format!("Connected to Node {} of {}", node_id, max_nodes));
+        w.reset_color();
+        send_ceremony_line(tx, &w.flush()).await;
+    }
+    sleep(Duration::from_millis(500)).await;
+
     send_ceremony_line(tx, "").await;
 
     Ok(node_id)
@@ -165,6 +236,9 @@ pub async fn send_line_busy(tx: &mpsc::Sender<String>, max_nodes: usize) {
 /// Each line is sent with synchronized rendering and a delay proportional
 /// to line length divided by baud_cps.
 pub async fn send_splash_screen(tx: &mpsc::Sender<String>, baud_cps: u32) {
+    // Clear the screen so ceremony text doesn't bleed into splash/login
+    let _ = tx.send("\x1B[2J\x1B[H".to_string()).await;
+
     let splash_lines = build_splash_art();
 
     for line in &splash_lines {
@@ -209,8 +283,7 @@ fn strip_ansi_len(s: &str) -> usize {
 }
 
 /// Build the ANSI art splash screen as a vector of pre-formatted lines.
-/// Uses CP437 box-drawing and CGA colors for authentic BBS atmosphere.
-/// Features a large Matrix-themed ASCII art logo for "THE CONSTRUCT".
+/// Uses a plain-text figlet-style logo (no box border) for a compact layout.
 fn build_splash_art() -> Vec<String> {
     let mut lines = Vec::new();
 
@@ -224,232 +297,43 @@ fn build_splash_art() -> Vec<String> {
         }};
     }
 
-    // Helper: bordered empty row
-    macro_rules! empty_row {
-        () => {
-            lines.push(line!(|w: &mut AnsiWriter| {
-                w.set_fg(Color::LightCyan);
-                w.bold();
-                w.write_cp437(&[0xBA]); // ║
-                w.write_str(&" ".repeat(78));
-                w.write_cp437(&[0xBA]); // ║
-            }));
-        };
-    }
-
-    // Helper: bordered row with content (content must be exactly 78 visible chars)
-    macro_rules! box_row {
-        ($body:expr) => {
-            lines.push(line!(|w: &mut AnsiWriter| {
-                w.set_fg(Color::LightCyan);
-                w.bold();
-                w.write_cp437(&[0xBA]); // ║
-                $body(w);
-                w.set_fg(Color::LightCyan);
-                w.bold();
-                w.write_cp437(&[0xBA]); // ║
-            }));
-        };
-    }
-
     // Blank line at top
     lines.push(String::new());
 
-    // Double-line top border
-    lines.push(line!(|w: &mut AnsiWriter| {
-        w.set_fg(Color::LightCyan);
-        w.bold();
-        w.write_cp437(&[0xC9]); // ╔
-        for _ in 0..78 {
-            w.write_cp437(&[0xCD]); // ═
-        }
-        w.write_cp437(&[0xBB]); // ╗
-    }));
+    // ASCII art logo -- centered "THE CONSTRUCT" figlet
+    let art_lines: &[&str] = &[
+        r"         _________                         __                        __   ",
+        r"     THE \_   ___ \  ____   ____   _______/  |________ __ __   _____/  |_ ",
+        r"         /    \  \/ /  _ \ /    \ /  ___/\   __\_  __ \  |  \_/ ___\   __\",
+        r"         \     \___(  <_> )   |  \\___ \  |  |  |  | \/  |  /\  \___|  |  ",
+        r"          \______  /\____/|___|  /____  > |__|  |__|  |____/  \___  >__|  ",
+        r"                 \/            \/     \/                          \/       ",
+    ];
 
-    // Empty row inside box
-    empty_row!();
-
-    // ---- ASCII Art Logo: THE CONSTRUCT (6 lines) ----
-    // Each logo line: 4 spaces + 3 rain + 2 spaces + content + padding + 2 spaces + 3 rain + 4 spaces
-    // Frame: " ░▒▓  " (6) + content + "  ▓▒░ " (6) = content fits in 66 chars
-    //
-    // THE CONSTRUCT in block chars with matrix rain borders
-    // Line layout inside 78-char box:
-    //   4sp + rain(3) + 2sp = 9 left margin
-    //   2sp + rain(3) + 4sp = 9 right margin
-    //   Content area = 78 - 9 - 9 = 60 chars
-    //
-    // Using a cleaner approach: write entire lines as CP437 byte arrays
-    // CP437: 0xDB=█ 0xDF=▀ 0xDC=▄ 0xB0=░ 0xB1=▒ 0xB2=▓ 0x20=space
-
-    // Logo line helper: writes rain-bordered art line
-    // rain_l/rain_r: 3 bytes each for matrix rain decoration
-    // art: CP437 bytes for the art content (must be exactly 60 bytes)
-    let logo_line = |lines: &mut Vec<String>,
-                     rain_l: [u8; 3],
-                     rain_r: [u8; 3],
-                     art: &[u8; 60]| {
+    for art in art_lines {
         lines.push(line!(|w: &mut AnsiWriter| {
-            w.set_fg(Color::DarkGray);
-            w.write_str("    ");
-            w.write_cp437(&rain_l);
-            w.write_str("  ");
             w.set_fg(Color::LightGreen);
             w.bold();
-            w.write_cp437(art);
-            w.set_fg(Color::DarkGray);
-            w.write_str("  ");
-            w.write_cp437(&rain_r);
-            w.write_str("    ");
+            w.write_str(art);
         }));
-    };
+    }
 
-    // THE CONSTRUCT - 6-line blocky ASCII art logo
-    // Each art content = exactly 60 CP437 bytes
-    //
-    // Design (visual, 60 columns):
-    // Line1: ▀▀▀█▀▀▀ █   █ █▀▀▀
-    // Line2:    █   █▀▀▀█ █▀▀
-    // Line3:    █   █   █ █▀▀▀
-    // Line4:  ▀▀▀ ▀▀█▀▀ █▀ █ ▀▀▀ ▀█▀ █▀▀ █ █ ▀▀▀ ▀█▀
-    // Line5:  █   █ █  █▀█  ▀▀█  █  ██  █ █ █    █
-    // Line6:  ▄▄▄ ▄▄█▄▄ █ ▀█ ▄▄▄  █  █ █ ▄▄▀ ▄▄▄  █
-
-    // Line 1: THE top - "▀▀▀█▀▀▀ █   █ █▀▀▀"
-    // 0xDF=▀ 0xDB=█ 0x20=space
-    logo_line(&mut lines,
-        [0xB0, 0xB1, 0xB2],
-        [0xB2, 0xB1, 0xB0],
-        //          ▀  ▀  ▀  █  ▀  ▀  ▀     █        █     █  ▀  ▀  ▀  ▀
-        &[0xDF,0xDF,0xDF,0xDB,0xDF,0xDF,0xDF,0x20,0xDB,0x20,0x20,0x20,0xDB,0x20,0xDB,0xDF,0xDF,0xDF,0xDF,0x20, // 20
-          0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20, // 40
-          0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20] // 60
-    );
-
-    // Line 2: THE middle - "   █   █████ ████"
-    logo_line(&mut lines,
-        [0xB1, 0xB0, 0xB2],
-        [0xB0, 0xB2, 0xB1],
-        //             █              █  █  █  █  █     █  █  █  █
-        &[0x20,0x20,0x20,0xDB,0x20,0x20,0x20,0xDB,0xDB,0xDB,0xDB,0xDB,0x20,0xDB,0xDB,0xDB,0xDB,0x20,0x20,0x20, // 20
-          0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20, // 40
-          0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20] // 60
-    );
-
-    // Line 3: THE bottom - "   █   █   █ ████"
-    logo_line(&mut lines,
-        [0xB2, 0xB1, 0xB0],
-        [0xB1, 0xB0, 0xB2],
-        //             █        █        █     █  █  █  █
-        &[0x20,0x20,0x20,0xDB,0x20,0x20,0x20,0xDB,0x20,0x20,0x20,0xDB,0x20,0xDB,0xDB,0xDB,0xDB,0x20,0x20,0x20, // 20
-          0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20, // 40
-          0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20] // 60
-    );
-
-    // Line 4: CONSTRUCT top
-    // "█▀▀ █▀█ █▀ █ ▀▀█ ▀█▀ █▀▀ █ █ █▀▀ ▀█▀"
-    logo_line(&mut lines,
-        [0xB0, 0xB2, 0xB1],
-        [0xB2, 0xB0, 0xB1],
-        // █  ▀  ▀     █  ▀  █     █  ▀     █     ▀  ▀  █     ▀  █  ▀     █  ▀  ▀     █     █     █  ▀  ▀     ▀  █  ▀
-        &[0xDB,0xDF,0xDF,0x20,0xDB,0xDF,0xDB,0x20,0xDB,0xDF,0x20,0xDB,0x20,0xDF,0xDF,0xDB,0x20,0xDF,0xDB,0xDF, // 20
-          0x20,0xDB,0xDF,0xDF,0x20,0xDB,0x20,0xDB,0x20,0xDB,0xDF,0xDF,0x20,0xDF,0xDB,0xDF,0x20,0x20,0x20,0x20, // 40
-          0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20] // 60
-    );
-
-    // Line 5: CONSTRUCT middle
-    // "█   █ █ ██ █  ▀▀█  █  ██  █ █ █    █ "
-    logo_line(&mut lines,
-        [0xB1, 0xB2, 0xB0],
-        [0xB0, 0xB1, 0xB2],
-        // █        █     █     █  █     █        ▀  ▀  █        █        █  █        █     █     █           █
-        &[0xDB,0x20,0x20,0x20,0xDB,0x20,0xDB,0x20,0xDB,0xDB,0x20,0xDB,0x20,0x20,0xDF,0xDF,0xDB,0x20,0x20,0xDB, // 20
-          0x20,0x20,0xDB,0xDB,0x20,0x20,0xDB,0x20,0xDB,0x20,0xDB,0x20,0x20,0x20,0x20,0xDB,0x20,0x20,0x20,0x20, // 40
-          0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20] // 60
-    );
-
-    // Line 6: CONSTRUCT bottom
-    // "█▄▄ ▀▄▀ █ ▀█ ▄▄▀  █  █ █ ▀▄▀ █▄▄  █ "
-    logo_line(&mut lines,
-        [0xB2, 0xB0, 0xB1],
-        [0xB1, 0xB2, 0xB0],
-        // █  ▄  ▄     ▀  ▄  ▀     █     ▀  █     ▄  ▄  ▀        █        █     █     ▀  ▄  ▀     █  ▄  ▄        █
-        &[0xDB,0xDC,0xDC,0x20,0xDF,0xDC,0xDF,0x20,0xDB,0x20,0xDF,0xDB,0x20,0xDC,0xDC,0xDF,0x20,0x20,0xDB,0x20, // 20
-          0x20,0xDB,0x20,0xDB,0x20,0xDF,0xDC,0xDF,0x20,0xDB,0xDC,0xDC,0x20,0x20,0xDB,0x20,0x20,0x20,0x20,0x20, // 40
-          0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20,0x20] // 60
-    );
-
-    // Empty row
-    empty_row!();
+    // Blank line
+    lines.push(String::new());
 
     // Tagline
-    box_row!(|w: &mut AnsiWriter| {
-        w.set_fg(Color::Yellow);
-        // Center: "Where the underground connects" = 30 chars
-        w.write_str("                        Where the underground connects                        ");
-    });
-
-    // Empty row
-    empty_row!();
-
-    // Decorative divider inside box (single-line)
     lines.push(line!(|w: &mut AnsiWriter| {
-        w.set_fg(Color::LightCyan);
-        w.bold();
-        w.write_cp437(&[0xCC]); // ╠
-        w.set_fg(Color::Brown);
-        for _ in 0..78 {
-            w.write_cp437(&[0xC4]); // ─
-        }
-        w.set_fg(Color::LightCyan);
-        w.bold();
-        w.write_cp437(&[0xB9]); // ╣
+        w.set_fg(Color::Yellow);
+        w.write_str("                      A haven for travelers, near and far");
     }));
 
-    // Empty row
-    empty_row!();
+    // Blank line
+    lines.push(String::new());
 
-    // System info line: Running on Wildyahoos | v0.1.0 | ANSI/CP437 | 16-Color CGA
-    // "  Running on Wildyahoos " (24) + "│" (1) + " v0.1.0 " (8) +
-    // "│" (1) + " ANSI/CP437 " (12) + "│" (1) + " 16-Color CGA" (14) +
-    // spaces to fill 78: 78 - 24 - 1 - 8 - 1 - 12 - 1 - 14 = 17 spaces
-    box_row!(|w: &mut AnsiWriter| {
-        w.set_fg(Color::Green);
-        w.write_str("  Running on Wildyahoos ");
-        w.write_cp437(&[0xB3]); // │
-        w.write_str(" v0.1.0 ");
-        w.write_cp437(&[0xB3]); // │
-        w.write_str(" ANSI/CP437 ");
-        w.write_cp437(&[0xB3]); // │
-        w.write_str(" 16-Color CGA                 ");
-    });
-
-    // Empty row
-    empty_row!();
-
-    // Decorative block art row
-    box_row!(|w: &mut AnsiWriter| {
-        w.set_fg(Color::DarkGray);
-        w.write_str("    ");
-        // Decorative blocks
-        for _ in 0..70 {
-            w.write_cp437(&[0xB0]); // ░
-        }
-        w.write_str("    ");
-    });
-
-    // Empty row
-    empty_row!();
-
-    // Double-line bottom border
+    // System info
     lines.push(line!(|w: &mut AnsiWriter| {
-        w.set_fg(Color::LightCyan);
-        w.bold();
-        w.write_cp437(&[0xC8]); // ╚
-        for _ in 0..78 {
-            w.write_cp437(&[0xCD]); // ═
-        }
-        w.write_cp437(&[0xBC]); // ╝
+        w.set_fg(Color::Green);
+        w.write_str("         Running on Wildyahoos | v0.1.0 | ANSI/CP437 | 16-Color CGA");
     }));
 
     // Blank line after splash
@@ -529,8 +413,17 @@ mod tests {
         assert!(all_text.contains("CONNECT 38400"));
         assert!(all_text.contains("Negotiating protocols"));
         assert!(all_text.contains("ANSI/CP437 terminal detected"));
-        assert!(all_text.contains("Connecting to The Construct BBS"));
+        assert!(all_text.contains("Performing system handshake"));
+        assert!(all_text.contains("Connection established"));
+        assert!(all_text.contains("Loading The Construct BBS"));
         assert!(all_text.contains("Connected to Node 1 of 4"));
+
+        // Verify order: Connection established before Loading, Node count last
+        let estab_pos = all_text.find("Connection established").unwrap();
+        let loading_pos = all_text.find("Loading The Construct BBS").unwrap();
+        let node_pos = all_text.find("Connected to Node").unwrap();
+        assert!(estab_pos < loading_pos, "Connection established should come before Loading");
+        assert!(loading_pos < node_pos, "Node count should be last");
     }
 
     #[tokio::test]

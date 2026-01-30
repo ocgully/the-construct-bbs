@@ -12,6 +12,8 @@ pub enum GameScreen {
     Travel { selecting_city: bool },
     /// Buy/sell at current location
     Trade { mode: TradeMode },
+    /// Use drugs from inventory
+    UseDrugs,
     /// Active combat encounter
     Combat { enemy_type: EnemyType, enemy_hp: u32 },
     /// Random event resolution
@@ -38,11 +40,9 @@ pub enum GameScreen {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TradeMode {
-    Menu,           // Choose buy/sell
-    Buying,         // Select drug to buy
-    Selling,        // Select drug to sell
-    BuyAmount { commodity: String }, // Enter quantity
-    SellAmount { commodity: String },
+    Menu,           // Choose buy/sell or cancel pending
+    Buying,         // Select drug to buy (instant purchase on keypress)
+    Selling,        // Select drug to sell (instant sale on keypress)
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -98,7 +98,7 @@ impl GtmFlow {
     /// Create new game from fresh state
     pub fn new() -> Self {
         let state = GameState::new();
-        let prices = generate_prices(&state.city, &state.location);
+        let prices = generate_prices_with_supply(&state.city, &state.location, &state.market_supply);
         Self {
             state,
             screen: GameScreen::Intro,
@@ -109,13 +109,18 @@ impl GtmFlow {
 
     /// Resume game from loaded state
     pub fn from_state(state: GameState) -> Self {
-        let prices = generate_prices(&state.city, &state.location);
+        let prices = generate_prices_with_supply(&state.city, &state.location, &state.market_supply);
         Self {
             state,
-            screen: GameScreen::MainMenu,
+            screen: GameScreen::Intro,  // Show splash screen first
             prices,
             input_buffer: String::new(),
         }
+    }
+
+    /// Regenerate prices for current location (call after travel or when prices should change)
+    pub fn refresh_prices(&mut self) {
+        self.prices = generate_prices_with_supply(&self.state.city, &self.state.location, &self.state.market_supply);
     }
 
     /// Get current screen for rendering
@@ -171,9 +176,8 @@ impl GtmFlow {
             GameScreen::MainMenu
                 | GameScreen::Intro
                 | GameScreen::Travel { .. }
-                | GameScreen::Trade { mode: TradeMode::Menu }
-                | GameScreen::Trade { mode: TradeMode::Buying }
-                | GameScreen::Trade { mode: TradeMode::Selling }
+                | GameScreen::Trade { .. }  // All trade modes are now single-key
+                | GameScreen::UseDrugs
                 | GameScreen::Combat { .. }
                 | GameScreen::Event { .. }
                 | GameScreen::LoanShark
@@ -197,6 +201,7 @@ impl GtmFlow {
             GameScreen::MainMenu => self.handle_main_menu(&input),
             GameScreen::Travel { selecting_city } => self.handle_travel(&input, *selecting_city),
             GameScreen::Trade { mode } => self.handle_trade(&input, mode.clone()),
+            GameScreen::UseDrugs => self.handle_use_drugs(&input),
             GameScreen::Combat { enemy_type, enemy_hp } => {
                 self.handle_combat(&input, enemy_type.clone(), *enemy_hp)
             }
@@ -220,53 +225,66 @@ impl GtmFlow {
     }
 
     fn handle_main_menu(&mut self, input: &str) -> GtmAction {
+        // Clear any displayed message when taking action
+        self.state.last_message = None;
+
         match input {
             "T" => {
                 self.screen = GameScreen::Travel { selecting_city: false };
-                GtmAction::Continue
+                GtmAction::SaveGame
             }
             "B" => {
                 self.screen = GameScreen::Trade { mode: TradeMode::Menu };
-                GtmAction::Continue
+                GtmAction::SaveGame
             }
             "L" => {
                 self.screen = GameScreen::LoanShark;
-                GtmAction::Continue
+                GtmAction::SaveGame
             }
             "K" if self.state.bank_unlocked => {
                 self.screen = GameScreen::Bank;
-                GtmAction::Continue
+                GtmAction::SaveGame
             }
             "H" => {
                 let borough = get_borough(&self.state.city, &self.state.location);
                 let is_mob = borough.map(|b| b.has_mob_doctor).unwrap_or(false);
                 self.screen = GameScreen::Hospital { is_mob_doctor: is_mob };
-                GtmAction::Continue
+                GtmAction::SaveGame
             }
             "G" => {
                 self.screen = GameScreen::GunShop;
-                GtmAction::Continue
+                GtmAction::SaveGame
+            }
+            "U" => {
+                // Use drugs from inventory
+                if self.state.inventory_count() > 0 {
+                    self.screen = GameScreen::UseDrugs;
+                    GtmAction::SaveGame
+                } else {
+                    self.state.last_message = Some("You don't have anything to use.".to_string());
+                    GtmAction::SaveGame
+                }
             }
             "C" => {
                 if get_city(&self.state.city).map(|c| c.has_casino).unwrap_or(false) {
                     self.screen = GameScreen::Casino { game_type: None };
-                    GtmAction::Continue
+                    GtmAction::SaveGame
                 } else {
                     GtmAction::Continue // No casino here
                 }
             }
             "Q" => {
                 self.screen = GameScreen::Quest;
-                GtmAction::Continue
+                GtmAction::SaveGame
             }
             "S" => {
                 // Show stats / leaderboard
                 self.screen = GameScreen::Leaderboard;
-                GtmAction::Continue
+                GtmAction::SaveGame
             }
             "X" => {
                 self.screen = GameScreen::ConfirmQuit;
-                GtmAction::Continue
+                GtmAction::SaveGame
             }
             _ => GtmAction::Continue,
         }
@@ -275,7 +293,7 @@ impl GtmFlow {
     fn handle_travel(&mut self, input: &str, selecting_city: bool) -> GtmAction {
         if input == "Q" || input == "B" {
             self.screen = GameScreen::MainMenu;
-            return GtmAction::Continue;
+            return GtmAction::SaveGame;
         }
 
         if selecting_city {
@@ -288,8 +306,9 @@ impl GtmFlow {
                         // For now, just move
                         self.state.city = city.key.to_string();
                         self.state.location = city.boroughs[0].key.to_string();
+                        self.state.clear_pending_transaction(); // Clear pending on travel
                         self.use_action();
-                        self.prices = generate_prices(&self.state.city, &self.state.location);
+                        self.refresh_prices();
 
                         // Check for random event after travel
                         if let Some(event_screen) = crate::game::events::maybe_trigger_event(&self.state) {
@@ -305,7 +324,7 @@ impl GtmFlow {
             // Select borough by number, or C for city
             if input == "C" {
                 self.screen = GameScreen::Travel { selecting_city: true };
-                return GtmAction::Continue;
+                return GtmAction::SaveGame;
             }
 
             if let Ok(idx) = input.parse::<usize>() {
@@ -314,8 +333,9 @@ impl GtmFlow {
                         let borough = &city.boroughs[idx - 1];
                         if borough.key != self.state.location {
                             self.state.location = borough.key.to_string();
+                            self.state.clear_pending_transaction(); // Clear pending on travel
                             self.use_action();
-                            self.prices = generate_prices(&self.state.city, &self.state.location);
+                            self.refresh_prices();
 
                             // Check for random event after travel
                             if let Some(event_screen) = crate::game::events::maybe_trigger_event(&self.state) {
@@ -334,20 +354,51 @@ impl GtmFlow {
     }
 
     fn handle_trade(&mut self, input: &str, mode: TradeMode) -> GtmAction {
+        use crate::game::{get_shop_inventory, PendingTransaction};
+
         match mode {
             TradeMode::Menu => {
                 match input {
                     "B" => {
+                        self.state.clear_pending_transaction();
                         self.screen = GameScreen::Trade { mode: TradeMode::Buying };
-                        GtmAction::Continue
+                        GtmAction::SaveGame
                     }
                     "S" => {
+                        self.state.clear_pending_transaction();
                         self.screen = GameScreen::Trade { mode: TradeMode::Selling };
-                        GtmAction::Continue
+                        GtmAction::SaveGame
+                    }
+                    "C" => {
+                        // Cancel pending transaction (costs 1 action)
+                        if let Some(ref pending) = self.state.pending_transaction.clone() {
+                            if self.state.actions_remaining > 0 {
+                                self.state.actions_remaining -= 1;
+                                if pending.is_purchase {
+                                    // Refund: remove from inventory, return cash
+                                    self.state.remove_inventory(&pending.commodity, pending.quantity);
+                                    self.state.cash += pending.total_cost;
+                                    self.state.stats.total_bought -= pending.total_cost;
+                                    // Undo supply adjustment
+                                    self.state.adjust_supply(&pending.commodity, pending.quantity as i32);
+                                } else {
+                                    // Undo sale: add back to inventory at original purchase price
+                                    self.state.add_inventory(&pending.commodity, pending.quantity, pending.purchase_price);
+                                    self.state.cash -= pending.total_cost;
+                                    self.state.stats.total_sold -= pending.total_cost;
+                                    self.state.stats.total_profit = self.state.stats.total_sold - self.state.stats.total_bought;
+                                    // Undo supply adjustment
+                                    self.state.adjust_supply(&pending.commodity, -(pending.quantity as i32));
+                                }
+                                self.state.clear_pending_transaction();
+                            }
+                        }
+                        GtmAction::SaveGame
                     }
                     "Q" | "X" => {
+                        self.state.clear_pending_transaction();
                         self.screen = GameScreen::MainMenu;
-                        GtmAction::Continue
+                        GtmAction::SaveGame
                     }
                     _ => GtmAction::Continue,
                 }
@@ -355,15 +406,39 @@ impl GtmFlow {
             TradeMode::Buying => {
                 if input == "Q" || input == "B" {
                     self.screen = GameScreen::Trade { mode: TradeMode::Menu };
-                    return GtmAction::Continue;
+                    return GtmAction::SaveGame;
                 }
-                // Select commodity by number
-                if let Ok(idx) = input.parse::<usize>() {
-                    if idx > 0 && idx <= COMMODITIES.len() {
-                        let commodity = &COMMODITIES[idx - 1];
-                        self.screen = GameScreen::Trade {
-                            mode: TradeMode::BuyAmount { commodity: commodity.key.to_string() },
-                        };
+                // Get local shop inventory
+                let shop = get_shop_inventory(&self.state.city, &self.state.location);
+
+                // Parse number input (0 = item 10)
+                if let Ok(mut idx) = input.parse::<usize>() {
+                    if idx == 0 { idx = 10; }
+
+                    if idx >= 1 && idx <= shop.len() {
+                        let (commodity_key, _) = shop[idx - 1];
+                        if let Some(&price) = self.prices.get(commodity_key) {
+                            let capacity_left = self.state.coat_capacity() - self.state.inventory_count();
+
+                            // Can afford and have space?
+                            if price <= self.state.cash && capacity_left >= 1 {
+                                // Instant single-unit purchase with price tracking
+                                self.state.cash -= price;
+                                self.state.add_inventory(commodity_key, 1, price);
+                                self.state.stats.total_bought += price;
+                                // Buying reduces local supply (price goes up for next buy)
+                                self.state.adjust_supply(commodity_key, -1);
+                                // Store as pending transaction for cancel option
+                                self.state.pending_transaction = Some(PendingTransaction {
+                                    commodity: commodity_key.to_string(),
+                                    quantity: 1,
+                                    total_cost: price,
+                                    is_purchase: true,
+                                    purchase_price: price,
+                                });
+                                return GtmAction::SaveGame;
+                            }
+                        }
                     }
                 }
                 GtmAction::Continue
@@ -371,65 +446,44 @@ impl GtmFlow {
             TradeMode::Selling => {
                 if input == "Q" || input == "B" {
                     self.screen = GameScreen::Trade { mode: TradeMode::Menu };
-                    return GtmAction::Continue;
+                    return GtmAction::SaveGame;
                 }
-                // Select commodity by number
-                if let Ok(idx) = input.parse::<usize>() {
-                    if idx > 0 && idx <= COMMODITIES.len() {
-                        let commodity = &COMMODITIES[idx - 1];
-                        if self.state.inventory.get(commodity.key).copied().unwrap_or(0) > 0 {
-                            self.screen = GameScreen::Trade {
-                                mode: TradeMode::SellAmount { commodity: commodity.key.to_string() },
-                            };
-                        }
-                    }
-                }
-                GtmAction::Continue
-            }
-            TradeMode::BuyAmount { ref commodity } => {
-                if input == "Q" || input == "B" || input.is_empty() {
-                    self.screen = GameScreen::Trade { mode: TradeMode::Buying };
-                    return GtmAction::Continue;
-                }
-                if let Ok(qty) = input.parse::<u32>() {
-                    if let Some(&price) = self.prices.get(commodity) {
-                        let total = price * (qty as i64);
-                        let capacity_left = self.state.coat_capacity() - self.state.inventory_count();
-                        if qty <= capacity_left && total <= self.state.cash {
-                            self.state.cash -= total;
-                            *self.state.inventory.entry(commodity.clone()).or_insert(0) += qty;
-                            self.state.stats.total_bought += total;
-                            self.screen = GameScreen::Trade { mode: TradeMode::Menu };
-                            return GtmAction::SaveGame;
-                        }
-                    }
-                }
-                self.screen = GameScreen::Trade { mode: TradeMode::Buying };
-                GtmAction::Continue
-            }
-            TradeMode::SellAmount { ref commodity } => {
-                if input == "Q" || input == "B" || input.is_empty() {
-                    self.screen = GameScreen::Trade { mode: TradeMode::Selling };
-                    return GtmAction::Continue;
-                }
-                if let Ok(qty) = input.parse::<u32>() {
-                    let owned = self.state.inventory.get(commodity).copied().unwrap_or(0);
-                    if let Some(&price) = self.prices.get(commodity) {
-                        if qty <= owned {
-                            let total = price * (qty as i64);
-                            self.state.cash += total;
-                            *self.state.inventory.entry(commodity.clone()).or_insert(0) -= qty;
-                            if self.state.inventory.get(commodity).copied().unwrap_or(0) == 0 {
-                                self.state.inventory.remove(commodity);
+                // Get local shop inventory (can only sell what shop would buy)
+                let shop = get_shop_inventory(&self.state.city, &self.state.location);
+
+                // Parse number input (0 = item 10)
+                if let Ok(mut idx) = input.parse::<usize>() {
+                    if idx == 0 { idx = 10; }
+
+                    if idx >= 1 && idx <= shop.len() {
+                        let (commodity_key, _) = shop[idx - 1];
+                        let owned = self.state.get_quantity(commodity_key);
+
+                        if owned > 0 {
+                            if let Some(&sell_price) = self.prices.get(commodity_key) {
+                                // Get purchase price before removing (for cancel tracking)
+                                let purchase_price = self.state.get_lowest_cost(commodity_key).unwrap_or(0);
+
+                                // Instant single-unit sale (sells highest-profit lot first)
+                                self.state.remove_inventory(commodity_key, 1);
+                                self.state.cash += sell_price;
+                                self.state.stats.total_sold += sell_price;
+                                self.state.stats.total_profit = self.state.stats.total_sold - self.state.stats.total_bought;
+                                // Selling increases local supply (price goes down)
+                                self.state.adjust_supply(commodity_key, 1);
+                                // Store as pending transaction for cancel option
+                                self.state.pending_transaction = Some(PendingTransaction {
+                                    commodity: commodity_key.to_string(),
+                                    quantity: 1,
+                                    total_cost: sell_price,
+                                    is_purchase: false,
+                                    purchase_price, // Track original cost for undo
+                                });
+                                return GtmAction::SaveGame;
                             }
-                            self.state.stats.total_sold += total;
-                            self.state.stats.total_profit = self.state.stats.total_sold - self.state.stats.total_bought;
-                            self.screen = GameScreen::Trade { mode: TradeMode::Menu };
-                            return GtmAction::SaveGame;
                         }
                     }
                 }
-                self.screen = GameScreen::Trade { mode: TradeMode::Selling };
                 GtmAction::Continue
             }
         }
@@ -455,6 +509,9 @@ impl GtmFlow {
 
         let result = resolve_combat(&self.state, &enemy_type, enemy_hp, action);
         apply_combat_result(&mut self.state, &result);
+
+        // Save combat message to display on next screen
+        self.state.last_message = Some(result.message.clone());
 
         // Check for death
         if self.state.game_over {
@@ -516,7 +573,7 @@ impl GtmFlow {
             }
             "Q" | "X" => {
                 self.screen = GameScreen::MainMenu;
-                GtmAction::Continue
+                GtmAction::SaveGame
             }
             _ => GtmAction::Continue,
         }
@@ -540,36 +597,223 @@ impl GtmFlow {
             }
             "Q" | "X" => {
                 self.screen = GameScreen::MainMenu;
-                GtmAction::Continue
+                GtmAction::SaveGame
             }
             _ => GtmAction::Continue,
         }
     }
 
-    fn handle_hospital(&mut self, input: &str, _is_mob_doctor: bool) -> GtmAction {
+    fn handle_hospital(&mut self, input: &str, is_mob_doctor: bool) -> GtmAction {
         match input {
             "H" => {
                 // Heal - costs money
-                let heal_cost = 10000; // $100 per visit
-                if self.state.cash >= heal_cost {
+                let heal_cost = if is_mob_doctor { 15000 } else { 10000 };
+                if self.state.cash >= heal_cost && self.state.health < self.state.max_health {
                     self.state.cash -= heal_cost;
                     self.state.health = self.state.max_health;
                     self.state.stats.hospital_visits += 1;
+                    self.state.last_message = Some("Patched up. Good as new.".to_string());
+                }
+                self.screen = GameScreen::MainMenu;
+                GtmAction::SaveGame
+            }
+            "D" => {
+                // Detox - clear high status
+                let detox_cost = if is_mob_doctor { 25000 } else { 20000 }; // $200-250
+                if self.state.cash >= detox_cost && self.state.high_tier > 0 {
+                    self.state.cash -= detox_cost;
+                    self.state.high_tier = 0;
+                    self.state.last_message = Some("Detox complete. Head's clear now.".to_string());
                 }
                 self.screen = GameScreen::MainMenu;
                 GtmAction::SaveGame
             }
             "Q" | "X" => {
                 self.screen = GameScreen::MainMenu;
-                GtmAction::Continue
+                GtmAction::SaveGame
             }
             _ => GtmAction::Continue,
         }
     }
 
-    fn handle_gun_shop(&mut self, _input: &str) -> GtmAction {
-        // TODO: implement gun shop
-        self.screen = GameScreen::MainMenu;
+    fn handle_gun_shop(&mut self, input: &str) -> GtmAction {
+        use crate::game::{WEAPONS, get_weapon};
+
+        if input == "Q" || input == "X" {
+            self.screen = GameScreen::MainMenu;
+            return GtmAction::SaveGame;
+        }
+
+        // Find weapon by first letter of key
+        for weapon in WEAPONS.iter() {
+            let first_char = weapon.key.chars().next().unwrap_or(' ').to_ascii_uppercase();
+            if input == first_char.to_string() {
+                // Can afford?
+                if self.state.cash >= weapon.price {
+                    self.state.cash -= weapon.price;
+
+                    // Set weapon in appropriate slot
+                    if weapon.is_gun {
+                        self.state.weapons.gun = Some(weapon.key.to_string());
+                    } else {
+                        self.state.weapons.melee = Some(weapon.key.to_string());
+                    }
+
+                    self.state.last_message = Some(format!("Purchased {} for {}!", weapon.name, super::render::format_money(weapon.price)));
+                    self.screen = GameScreen::MainMenu;
+                    return GtmAction::SaveGame;
+                } else {
+                    self.state.last_message = Some(format!("Can't afford {} ({}).", weapon.name, super::render::format_money(weapon.price)));
+                    return GtmAction::SaveGame;
+                }
+            }
+        }
+
+        GtmAction::Continue
+    }
+
+    fn handle_use_drugs(&mut self, input: &str) -> GtmAction {
+        use crate::game::get_commodity;
+
+        if input == "Q" || input == "X" {
+            self.screen = GameScreen::MainMenu;
+            return GtmAction::SaveGame;
+        }
+
+        // Get owned commodities (only show what we have)
+        let owned: Vec<(String, u32)> = self.state.inventory_lots
+            .iter()
+            .map(|(k, lots)| (k.clone(), lots.iter().map(|l| l.quantity).sum()))
+            .filter(|(_, qty)| *qty > 0)
+            .collect();
+
+        // Parse number input (1-9, 0 for 10)
+        if let Ok(mut idx) = input.parse::<usize>() {
+            if idx == 0 { idx = 10; }
+
+            if idx >= 1 && idx <= owned.len() {
+                let (commodity_key, _) = &owned[idx - 1];
+
+                // Consume 1 unit
+                self.state.remove_inventory(commodity_key, 1);
+
+                // Get drug properties
+                if let Some(commodity) = get_commodity(commodity_key) {
+                    let mut effects: Vec<String> = Vec::new();
+
+                    // Action boost
+                    if commodity.action_boost {
+                        let boost = 2;
+                        self.state.actions_remaining += boost;
+                        effects.push(format!("+{} actions", boost));
+                    }
+
+                    // Health effects based on drug type
+                    let health_change = match commodity_key.as_str() {
+                        "krokodil" => -10i32,  // Flesh-eating drug hurts
+                        "fentanyl" => -5,      // Dangerous
+                        "heroin" => -3,        // Addictive and harmful
+                        "bathsalts" => -5,     // Can make you crazy
+                        "meth" => -2,          // Wears you down
+                        "speed" => -1,         // Mild wear
+                        "weed" => 5,           // Relaxing, minor heal
+                        "ludes" => 3,          // Chill
+                        "acid" => 0,           // No physical effect
+                        "dmt" => 0,            // Spiritual, no physical
+                        "ketamine" => -2,      // Anesthetic effects
+                        "mdma" => -1,          // Dehydration
+                        "cocaine" => -2,       // Heart strain
+                        "oxy" => -3,           // Opioid effects
+                        "adderall" => 0,       // Focus drug
+                        _ => 0,
+                    };
+
+                    // Weed makes you lazy - costs an action
+                    if commodity_key == "weed" && self.state.actions_remaining > 0 {
+                        self.state.actions_remaining -= 1;
+                        effects.push("-1 action".to_string());
+                    }
+
+                    if health_change != 0 {
+                        self.state.health = ((self.state.health as i32) + health_change)
+                            .max(1)
+                            .min(self.state.max_health as i32) as u32;
+
+                        if health_change > 0 {
+                            effects.push(format!("+{} HP", health_change));
+                        } else {
+                            effects.push(format!("{} HP", health_change));
+                        }
+                    }
+
+                    // Addiction system
+                    if commodity.addictive {
+                        let addiction = self.state.addiction.entry(commodity_key.to_string()).or_insert(0);
+                        *addiction = (*addiction + 1).min(100);
+                        if *addiction >= 10 && *addiction % 10 == 0 {
+                            effects.push(format!("addiction lv{}", addiction));
+                        }
+                    }
+
+                    // Getting high - increase tier (max 3)
+                    // Some drugs get you more high than others
+                    let high_increase = match commodity_key.as_str() {
+                        "acid" | "dmt" | "bathsalts" => 2,  // Psychedelics hit hard
+                        "weed" | "ludes" | "tidepods" => 0, // Mild, no visual distortion
+                        _ => 1,  // Most drugs increase by 1
+                    };
+                    if high_increase > 0 {
+                        let old_tier = self.state.high_tier;
+                        self.state.high_tier = (self.state.high_tier + high_increase).min(3);
+                        if self.state.high_tier > old_tier {
+                            effects.push(format!("high lv{}", self.state.high_tier));
+                        }
+                    }
+
+                    // Special effects for certain drugs
+                    let special = match commodity_key.as_str() {
+                        "acid" => Some("The walls are breathing..."),
+                        "dmt" => Some("You meet machine elves."),
+                        "bathsalts" => Some("You feel invincible!"),
+                        "mdma" => Some("Everyone is your friend!"),
+                        "weed" => Some("Everything is chill."),
+                        "cocaine" => Some("You could conquer the world!"),
+                        "meth" => Some("You haven't slept in 3 days."),
+                        "heroin" => Some("Everything fades away..."),
+                        "ketamine" => Some("You enter the K-hole."),
+                        "fentanyl" => Some("Careful with that..."),
+                        "krokodil" => Some("That can't be good for you."),
+                        _ => None,
+                    };
+
+                    let effect_str = if effects.is_empty() {
+                        "No noticeable effect.".to_string()
+                    } else {
+                        effects.join(", ")
+                    };
+
+                    let msg = if let Some(special) = special {
+                        format!("Used {}. {} {}", commodity.name, effect_str, special)
+                    } else {
+                        format!("Used {}. {}", commodity.name, effect_str)
+                    };
+
+                    self.state.last_message = Some(msg);
+                }
+
+                // Check for death from overdose
+                if self.state.health == 0 {
+                    self.state.game_over = true;
+                    self.state.game_over_reason = Some("You overdosed.".to_string());
+                    self.screen = GameScreen::GameOver;
+                } else {
+                    self.screen = GameScreen::MainMenu;
+                }
+
+                return GtmAction::SaveGame;
+            }
+        }
+
         GtmAction::Continue
     }
 
@@ -592,7 +836,7 @@ impl GtmFlow {
             }
             "Q" | "X" => {
                 self.screen = GameScreen::MainMenu;
-                GtmAction::Continue
+                GtmAction::SaveGame
             }
             _ => GtmAction::Continue,
         }
@@ -607,7 +851,7 @@ impl GtmFlow {
             } else {
                 self.screen = GameScreen::Casino { game_type: None };
             }
-            return GtmAction::Continue;
+            return GtmAction::SaveGame;
         }
 
         match game_type {
@@ -616,12 +860,15 @@ impl GtmFlow {
                 match input {
                     "1" | "B" => {
                         self.screen = GameScreen::Casino { game_type: Some(CasinoGame::Blackjack) };
+                        return GtmAction::SaveGame;
                     }
                     "2" | "R" => {
                         self.screen = GameScreen::Casino { game_type: Some(CasinoGame::Roulette) };
+                        return GtmAction::SaveGame;
                     }
                     "3" | "H" => {
                         self.screen = GameScreen::Casino { game_type: Some(CasinoGame::Horses) };
+                        return GtmAction::SaveGame;
                     }
                     _ => {}
                 }
@@ -670,7 +917,7 @@ impl GtmFlow {
 
     fn handle_leaderboard(&mut self, _input: &str) -> GtmAction {
         self.screen = GameScreen::MainMenu;
-        GtmAction::Continue
+        GtmAction::SaveGame
     }
 
     fn handle_confirm_quit(&mut self, input: &str) -> GtmAction {
@@ -678,7 +925,7 @@ impl GtmFlow {
             "Y" => GtmAction::Quit,
             _ => {
                 self.screen = GameScreen::MainMenu;
-                GtmAction::Continue
+                GtmAction::SaveGame
             }
         }
     }
@@ -704,6 +951,11 @@ impl GtmFlow {
         self.state.apply_bank_interest();
         self.state.decay_notoriety();
 
+        // Coming down - high tier decreases by 1 each day
+        if self.state.high_tier > 0 {
+            self.state.high_tier -= 1;
+        }
+
         // Check for game over
         if self.state.day > 90 {
             self.state.game_over = true;
@@ -724,28 +976,42 @@ impl GtmFlow {
     }
 }
 
-/// Generate market prices for a location
-fn generate_prices(city: &str, _location: &str) -> HashMap<String, i64> {
+/// Generate market prices for a location using shop inventory and supply/demand
+fn generate_prices(city: &str, location: &str) -> HashMap<String, i64> {
+    generate_prices_with_supply(city, location, &HashMap::new())
+}
+
+/// Generate prices with supply modifier from game state
+pub fn generate_prices_with_supply(city: &str, location: &str, market_supply: &HashMap<String, i32>) -> HashMap<String, i64> {
     use rand::Rng;
+    use crate::game::get_shop_inventory;
+
     let mut rng = rand::thread_rng();
     let mut prices = HashMap::new();
 
-    for commodity in COMMODITIES.iter() {
-        let base_price = rng.gen_range(commodity.min_price..=commodity.max_price);
+    // Get what this shop sells
+    let shop_inventory = get_shop_inventory(city, location);
 
-        // Regional modifier
-        let modifier = match (city, commodity.key) {
-            ("tokyo", "meth") => 1.5,
-            ("london", "cocaine") => 0.7,
-            ("bogota", "cocaine") => 0.5,
-            _ => 1.0,
-        };
+    for (commodity_key, base_modifier) in shop_inventory {
+        if let Some(commodity) = crate::game::get_commodity(commodity_key) {
+            // Start with base price in range
+            let base_price = rng.gen_range(commodity.min_price..=commodity.max_price);
 
-        // Volatility +-20%
-        let volatility = rng.gen_range(0.8..=1.2);
+            // Apply location modifier (80-120%)
+            let location_mod = (base_modifier as f64) / 100.0;
 
-        let final_price = ((base_price as f64) * modifier * volatility) as i64;
-        prices.insert(commodity.key.to_string(), final_price);
+            // Get supply modifier: negative = oversupplied (cheaper), positive = undersupplied (expensive)
+            let supply_key = format!("{}/{}/{}", city, location, commodity_key);
+            let supply_mod = market_supply.get(&supply_key).copied().unwrap_or(0);
+            // Each supply point = 1% price change, max 50% swing
+            let supply_factor = 1.0 + (supply_mod as f64 * -0.01);
+
+            // Daily volatility +-15%
+            let volatility = rng.gen_range(0.85..=1.15);
+
+            let final_price = ((base_price as f64) * location_mod * supply_factor * volatility) as i64;
+            prices.insert(commodity_key.to_string(), final_price.max(1)); // Min $0.01
+        }
     }
 
     prices

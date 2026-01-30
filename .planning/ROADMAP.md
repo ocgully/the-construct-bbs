@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Time Limits & User Lists** - Daily time caps, session timers, who's online
 - [x] **Phase 5: Email System** - Inter-user private messaging
 - [x] **Phase 6: Chat & Real-Time Communication** - Live teleconference, user paging
-- [ ] **Phase 7: News & Bulletins** - RSS feed integration, sysop bulletins
+- [x] **Phase 7: News & Bulletins** - RSS feed integration, sysop bulletins
 - [ ] **Phase 8: First Door Game (Drug Wars)** - Commodity trading game, validates game architecture
 - [ ] **Phase 9: Second Door Game (LORD)** - Complex RPG with combat, PvP, dragon boss
 - [ ] **Phase 10: Third Door Game (Usurper)** - Medieval RPG, darker theme
@@ -166,7 +166,7 @@ Plans:
 - [x] 07-03-PLAN.md -- Session integration with input handling and menu routing
 
 ### Phase 8: First Door Game (Drug Wars)
-**Goal**: Users can play Drug Wars clone with state persistence and leaderboards
+**Goal**: Users can play Grand Theft Meth (Drug Wars clone) with state persistence and leaderboards
 **Depends on**: Phase 7
 **Requirements**: GAME-05, GAME-06, GAME-07, GAME-08
 **Success Criteria** (what must be TRUE):
@@ -175,11 +175,19 @@ Plans:
   3. User encounters random events (police, mugging, deals)
   4. User game state persists between sessions (save/resume works)
   5. User can view leaderboard showing top players
-  6. User game completes after 30-day in-game limit
-**Plans**: TBD
+  6. User game completes after 90-day in-game limit
+**Plans**: 9 plans
 
 Plans:
-- [ ] TBD during planning
+- [ ] 08-01-PLAN.md -- Database foundation (game_saves, game_completions tables, CRUD, leaderboard)
+- [ ] 08-02-PLAN.md -- Core game data structures (GameState, locations, commodities, weapons, gangs)
+- [ ] 08-03-PLAN.md -- Game state machine (GameScreen, GtmFlow, screen transitions, action processing)
+- [ ] 08-04-PLAN.md -- ANSI rendering (main menu, trade, travel, status bar, combat, events)
+- [ ] 08-05-PLAN.md -- Random events (weighted selection, police/mugger/deals, price fluctuations)
+- [ ] 08-06-PLAN.md -- Economy systems (loan shark, bank, casino games)
+- [ ] 08-07-PLAN.md -- Gangs and quests (relations, deliveries, 15-step story quest)
+- [ ] 08-08-PLAN.md -- Session integration (service wiring, save/load, menu config)
+- [ ] 08-09-PLAN.md -- Final integration and human verification
 
 ### Phase 9: Second Door Game (LORD)
 **Goal**: Users can play Legend of the Red Dragon clone with daily turns and PvP
@@ -303,7 +311,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 5. Email System | 4/4 | Complete | 2026-01-28 |
 | 6. Chat & Real-Time Communication | 5/5 | Complete | 2026-01-28 |
 | 7. News & Bulletins | 3/3 | Complete | 2026-01-28 |
-| 8. First Door Game (Drug Wars) | 0/TBD | Not started | - |
+| 8. First Door Game (Drug Wars) | 0/9 | Planned | - |
 | 9. Second Door Game (LORD) | 0/TBD | Not started | - |
 | 10. Third Door Game (Usurper) | 0/TBD | Not started | - |
 | 11. Multiplayer Door Game (Acrophobia) | 0/TBD | Not started | - |
@@ -314,4 +322,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 
 ---
 *Roadmap created: 2026-01-26*
-*Last updated: 2026-01-28 (Phase 7 complete)*
+*Last updated: 2026-01-29 (Phase 8 planned: 9 plans in 4 waves)*

@@ -1877,6 +1877,19 @@ impl Session {
         self.disconnecting = true;
     }
 
+    /// Check if session timer has expired and handle timeout if so.
+    /// Called periodically from the main websocket loop to handle idle timeouts.
+    /// Returns true if session timed out (caller should disconnect).
+    pub async fn check_and_handle_timeout(&mut self) -> bool {
+        if let Some(timer) = &self.session_timer {
+            if timer.is_expired() {
+                self.handle_timeout().await;
+                return true;
+            }
+        }
+        false
+    }
+
     /// Enter a service (with authentic BBS "loading door" delay)
     async fn enter_service(&mut self, service_name: &str) {
         let service = self.state.registry.get(service_name).cloned();
