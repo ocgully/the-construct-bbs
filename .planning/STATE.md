@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-26)
 ## Current Position
 
 Phase: 8 of 15 (First Door Game - Drug Wars)
-Plan: 8 of 9 in current phase
+Plan: 10 of 11 in current phase
 Status: In progress
-Last activity: 2026-01-29 - Completed 08-08-PLAN.md (Session Integration)
+Last activity: 2026-01-30 - Completed 08-10-PLAN.md (Game Code Restructure)
 
-Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 100% of Phase 7 (3/3), 89% of Phase 8 (8/9)
+Progress: [████████████████████] 100% of Phase 1 (5/5), 100% of Phase 2 (7/7), 100% of Phase 3 (3/3), 100% of Phase 4 (6/6), 100% of Phase 5 (4/4), 100% of Phase 6 (5/5), 100% of Phase 7 (3/3), 91% of Phase 8 (10/11)
 
 ## Performance Metrics
 
@@ -34,7 +34,7 @@ Progress: [████████████████████] 100% of
 | 05    | 4     | 31min | 8min     | Complete |
 | 06    | 5     | 18min | 4min     | Complete |
 | 07    | 3     | 13min | 4min     | Complete |
-| 08    | 8     | 38min | 5min     | In progress |
+| 08    | 10    | 46min | 5min     | In progress |
 
 **Recent Trend:**
 - Last 5 plans: 5min, 5min, 5min, 8min, 8min
@@ -208,6 +208,8 @@ Recent decisions affecting current work:
 | 08-08 | Game-specific database (grand_theft_meth.db) separate from BBS database | Keeps game data isolated, allows independent schema evolution |
 | 08-08 | __game_gtm__ sentinel for session routing | Consistent with __chat__, __news__ pattern for service routing |
 | 08-08 | GtmAction enum drives session response | Clean separation: game returns actions (Continue, Echo, SaveGame, GameOver, Quit) for session to execute |
+| 08-10 | Multi-game architecture with games/ registry | Scalable structure for adding LORD, Usurper, Acrophobia, Kyrandia |
+| 08-10 | Game code moved to backend/src/games/grand_theft_meth/ | Self-contained module with clear boundaries, easy to copy for new games |
 
 ### Roadmap Evolution
 
@@ -373,11 +375,11 @@ Full news system implemented:
 
 ## Session Continuity
 
-Last session: 2026-01-29
-Stopped at: Completed 08-08-PLAN.md (Session Integration)
+Last session: 2026-01-30
+Stopped at: Completed 08-10-PLAN.md (Game Code Restructure)
 Resume file: None
-Next action: Execute 08-09-PLAN.md (Integration Test)
+Next action: Execute 08-11-PLAN.md
 
 ---
 *State initialized: 2026-01-26*
-*Last updated: 2026-01-29 (08-08 Session Integration complete)*
+*Last updated: 2026-01-30 (08-10 Game Code Restructure complete)*
