@@ -1303,3 +1303,17 @@ pub fn render_use_drugs(state: &GameState, prices: &HashMap<String, i64>) -> Str
 
     w.flush()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_format_money() {
+        assert_eq!(format_money(0), "$0");
+        assert_eq!(format_money(100), "$1");
+        assert_eq!(format_money(12345), "$123");
+        assert_eq!(format_money(1234567), "$12,345");
+        assert_eq!(format_money(-5000), "-$50");
+    }
+}

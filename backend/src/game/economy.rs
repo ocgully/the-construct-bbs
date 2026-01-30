@@ -313,3 +313,84 @@ pub fn bet_on_horse(state: &mut GameState, bet: i64, horse: u8) -> Result<(bool,
         Ok((false, bet, format!("Horse #{} wins. You lose {}.", winner, super::render::format_money(bet))))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_borrow_money() {
+        let mut state = GameState::new();
+        let initial_cash = state.cash;
+        let initial_debt = state.debt;
+
+        let amount = 100000; // $1,000
+        let result = borrow_money(&mut state, amount);
+
+        assert!(result.is_ok());
+        assert_eq!(state.cash, initial_cash + amount);
+        assert_eq!(state.debt, initial_debt + amount);
+    }
+
+    #[test]
+    fn test_borrow_exceeds_max() {
+        let mut state = GameState::new();
+        state.debt = 100000; // $1,000
+
+        // Max borrow is 2x debt = $2,000
+        let result = borrow_money(&mut state, 300000); // Try to borrow $3,000
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_pay_debt() {
+        let mut state = GameState::new();
+        state.debt = 100000; // $1,000
+        state.cash = 200000; // $2,000
+
+        let result = pay_debt(&mut state, 50000); // Pay $500
+
+        assert!(result.is_ok());
+        assert_eq!(state.debt, 50000);
+        assert_eq!(state.cash, 150000);
+    }
+
+    #[test]
+    fn test_bank_unlock() {
+        let mut state = GameState::new();
+        state.cash = 5000000; // $50,000
+
+        assert!(!state.bank_unlocked);
+        let unlocked = check_bank_unlock(&mut state);
+        assert!(unlocked);
+        assert!(state.bank_unlocked);
+    }
+
+    #[test]
+    fn test_deposit() {
+        let mut state = GameState::new();
+        state.bank_unlocked = true;
+        state.cash = 100000; // $1,000
+
+        let result = deposit(&mut state, 50000); // Deposit $500
+
+        assert!(result.is_ok());
+        assert_eq!(state.cash, 50000);
+        assert_eq!(state.bank_balance, 50000);
+    }
+
+    #[test]
+    fn test_withdraw() {
+        let mut state = GameState::new();
+        state.bank_unlocked = true;
+        state.bank_balance = 100000; // $1,000
+        state.cash = 0;
+
+        let result = withdraw(&mut state, 50000); // Withdraw $500
+
+        assert!(result.is_ok());
+        assert_eq!(state.cash, 50000);
+        assert_eq!(state.bank_balance, 50000);
+    }
+}
