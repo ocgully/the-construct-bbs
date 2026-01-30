@@ -4,11 +4,12 @@ use std::collections::HashMap;
 
 use crate::game::{
     GameState, GameScreen, EnemyType, GameEvent,
-    COMMODITIES, get_borough, get_commodity,
+    COMMODITIES, get_borough,
 };
 
 /// Outcome of resolving an event
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub enum EventOutcome {
     /// Event continues (e.g., combat not resolved yet)
     Continue,
@@ -201,6 +202,7 @@ pub fn apply_find_event(event: &GameEvent, state: &mut GameState) {
 }
 
 /// Resolve combat outcome
+#[allow(dead_code)]
 pub struct CombatResult {
     pub player_won: bool,
     pub player_damage: u32,

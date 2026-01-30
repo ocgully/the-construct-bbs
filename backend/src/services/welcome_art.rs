@@ -4,6 +4,7 @@ use crate::terminal::{AnsiWriter, Color};
 ///
 /// This welcome screen is the acid test for Phase 1: if box-drawing renders
 /// correctly with all 16 CGA colors, the terminal foundation works.
+#[allow(dead_code)]
 pub fn render_welcome(services: &[(String, String)]) -> String {
     let mut w = AnsiWriter::new();
     

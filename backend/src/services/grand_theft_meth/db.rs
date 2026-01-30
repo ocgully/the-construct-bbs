@@ -89,6 +89,7 @@ impl GtmDb {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub async fn has_save(&self, user_id: i64) -> Result<bool, sqlx::Error> {
         let row: Option<(i64,)> = sqlx::query_as(
             "SELECT 1 FROM saves WHERE user_id = ?"
@@ -154,6 +155,7 @@ impl GtmDb {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct LeaderboardEntry {
     pub rank: i64,
     pub handle: String,

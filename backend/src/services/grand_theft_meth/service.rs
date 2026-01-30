@@ -8,14 +8,14 @@
 
 use rand::Rng;
 use crate::services::grand_theft_meth::db::{GtmDb, LeaderboardEntry};
-use crate::game::{GameState, GtmFlow, GtmAction, GameScreen};
+use crate::game::{GameState, GtmFlow, GameScreen};
 use crate::game::render::*;
 
 /// Sentinel for session routing
 pub const SENTINEL: &str = "__game_gtm__";
 
 /// Initialize or resume a game session
-pub async fn start_game(db: &GtmDb, user_id: i64, handle: &str) -> Result<(GtmFlow, String), String> {
+pub async fn start_game(db: &GtmDb, user_id: i64, _handle: &str) -> Result<(GtmFlow, String), String> {
     // Check for existing save
     match db.load_game(user_id).await {
         Ok(Some(json)) => {
@@ -59,6 +59,7 @@ pub async fn save_game_state(db: &GtmDb, user_id: i64, handle: &str, flow: &GtmF
 }
 
 /// Delete save and start fresh
+#[allow(dead_code)]
 pub async fn clear_save(db: &GtmDb, user_id: i64) -> Result<(), String> {
     db.delete_save(user_id)
         .await

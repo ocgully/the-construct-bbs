@@ -4,6 +4,7 @@ use tokio::sync::RwLock;
 
 /// Information about an active node connection.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct NodeInfo {
     pub user_id: i64,
     pub handle: String,
@@ -74,6 +75,7 @@ impl NodeManager {
     }
 
     /// Get all active nodes as (node_id, handle) pairs, sorted by node_id.
+    #[allow(dead_code)]
     pub async fn get_active_nodes(&self) -> Vec<(usize, String)> {
         let nodes = self.active_nodes.read().await;
         let mut result: Vec<(usize, String)> = nodes
@@ -91,6 +93,7 @@ impl NodeManager {
     }
 
     /// Find the node number for a given user, if connected.
+    #[allow(dead_code)]
     pub async fn get_node_for_user(&self, user_id: i64) -> Option<usize> {
         let nodes = self.active_nodes.read().await;
         nodes

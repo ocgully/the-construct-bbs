@@ -15,6 +15,7 @@ impl Page {
 }
 
 /// Pager for handling paginated output with [More] prompts
+#[allow(dead_code)]
 pub struct Pager {
     terminal_rows: u16,
     reserved_rows: u16,
@@ -37,16 +38,19 @@ impl Pager {
     }
 
     /// Reset the pager state
+    #[allow(dead_code)]
     pub fn reset(&mut self) {
         self.lines_shown = 0;
     }
 
     /// Check if a pause is needed before showing more content
+    #[allow(dead_code)]
     pub fn needs_pause(&self) -> bool {
         self.lines_shown >= self.page_size()
     }
 
     /// Add lines to the count
+    #[allow(dead_code)]
     pub fn add_lines(&mut self, count: u16) {
         self.lines_shown = self.lines_shown.saturating_add(count);
     }

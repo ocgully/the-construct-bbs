@@ -29,6 +29,7 @@ pub fn borrow_money(state: &mut GameState, amount: i64) -> Result<i64, String> {
 
 /// Pay back loan shark debt
 /// Returns Ok(remaining_debt) or Err(message)
+#[allow(dead_code)]
 pub fn pay_debt(state: &mut GameState, amount: i64) -> Result<i64, String> {
     if amount <= 0 {
         return Err("Amount must be positive.".to_string());
@@ -66,6 +67,7 @@ pub fn pay_all_debt(state: &mut GameState) -> Result<i64, String> {
 // ============================================================================
 
 /// Check if bank is available (requires $50,000 to unlock)
+#[allow(dead_code)]
 pub fn check_bank_unlock(state: &mut GameState) -> bool {
     if !state.bank_unlocked && state.cash >= 5000000 {
         state.bank_unlocked = true;
@@ -75,6 +77,7 @@ pub fn check_bank_unlock(state: &mut GameState) -> bool {
 
 /// Deposit cash into bank
 /// Returns Ok(new_balance) or Err(message)
+#[allow(dead_code)]
 pub fn deposit(state: &mut GameState, amount: i64) -> Result<i64, String> {
     if !state.bank_unlocked {
         return Err("Bank requires $50,000 minimum to open account.".to_string());
@@ -96,6 +99,7 @@ pub fn deposit(state: &mut GameState, amount: i64) -> Result<i64, String> {
 
 /// Withdraw cash from bank
 /// Returns Ok(new_balance) or Err(message)
+#[allow(dead_code)]
 pub fn withdraw(state: &mut GameState, amount: i64) -> Result<i64, String> {
     if !state.bank_unlocked {
         return Err("You don't have a bank account.".to_string());
@@ -237,6 +241,7 @@ pub fn play_blackjack(state: &mut GameState, bet: i64) -> Result<(BlackjackResul
 
 /// Roulette bet type
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub enum RouletteBet {
     Red,
     Black,

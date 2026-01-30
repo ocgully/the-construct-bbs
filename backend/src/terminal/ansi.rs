@@ -2,6 +2,7 @@ use codepage_437::{FromCp437, CP437_CONTROL};
 
 /// CGA 16-color palette
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum Color {
     Black,
     Red,
@@ -96,6 +97,7 @@ impl AnsiWriter {
     }
 
     /// Move cursor to specified position (1-based)
+    #[allow(dead_code)]
     pub fn move_cursor(&mut self, row: u16, col: u16) {
         self.buffer.push_str(&format!("\x1B[{};{}H", row, col));
     }
@@ -143,6 +145,7 @@ impl AnsiWriter {
     }
 
     /// Hide cursor
+    #[allow(dead_code)]
     pub fn hide_cursor(&mut self) {
         self.buffer.push_str("\x1B[?25l");
     }
@@ -158,6 +161,7 @@ impl AnsiWriter {
     }
 
     /// Get current buffer length
+    #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.buffer.len()
     }

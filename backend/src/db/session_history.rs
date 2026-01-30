@@ -2,6 +2,7 @@ use sqlx::sqlite::SqlitePool;
 use sqlx::FromRow;
 
 #[derive(Debug, Clone, FromRow)]
+#[allow(dead_code)]
 pub struct SessionHistoryEntry {
     pub id: i64,
     pub user_id: i64,

@@ -114,6 +114,7 @@ fn truncate(s: &str, max: usize) -> String {
 
 /// The stages of the compose flow.
 #[derive(Debug, Clone, PartialEq)]
+#[allow(dead_code)]
 pub enum ComposeState {
     PromptTo,
     InputTo,
@@ -159,7 +160,9 @@ pub enum ComposeAction {
 /// that returns ComposeAction to let session.rs handle async DB operations.
 pub struct ComposeFlow {
     state: ComposeState,
+    #[allow(dead_code)]
     sender_id: i64,
+    #[allow(dead_code)]
     sender_handle: String,
     input_buffer: String,
     recipient_id: Option<i64>,
@@ -234,6 +237,7 @@ impl ComposeFlow {
     }
 
     /// Get current state (for external inspection if needed).
+    #[allow(dead_code)]
     pub fn state(&self) -> &ComposeState {
         &self.state
     }

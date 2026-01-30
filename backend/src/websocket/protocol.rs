@@ -2,11 +2,13 @@
 ///
 /// Ensures complete ANSI sequences are sent to the client, preventing
 /// partial sequences from causing rendering artifacts in xterm.js.
+#[allow(dead_code)]
 pub struct AnsiBuffer {
     buffer: Vec<u8>,
     in_escape: bool,
 }
 
+#[allow(dead_code)]
 impl AnsiBuffer {
     /// Create a new empty ANSI buffer
     pub fn new() -> Self {

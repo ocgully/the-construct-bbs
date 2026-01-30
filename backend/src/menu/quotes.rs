@@ -1,6 +1,7 @@
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 
+#[allow(dead_code)]
 const STOIC_QUOTES: &[&str] = &[
     // Marcus Aurelius (Meditations)
     "You have power over your mind - not outside events. Realize this, and you will find strength. -- Marcus Aurelius",
@@ -38,6 +39,7 @@ const STOIC_QUOTES: &[&str] = &[
 ];
 
 /// Returns a random Stoic quote from the embedded collection
+#[allow(dead_code)]
 pub fn random_stoic_quote() -> &'static str {
     let mut rng = thread_rng();
     STOIC_QUOTES.choose(&mut rng).unwrap_or(&STOIC_QUOTES[0])

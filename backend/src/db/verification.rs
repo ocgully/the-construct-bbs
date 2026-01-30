@@ -84,6 +84,7 @@ pub async fn validate_verification_code(
 /// Delete all expired verification codes.
 ///
 /// Returns the number of rows deleted.
+#[allow(dead_code)]
 pub async fn cleanup_expired_codes(pool: &SqlitePool) -> Result<u64, sqlx::Error> {
     let result =
         sqlx::query("DELETE FROM verification_codes WHERE datetime(expires_at) <= datetime('now', '-5 hours')")

@@ -217,6 +217,7 @@ impl GameState {
     }
 
     /// Get average cost basis for a commodity
+    #[allow(dead_code)]
     pub fn get_average_cost(&self, commodity: &str) -> Option<i64> {
         let lots = self.inventory_lots.get(commodity)?;
         let total_qty: u32 = lots.iter().map(|l| l.quantity).sum();
@@ -240,6 +241,7 @@ impl GameState {
 
     /// Get market supply modifier for a commodity at current location
     /// Negative = oversupplied (cheaper to buy), Positive = undersupplied (more expensive)
+    #[allow(dead_code)]
     pub fn get_supply_modifier(&self, commodity: &str) -> i32 {
         let key = format!("{}/{}/{}", self.city, self.location, commodity);
         self.market_supply.get(&key).copied().unwrap_or(0)

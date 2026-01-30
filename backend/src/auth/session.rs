@@ -65,6 +65,7 @@ pub async fn delete_session(pool: &SqlitePool, token: &str) -> Result<(), sqlx::
 }
 
 /// Delete all sessions for a user (force logout everywhere).
+#[allow(dead_code)]
 pub async fn delete_user_sessions(pool: &SqlitePool, user_id: i64) -> Result<(), sqlx::Error> {
     sqlx::query("DELETE FROM sessions WHERE user_id = ?")
         .bind(user_id)
@@ -74,6 +75,7 @@ pub async fn delete_user_sessions(pool: &SqlitePool, user_id: i64) -> Result<(),
 }
 
 /// Remove all expired sessions. Returns number of rows deleted.
+#[allow(dead_code)]
 pub async fn cleanup_expired_sessions(pool: &SqlitePool) -> Result<u64, sqlx::Error> {
     let result = sqlx::query("DELETE FROM sessions WHERE datetime(expires_at) < datetime('now', '-5 hours')")
         .execute(pool)

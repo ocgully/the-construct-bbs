@@ -7,6 +7,7 @@ use tokio_util::sync::CancellationToken;
 /// Represents a running session timer.
 /// Hold onto this struct -- dropping it won't cancel the task.
 /// Call cancel() to stop the timer (on clean quit).
+#[allow(dead_code)]
 pub struct SessionTimer {
     cancel: CancellationToken,
     handle: tokio::task::JoinHandle<TimerResult>,
@@ -75,6 +76,7 @@ impl SessionTimer {
     }
 
     /// Wait for the timer to complete and get the result.
+    #[allow(dead_code)]
     pub async fn wait(self) -> TimerResult {
         match self.handle.await {
             Ok(result) => result,
@@ -83,6 +85,7 @@ impl SessionTimer {
     }
 
     /// Check if the timer is still running.
+    #[allow(dead_code)]
     pub fn is_running(&self) -> bool {
         !self.handle.is_finished()
     }

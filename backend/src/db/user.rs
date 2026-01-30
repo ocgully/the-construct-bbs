@@ -155,6 +155,7 @@ pub async fn update_user_field(
     Ok(())
 }
 
+#[allow(dead_code)]
 pub async fn delete_user(pool: &SqlitePool, user_id: i64) -> Result<(), sqlx::Error> {
     sqlx::query("DELETE FROM users WHERE id = ?")
         .bind(user_id)

@@ -20,7 +20,7 @@ async fn send_ceremony_line(tx: &mpsc::Sender<String>, text: &str) {
 pub async fn run_connection_ceremony(
     tx: &mpsc::Sender<String>,
     node_manager: &NodeManager,
-    config: &ConnectionConfig,
+    _config: &ConnectionConfig,
 ) -> Result<usize, String> {
     // Check node availability first
     let (active, max) = node_manager.get_status().await;
@@ -178,7 +178,7 @@ pub async fn run_connection_ceremony(
 
 /// Send the "ALL LINES BUSY" rejection message with CP437 box-drawing art.
 /// Waits 3 seconds after displaying so the user can read the message.
-pub async fn send_line_busy(tx: &mpsc::Sender<String>, max_nodes: usize) {
+pub async fn send_line_busy(tx: &mpsc::Sender<String>, _max_nodes: usize) {
     let mut w = AnsiWriter::new();
 
     w.set_fg(Color::LightRed);

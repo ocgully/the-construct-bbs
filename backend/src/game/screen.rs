@@ -1,4 +1,4 @@
-use crate::game::{GameState, get_city, get_borough, get_commodity, COMMODITIES, CITIES};
+use crate::game::{GameState, get_city, get_borough, CITIES};
 use std::collections::HashMap;
 
 /// Which screen the player is currently viewing
@@ -71,6 +71,7 @@ pub enum CasinoGame {
 
 /// Actions returned by GtmFlow for session.rs to handle
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub enum GtmAction {
     /// Continue - no output needed
     Continue,
@@ -637,7 +638,7 @@ impl GtmFlow {
     }
 
     fn handle_gun_shop(&mut self, input: &str) -> GtmAction {
-        use crate::game::{WEAPONS, get_weapon};
+        use crate::game::WEAPONS;
 
         if input == "Q" || input == "X" {
             self.screen = GameScreen::MainMenu;
@@ -977,6 +978,7 @@ impl GtmFlow {
 }
 
 /// Generate market prices for a location using shop inventory and supply/demand
+#[allow(dead_code)]
 fn generate_prices(city: &str, location: &str) -> HashMap<String, i64> {
     generate_prices_with_supply(city, location, &HashMap::new())
 }

@@ -1,5 +1,5 @@
 use crate::terminal::{AnsiWriter, Color};
-use crate::game::{GameState, TradeMode, EnemyType, GameEvent, CITIES, COMMODITIES, WEAPONS, get_city, get_borough, get_commodity, get_weapon, get_shop_inventory};
+use crate::game::{GameState, TradeMode, EnemyType, GameEvent, CITIES, WEAPONS, get_city, get_borough, get_commodity, get_weapon, get_shop_inventory};
 use std::collections::HashMap;
 
 // ============================================================================
@@ -1053,7 +1053,7 @@ pub fn render_leaderboard_screen(entries: &[(String, i64, i64, bool)]) -> String
 
 /// Render quest screen
 pub fn render_quest(state: &GameState, prices: &HashMap<String, i64>) -> String {
-    use crate::game::quest::{get_current_story, can_complete_story_step, gang_status, STORY_STEPS};
+    use crate::game::quest::{get_current_story, can_complete_story_step, gang_status};
 
     let mut w = AnsiWriter::new();
 

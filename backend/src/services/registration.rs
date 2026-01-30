@@ -86,6 +86,7 @@ impl RegistrationFlow {
     }
 
     /// Return the current state.
+    #[allow(dead_code)]
     pub fn state(&self) -> &RegistrationState {
         &self.state
     }

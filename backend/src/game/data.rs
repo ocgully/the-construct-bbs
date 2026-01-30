@@ -40,6 +40,7 @@ pub struct Weapon {
 
 /// Gang definition
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Gang {
     pub key: &'static str,
     pub name: &'static str,
@@ -273,11 +274,13 @@ pub fn get_weapon(key: &str) -> Option<&'static Weapon> {
     WEAPONS.iter().find(|w| w.key == key)
 }
 
+#[allow(dead_code)]
 pub fn get_gang(key: &str) -> Option<&'static Gang> {
     GANGS.iter().find(|g| g.key == key)
 }
 
 /// Get travel cost between cities (in cents)
+#[allow(dead_code)]
 pub fn get_travel_cost(from_city: &str, to_city: &str, mode: TravelMode) -> (i64, u32) {
     if from_city == to_city {
         // Intra-city taxi fare, instant
@@ -292,12 +295,14 @@ pub fn get_travel_cost(from_city: &str, to_city: &str, mode: TravelMode) -> (i64
 }
 
 #[derive(Debug, Clone, Copy)]
+#[allow(dead_code)]
 pub enum TravelMode {
     Bus,
     Plane,
 }
 
 /// Get coat tier upgrade cost and what trenchcoat guy might want
+#[allow(dead_code)]
 pub fn get_coat_upgrade_cost(current_tier: u32) -> Option<i64> {
     match current_tier {
         0 => Some(50000),   // $500 for tier 1

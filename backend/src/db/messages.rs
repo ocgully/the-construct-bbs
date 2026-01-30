@@ -2,6 +2,7 @@ use sqlx::sqlite::SqlitePool;
 use sqlx::FromRow;
 
 #[derive(Debug, Clone, FromRow)]
+#[allow(dead_code)]
 pub struct Message {
     pub id: i64,
     pub sender_id: i64,

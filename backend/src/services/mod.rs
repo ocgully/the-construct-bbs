@@ -27,6 +27,7 @@ pub trait Service: Send + Sync {
 }
 
 /// Session I/O abstraction for service interaction
+#[allow(dead_code)]
 pub trait SessionIO {
     fn write(&mut self, data: &str);
     fn writeln(&mut self, data: &str);
@@ -42,6 +43,7 @@ pub enum ServiceAction {
 
 /// Errors that can occur in service operations
 #[derive(Error, Debug)]
+#[allow(dead_code)]
 pub enum ServiceError {
     #[error("Service error: {0}")]
     Generic(String),

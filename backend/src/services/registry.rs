@@ -43,6 +43,7 @@ impl ServiceRegistry {
             .collect()
     }
 
+    #[allow(dead_code)]
     pub fn is_empty(&self) -> bool {
         self.services.is_empty()
     }

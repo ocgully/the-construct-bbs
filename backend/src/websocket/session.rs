@@ -11,7 +11,7 @@ use crate::{
         messages::{
             check_mailbox_full, create_message, delete_message, get_inbox_count,
             get_inbox_page, get_message_by_id, get_sender_handles, get_unread_count,
-            mark_message_read, InboxEntry,
+            mark_message_read,
         },
         user::{find_user_by_id, find_user_by_handle, update_last_login, update_user_field, update_user_time},
     },
@@ -27,7 +27,7 @@ use crate::{
         mail::{
             render_compose_header, render_compose_help, render_inbox, render_mailbox_full_error,
             render_message, render_new_mail_notification, render_self_mail_error,
-            render_user_not_found_error, ComposeAction, ComposeFlow, format_body_lines,
+            render_user_not_found_error, ComposeAction, ComposeFlow,
         },
         news::{
             fetch_feeds, render_news_list, render_news_article,
@@ -105,6 +105,7 @@ pub struct Session {
     /// Input buffer for message number entry in inbox
     mail_input_buffer: Option<String>,
     /// Handle of last DM sender for /r reply command
+    #[allow(dead_code)]
     last_dm_sender: Option<String>,
     /// Cancellation token for chat broadcast receiver task
     chat_cancel: Option<CancellationToken>,

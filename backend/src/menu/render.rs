@@ -177,7 +177,7 @@ pub fn render_main_menu(
 }
 
 pub fn render_submenu(
-    submenu_key: &str,
+    _submenu_key: &str,
     submenu_name: &str,
     items: &[&MenuItem],
     _user_level: u8,

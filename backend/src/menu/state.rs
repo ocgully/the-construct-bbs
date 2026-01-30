@@ -8,6 +8,7 @@ pub enum MenuState {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+#[allow(dead_code)]
 pub enum MenuAction {
     Redraw,                          // Redraw current menu (Enter, invalid input)
     EnterSubmenu(String),            // Navigate to submenu by key
@@ -19,11 +20,13 @@ pub enum MenuAction {
     None,                            // No action (ignored input)
 }
 
+#[allow(dead_code)]
 pub struct TypeAheadBuffer {
     buffer: VecDeque<char>,
     max_size: usize,
 }
 
+#[allow(dead_code)]
 impl TypeAheadBuffer {
     pub fn new() -> Self {
         Self {
@@ -140,6 +143,7 @@ impl MenuSession {
         }
     }
 
+    #[allow(dead_code)]
     pub fn buffer_key(&mut self, ch: char) {
         self.typeahead.push(ch);
     }

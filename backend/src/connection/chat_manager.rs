@@ -4,6 +4,7 @@ use tokio::sync::{broadcast, RwLock};
 
 /// Message types for chat broadcast channel.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub enum ChatMessage {
     /// Regular chat message.
     Public { sender: String, text: String },
@@ -93,18 +94,21 @@ impl ChatManager {
     }
 
     /// Check if a user is currently in chat.
+    #[allow(dead_code)]
     pub async fn is_in_chat(&self, user_id: i64) -> bool {
         let participants = self.participants.read().await;
         participants.contains_key(&user_id)
     }
 
     /// Get current participant count.
+    #[allow(dead_code)]
     pub async fn get_participant_count(&self) -> usize {
         let participants = self.participants.read().await;
         participants.len()
     }
 
     /// Get user_id for a handle (reverse lookup for /msg command).
+    #[allow(dead_code)]
     pub async fn get_handle_user_id(&self, handle: &str) -> Option<i64> {
         let participants = self.participants.read().await;
         let handle_lower = handle.to_lowercase();

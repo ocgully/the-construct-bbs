@@ -1,11 +1,12 @@
 use rand::prelude::*;
-use crate::game::{GameState, DeliveryQuest, CITIES, COMMODITIES, GANGS, get_city, get_gang, format_money};
+use crate::game::{GameState, DeliveryQuest, CITIES, COMMODITIES, get_city, get_gang, format_money};
 
 // ============================================================================
 // GANG RELATIONS
 // ============================================================================
 
 /// Pay tribute to a gang to improve relations
+#[allow(dead_code)]
 pub fn pay_tribute(state: &mut GameState, gang_key: &str) -> Result<String, String> {
     let gang = get_gang(gang_key).ok_or("Unknown gang.")?;
 
@@ -46,6 +47,7 @@ pub fn gang_status(relation: i32) -> &'static str {
 // ============================================================================
 
 /// Generate a random delivery quest
+#[allow(dead_code)]
 pub fn generate_delivery_quest(state: &GameState, rng: &mut impl Rng) -> Option<DeliveryQuest> {
     // Can only have 3 active deliveries
     if state.quest_state.active_deliveries.len() >= 3 {
@@ -84,6 +86,7 @@ pub fn generate_delivery_quest(state: &GameState, rng: &mut impl Rng) -> Option<
 }
 
 /// Accept a delivery quest
+#[allow(dead_code)]
 pub fn accept_delivery(state: &mut GameState, quest: DeliveryQuest) -> Result<(), String> {
     if state.quest_state.active_deliveries.len() >= 3 {
         return Err("You can only have 3 active deliveries.".to_string());
@@ -109,6 +112,7 @@ pub fn accept_delivery(state: &mut GameState, quest: DeliveryQuest) -> Result<()
 }
 
 /// Check and complete deliveries at current location
+#[allow(dead_code)]
 pub fn check_deliveries(state: &mut GameState) -> Vec<(DeliveryQuest, i64)> {
     let current_loc = format!("{}/{}", state.city, state.location);
     let mut completed = Vec::new();
@@ -136,6 +140,7 @@ pub fn check_deliveries(state: &mut GameState) -> Vec<(DeliveryQuest, i64)> {
 }
 
 /// Expire old deliveries
+#[allow(dead_code)]
 pub fn expire_deliveries(state: &mut GameState) -> Vec<DeliveryQuest> {
     let current_day = state.day;
     let mut expired = Vec::new();
@@ -162,6 +167,7 @@ pub fn expire_deliveries(state: &mut GameState) -> Vec<DeliveryQuest> {
 }
 
 /// Get gang controlling a territory
+#[allow(dead_code)]
 fn get_territory_gang(location: &str) -> Option<String> {
     let parts: Vec<&str> = location.split('/').collect();
     if parts.len() != 2 {
@@ -427,6 +433,7 @@ pub fn complete_story_step(state: &mut GameState, prices: &std::collections::Has
 }
 
 /// Check if story is complete
+#[allow(dead_code)]
 pub fn is_story_complete(state: &GameState) -> bool {
     state.quest_state.story_step >= 15
 }
