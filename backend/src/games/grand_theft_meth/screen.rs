@@ -1,4 +1,4 @@
-use crate::game::{GameState, get_city, get_borough, CITIES};
+use super::{GameState, get_city, get_borough, CITIES};
 use std::collections::HashMap;
 
 /// Which screen the player is currently viewing
@@ -312,7 +312,7 @@ impl GtmFlow {
                         self.refresh_prices();
 
                         // Check for random event after travel
-                        if let Some(event_screen) = crate::game::events::maybe_trigger_event(&self.state) {
+                        if let Some(event_screen) = super::events::maybe_trigger_event(&self.state) {
                             self.screen = event_screen;
                             return GtmAction::SaveGame;
                         }
@@ -339,7 +339,7 @@ impl GtmFlow {
                             self.refresh_prices();
 
                             // Check for random event after travel
-                            if let Some(event_screen) = crate::game::events::maybe_trigger_event(&self.state) {
+                            if let Some(event_screen) = super::events::maybe_trigger_event(&self.state) {
                                 self.screen = event_screen;
                                 return GtmAction::SaveGame;
                             }
@@ -355,7 +355,7 @@ impl GtmFlow {
     }
 
     fn handle_trade(&mut self, input: &str, mode: TradeMode) -> GtmAction {
-        use crate::game::{get_shop_inventory, PendingTransaction};
+        use super::{get_shop_inventory, PendingTransaction};
 
         match mode {
             TradeMode::Menu => {
@@ -491,7 +491,7 @@ impl GtmFlow {
     }
 
     fn handle_combat(&mut self, input: &str, enemy_type: EnemyType, enemy_hp: u32) -> GtmAction {
-        use crate::game::events::{CombatAction, resolve_combat, apply_combat_result};
+        use super::events::{CombatAction, resolve_combat, apply_combat_result};
 
         let action = match input {
             "F" => CombatAction::Fight,
@@ -525,7 +525,7 @@ impl GtmFlow {
     }
 
     fn handle_event(&mut self, _input: &str, event: GameEvent) -> GtmAction {
-        use crate::game::events::{apply_find_event, apply_price_event, handle_trenchcoat_upgrade};
+        use super::events::{apply_find_event, apply_price_event, handle_trenchcoat_upgrade};
 
         match &event {
             GameEvent::FindCash { .. } | GameEvent::FindDrugs { .. } => {
@@ -547,7 +547,7 @@ impl GtmFlow {
     }
 
     fn handle_loan_shark(&mut self, input: &str) -> GtmAction {
-        use crate::game::economy::{borrow_money, pay_all_debt};
+        use super::economy::{borrow_money, pay_all_debt};
 
         match input {
             "P" => {
@@ -581,7 +581,7 @@ impl GtmFlow {
     }
 
     fn handle_bank(&mut self, input: &str) -> GtmAction {
-        use crate::game::economy::{deposit_all, withdraw_all};
+        use super::economy::{deposit_all, withdraw_all};
 
         match input {
             "D" => {
@@ -638,7 +638,7 @@ impl GtmFlow {
     }
 
     fn handle_gun_shop(&mut self, input: &str) -> GtmAction {
-        use crate::game::WEAPONS;
+        use super::WEAPONS;
 
         if input == "Q" || input == "X" {
             self.screen = GameScreen::MainMenu;
@@ -674,7 +674,7 @@ impl GtmFlow {
     }
 
     fn handle_use_drugs(&mut self, input: &str) -> GtmAction {
-        use crate::game::get_commodity;
+        use super::get_commodity;
 
         if input == "Q" || input == "X" {
             self.screen = GameScreen::MainMenu;
@@ -819,7 +819,7 @@ impl GtmFlow {
     }
 
     fn handle_quest(&mut self, input: &str) -> GtmAction {
-        use crate::game::quest::{complete_story_step, can_complete_story_step};
+        use super::quest::{complete_story_step, can_complete_story_step};
 
         match input {
             "S" => {
@@ -844,7 +844,7 @@ impl GtmFlow {
     }
 
     fn handle_casino(&mut self, input: &str, game_type: Option<CasinoGame>) -> GtmAction {
-        use crate::game::economy::{play_blackjack, play_roulette, RouletteBet, bet_on_horse};
+        use super::economy::{play_blackjack, play_roulette, RouletteBet, bet_on_horse};
 
         if input == "Q" || input == "X" {
             if game_type.is_none() {
@@ -986,7 +986,7 @@ fn generate_prices(city: &str, location: &str) -> HashMap<String, i64> {
 /// Generate prices with supply modifier from game state
 pub fn generate_prices_with_supply(city: &str, location: &str, market_supply: &HashMap<String, i32>) -> HashMap<String, i64> {
     use rand::Rng;
-    use crate::game::get_shop_inventory;
+    use super::get_shop_inventory;
 
     let mut rng = rand::thread_rng();
     let mut prices = HashMap::new();
@@ -995,7 +995,7 @@ pub fn generate_prices_with_supply(city: &str, location: &str, market_supply: &H
     let shop_inventory = get_shop_inventory(city, location);
 
     for (commodity_key, base_modifier) in shop_inventory {
-        if let Some(commodity) = crate::game::get_commodity(commodity_key) {
+        if let Some(commodity) = super::get_commodity(commodity_key) {
             // Start with base price in range
             let base_price = rng.gen_range(commodity.min_price..=commodity.max_price);
 

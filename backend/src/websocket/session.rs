@@ -112,7 +112,7 @@ pub struct Session {
     /// Current news viewing state
     news_state: Option<NewsState>,
     /// Active Grand Theft Meth game state
-    gtm_flow: Option<crate::game::GtmFlow>,
+    gtm_flow: Option<crate::games::grand_theft_meth::GtmFlow>,
 }
 
 /// Map user level string to numeric level for menu filtering
@@ -2136,7 +2136,7 @@ impl Session {
         use crate::services::grand_theft_meth::{
             render_screen, save_game_state, record_game_completion, get_game_leaderboard,
         };
-        use crate::game::{GtmAction, GameScreen};
+        use crate::games::grand_theft_meth::{GtmAction, GameScreen};
 
         // Process each character
         for ch in input.chars() {
@@ -2221,7 +2221,7 @@ impl Session {
                 let leaderboard_entries: Vec<_> = entries.iter()
                     .map(|e| (e.handle.clone(), e.final_score, e.days_played, e.story_completed))
                     .collect();
-                let screen = crate::game::render::render_leaderboard_screen(&leaderboard_entries);
+                let screen = crate::games::grand_theft_meth::render::render_leaderboard_screen(&leaderboard_entries);
                 let _ = self.tx.send(screen).await;
             }
         }

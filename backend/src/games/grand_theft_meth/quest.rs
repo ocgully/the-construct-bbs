@@ -1,5 +1,5 @@
 use rand::prelude::*;
-use crate::game::{GameState, DeliveryQuest, CITIES, COMMODITIES, get_city, get_gang, format_money};
+use super::{GameState, DeliveryQuest, CITIES, COMMODITIES, get_city, get_gang, format_money};
 
 // ============================================================================
 // GANG RELATIONS

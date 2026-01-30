@@ -2,7 +2,7 @@ use rand::prelude::*;
 use rand::distributions::WeightedIndex;
 use std::collections::HashMap;
 
-use crate::game::{
+use super::{
     GameState, GameScreen, EnemyType, GameEvent,
     COMMODITIES, get_borough,
 };
@@ -223,9 +223,9 @@ pub fn resolve_combat(
 
     // Get player weapon damage
     let base_damage = if let Some(ref gun) = state.weapons.gun {
-        crate::game::get_weapon(gun).map(|w| w.damage).unwrap_or(3)
+        super::get_weapon(gun).map(|w| w.damage).unwrap_or(3)
     } else if let Some(ref melee) = state.weapons.melee {
-        crate::game::get_weapon(melee).map(|w| w.damage).unwrap_or(3)
+        super::get_weapon(melee).map(|w| w.damage).unwrap_or(3)
     } else {
         3 // Bare fists
     };

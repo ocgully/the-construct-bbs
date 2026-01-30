@@ -1,5 +1,5 @@
 use crate::terminal::{AnsiWriter, Color};
-use crate::game::{GameState, TradeMode, EnemyType, GameEvent, CITIES, WEAPONS, get_city, get_borough, get_commodity, get_weapon, get_shop_inventory};
+use super::{GameState, TradeMode, EnemyType, GameEvent, CITIES, WEAPONS, get_city, get_borough, get_commodity, get_weapon, get_shop_inventory};
 use std::collections::HashMap;
 
 // ============================================================================
@@ -1053,7 +1053,7 @@ pub fn render_leaderboard_screen(entries: &[(String, i64, i64, bool)]) -> String
 
 /// Render quest screen
 pub fn render_quest(state: &GameState, prices: &HashMap<String, i64>) -> String {
-    use crate::game::quest::{get_current_story, can_complete_story_step, gang_status};
+    use super::quest::{get_current_story, can_complete_story_step, gang_status};
 
     let mut w = AnsiWriter::new();
 
@@ -1145,7 +1145,7 @@ pub fn render_quest(state: &GameState, prices: &HashMap<String, i64>) -> String 
     w.writeln("  GANG RELATIONS");
     w.reset_color();
 
-    for gang in crate::game::GANGS {
+    for gang in super::GANGS {
         let relation = state.gang_relations.get(gang.key).copied().unwrap_or(0);
         let status = gang_status(relation);
         let color = if relation >= 50 {

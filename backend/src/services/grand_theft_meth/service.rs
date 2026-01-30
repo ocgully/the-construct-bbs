@@ -8,8 +8,8 @@
 
 use rand::Rng;
 use crate::services::grand_theft_meth::db::{GtmDb, LeaderboardEntry};
-use crate::game::{GameState, GtmFlow, GameScreen};
-use crate::game::render::*;
+use crate::games::grand_theft_meth::{GameState, GtmFlow, GameScreen};
+use crate::games::grand_theft_meth::render::*;
 
 /// Sentinel for session routing
 pub const SENTINEL: &str = "__game_gtm__";

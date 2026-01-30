@@ -1,4 +1,4 @@
-use crate::game::GameState;
+use super::state::GameState;
 use rand::prelude::*;
 
 // ============================================================================
