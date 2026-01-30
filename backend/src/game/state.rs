@@ -302,3 +302,77 @@ impl GameState {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_game_initial_state() {
+        let state = GameState::new();
+        assert_eq!(state.day, 1);
+        assert_eq!(state.cash, 200000); // $2,000
+        assert_eq!(state.debt, 550000); // $5,500
+        assert_eq!(state.health, 100);
+        assert_eq!(state.actions_remaining, 5);
+        assert_eq!(state.location, "bronx");
+        assert_eq!(state.city, "nyc");
+    }
+
+    #[test]
+    fn test_inventory_operations() {
+        let mut state = GameState::new();
+        state.add_inventory("weed", 10, 1500);
+        assert_eq!(state.get_quantity("weed"), 10);
+
+        state.remove_inventory("weed", 5);
+        assert_eq!(state.get_quantity("weed"), 5);
+    }
+
+    #[test]
+    fn test_coat_capacity() {
+        let mut state = GameState::new();
+        assert_eq!(state.coat_capacity(), 100);
+        state.coat_tier = 1;
+        assert_eq!(state.coat_capacity(), 125);
+        state.coat_tier = 3;
+        assert_eq!(state.coat_capacity(), 250);
+    }
+
+    #[test]
+    fn test_debt_interest() {
+        let mut state = GameState::new();
+        state.debt = 100000; // $1,000
+        state.apply_debt_interest();
+        assert_eq!(state.debt, 110000); // $1,100 (10% interest)
+    }
+
+    #[test]
+    fn test_bank_interest() {
+        let mut state = GameState::new();
+        state.bank_unlocked = true;
+        state.bank_balance = 100000; // $1,000
+        state.apply_bank_interest();
+        assert_eq!(state.bank_balance, 105000); // $1,050 (5% interest)
+    }
+
+    #[test]
+    fn test_net_worth_calculation() {
+        let mut state = GameState::new();
+        state.cash = 100000;
+        state.bank_balance = 50000;
+        state.debt = 30000;
+        let prices = std::collections::HashMap::new();
+        assert_eq!(state.net_worth(&prices), 120000); // 100k + 50k - 30k
+    }
+
+    #[test]
+    fn test_high_tier_sober_up() {
+        let mut state = GameState::new();
+        state.high_tier = 3;
+        state.last_login_date = Some("2020-01-01".to_string());
+        let sobered = state.check_new_day_sober_up();
+        assert!(sobered);
+        assert_eq!(state.high_tier, 0);
+    }
+}

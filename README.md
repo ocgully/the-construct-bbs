@@ -7,6 +7,14 @@ A web-based Bulletin Board System built in Rust, delivering an authentic retro B
 - [Rust](https://rustup.rs/) (stable)
 - [Node.js](https://nodejs.org/) (v18+)
 
+## Quick Start (Windows)
+
+```powershell
+cd C:\Git\bbs\frontend; npm run build; cd ..\backend; cargo run
+```
+
+Then open http://localhost:3000.
+
 ## Development
 
 From the project root (`C:\Git\bbs`):
