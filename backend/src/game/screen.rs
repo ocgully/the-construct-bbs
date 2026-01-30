@@ -1016,3 +1016,69 @@ pub fn generate_prices_with_supply(city: &str, location: &str, market_supply: &H
 
     prices
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_new_game_starts_at_intro() {
+        let flow = GtmFlow::new();
+        assert!(matches!(flow.screen, GameScreen::Intro));
+    }
+
+    #[test]
+    fn test_day_advance_on_zero_actions() {
+        let mut flow = GtmFlow::new();
+        flow.state.actions_remaining = 1;
+        let initial_day = flow.state.day;
+
+        flow.use_action();
+
+        assert_eq!(flow.state.day, initial_day + 1);
+        assert_eq!(flow.state.actions_remaining, 5);
+    }
+
+    #[test]
+    fn test_game_over_at_day_90() {
+        let mut flow = GtmFlow::new();
+        flow.state.day = 90;
+        flow.state.actions_remaining = 1;
+
+        flow.use_action();
+
+        assert_eq!(flow.state.day, 91);
+        assert!(flow.state.game_over);
+    }
+
+    #[test]
+    fn test_current_screen_returns_screen() {
+        let mut flow = GtmFlow::new();
+        flow.screen = GameScreen::MainMenu;
+        assert!(matches!(flow.current_screen(), GameScreen::MainMenu));
+    }
+
+    #[test]
+    fn test_advance_day_applies_interest() {
+        let mut flow = GtmFlow::new();
+        flow.state.debt = 100000;
+        flow.state.bank_unlocked = true;
+        flow.state.bank_balance = 100000;
+
+        flow.advance_day();
+
+        assert_eq!(flow.state.debt, 110000); // 10% debt interest
+        assert_eq!(flow.state.bank_balance, 105000); // 5% bank interest
+    }
+
+    #[test]
+    fn test_high_tier_decay() {
+        let mut flow = GtmFlow::new();
+        flow.state.high_tier = 3;
+
+        flow.advance_day();
+
+        assert_eq!(flow.state.high_tier, 2); // Decreases by 1 per day
+    }
+}
