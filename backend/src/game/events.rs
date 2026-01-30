@@ -452,3 +452,77 @@ pub fn handle_trenchcoat_upgrade(state: &mut GameState, accept: bool) -> String 
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_combat_result_application() {
+        let mut state = GameState::new();
+        state.health = 100;
+
+        let result = CombatResult {
+            player_won: true,
+            player_damage: 20,
+            enemy_killed: true,
+            loot_cash: 5000,
+            notoriety_change: 5,
+            message: "Victory!".to_string(),
+        };
+
+        apply_combat_result(&mut state, &result);
+
+        assert_eq!(state.health, 80);
+        assert_eq!(state.cash, 205000); // 200000 + 5000
+        assert_eq!(state.notoriety, 5);
+        assert_eq!(state.stats.people_killed, 1);
+    }
+
+    #[test]
+    fn test_find_cash_event() {
+        let mut state = GameState::new();
+        let event = GameEvent::FindCash { amount: 10000 };
+        apply_find_event(&event, &mut state);
+        assert_eq!(state.cash, 210000);
+    }
+
+    #[test]
+    fn test_find_drugs_event() {
+        let mut state = GameState::new();
+        let event = GameEvent::FindDrugs {
+            commodity: "weed".to_string(),
+            amount: 5,
+        };
+        apply_find_event(&event, &mut state);
+        assert_eq!(state.get_quantity("weed"), 5);
+    }
+
+    #[test]
+    fn test_trenchcoat_upgrade() {
+        let mut state = GameState::new();
+        state.coat_tier = 0;
+        let msg = handle_trenchcoat_upgrade(&mut state, true);
+        assert_eq!(state.coat_tier, 1);
+        assert!(msg.contains("125"));
+    }
+
+    #[test]
+    fn test_combat_run_action() {
+        let state = GameState::new();
+        let result = resolve_combat(
+            &state,
+            &EnemyType::Mugger,
+            30,
+            CombatAction::Run,
+        );
+
+        // Either escaped (won=true, damage=0) or caught (won=false, damage>0)
+        if result.player_won {
+            assert_eq!(result.player_damage, 0);
+        } else {
+            assert!(result.player_damage > 0);
+        }
+        assert!(!result.enemy_killed);
+    }
+}
