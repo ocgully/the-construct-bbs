@@ -430,3 +430,53 @@ pub fn complete_story_step(state: &mut GameState, prices: &std::collections::Has
 pub fn is_story_complete(state: &GameState) -> bool {
     state.quest_state.story_step >= 15
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_gang_status_text() {
+        assert_eq!(gang_status(75), "Allied");
+        assert_eq!(gang_status(25), "Neutral");
+        assert_eq!(gang_status(-25), "Hostile");
+        assert_eq!(gang_status(-75), "Enemy");
+    }
+
+    #[test]
+    fn test_story_step_count() {
+        assert_eq!(STORY_STEPS.len(), 15);
+    }
+
+    #[test]
+    fn test_get_current_story() {
+        let mut state = GameState::new();
+        state.quest_state.story_step = 0;
+        let step = get_current_story(&state);
+        assert!(step.is_some());
+        assert_eq!(step.unwrap().step, 1);
+        assert_eq!(step.unwrap().title, "The Old Contact");
+    }
+
+    #[test]
+    fn test_is_story_complete() {
+        let mut state = GameState::new();
+        state.quest_state.story_step = 14;
+        assert!(!is_story_complete(&state));
+        state.quest_state.story_step = 15;
+        assert!(is_story_complete(&state));
+    }
+
+    #[test]
+    fn test_pay_tribute() {
+        let mut state = GameState::new();
+        state.cash = 1000000; // $10,000
+        let initial_relation = state.gang_relations.get("triads").copied().unwrap_or(0);
+
+        let result = pay_tribute(&mut state, "triads");
+
+        assert!(result.is_ok());
+        let new_relation = state.gang_relations.get("triads").copied().unwrap_or(0);
+        assert_eq!(new_relation, initial_relation + 30);
+    }
+}
