@@ -34,6 +34,7 @@ The feeling of dialing into an exclusive, underground system — artificial scar
 - [ ] Web browser terminal frontend (xterm.js)
 - [ ] Mobile-responsive terminal (adapts to phone screens and touch keyboards)
 - [ ] Easter eggs referencing Crystal Ice Palace, Gulliver's Travels, and News Journal Center — woven into lore (old nodes, archived transmissions) and hidden discoveries (secret commands, ANSI art nods, game dialogue references)
+- [ ] Comprehensive test coverage — unit tests for all modules, integration tests for user flows, automated UAT for all features and games
 
 ### Out of Scope
 

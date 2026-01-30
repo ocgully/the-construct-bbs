@@ -168,7 +168,7 @@ Plans:
 ### Phase 8: First Door Game (Drug Wars)
 **Goal**: Users can play Grand Theft Meth (Drug Wars clone) with state persistence and leaderboards
 **Depends on**: Phase 7
-**Requirements**: GAME-05, GAME-06, GAME-07, GAME-08
+**Requirements**: GAME-05, GAME-06, GAME-07, GAME-08, TEST-01
 **Success Criteria** (what must be TRUE):
   1. User can launch Drug Wars from main menu
   2. User can buy/sell commodities across multiple locations
@@ -176,23 +176,25 @@ Plans:
   4. User game state persists between sessions (save/resume works)
   5. User can view leaderboard showing top players
   6. User game completes after 90-day in-game limit
+  7. Unit tests cover all game modules (state, economy, events, quests)
+  8. Integration tests verify complete game flows
 **Plans**: 9 plans
 
 Plans:
-- [ ] 08-01-PLAN.md -- Database foundation (game_saves, game_completions tables, CRUD, leaderboard)
-- [ ] 08-02-PLAN.md -- Core game data structures (GameState, locations, commodities, weapons, gangs)
-- [ ] 08-03-PLAN.md -- Game state machine (GameScreen, GtmFlow, screen transitions, action processing)
-- [ ] 08-04-PLAN.md -- ANSI rendering (main menu, trade, travel, status bar, combat, events)
-- [ ] 08-05-PLAN.md -- Random events (weighted selection, police/mugger/deals, price fluctuations)
-- [ ] 08-06-PLAN.md -- Economy systems (loan shark, bank, casino games)
-- [ ] 08-07-PLAN.md -- Gangs and quests (relations, deliveries, 15-step story quest)
-- [ ] 08-08-PLAN.md -- Session integration (service wiring, save/load, menu config)
-- [ ] 08-09-PLAN.md -- Final integration and human verification
+- [x] 08-01-PLAN.md -- Database foundation (game_saves, game_completions tables, CRUD, leaderboard)
+- [x] 08-02-PLAN.md -- Core game data structures (GameState, locations, commodities, weapons, gangs)
+- [x] 08-03-PLAN.md -- Game state machine (GameScreen, GtmFlow, screen transitions, action processing)
+- [x] 08-04-PLAN.md -- ANSI rendering (main menu, trade, travel, status bar, combat, events)
+- [x] 08-05-PLAN.md -- Random events (weighted selection, police/mugger/deals, price fluctuations)
+- [x] 08-06-PLAN.md -- Economy systems (loan shark, bank, casino games)
+- [x] 08-07-PLAN.md -- Gangs and quests (relations, deliveries, 15-step story quest)
+- [x] 08-08-PLAN.md -- Session integration (service wiring, save/load, menu config)
+- [ ] 08-09-PLAN.md -- Final integration, unit tests, and automated UAT
 
 ### Phase 9: Second Door Game (LORD)
 **Goal**: Users can play Legend of the Red Dragon clone with daily turns and PvP
 **Depends on**: Phase 8
-**Requirements**: GAME-02
+**Requirements**: GAME-02, TEST-01
 **Success Criteria** (what must be TRUE):
   1. User can launch LORD from main menu
   2. User can fight monsters in forest with turn-based combat
@@ -201,6 +203,8 @@ Plans:
   5. User progresses toward defeating dragon boss
   6. User daily turn limit resets at midnight
   7. User game state persists between sessions
+  8. Unit tests cover all game modules
+  9. Integration tests verify complete game flows
 **Plans**: TBD
 
 Plans:
@@ -209,7 +213,7 @@ Plans:
 ### Phase 10: Third Door Game (Usurper)
 **Goal**: Users can play Usurper clone with medieval kingdom theme
 **Depends on**: Phase 9
-**Requirements**: GAME-03
+**Requirements**: GAME-03, TEST-01
 **Success Criteria** (what must be TRUE):
   1. User can launch Usurper from main menu
   2. User can manage medieval kingdom with quests
@@ -217,6 +221,8 @@ Plans:
   4. User experiences darker tone than LORD (theme and narrative)
   5. User daily turn limit enforced
   6. User game state persists between sessions
+  7. Unit tests cover all game modules
+  8. Integration tests verify complete game flows
 **Plans**: TBD
 
 Plans:
@@ -225,7 +231,7 @@ Plans:
 ### Phase 11: Multiplayer Door Game (Acrophobia)
 **Goal**: Users can play real-time multiplayer Acrophobia with timed rounds
 **Depends on**: Phase 10
-**Requirements**: GAME-01
+**Requirements**: GAME-01, TEST-01
 **Success Criteria** (what must be TRUE):
   1. User can launch Acrophobia from main menu and join active round
   2. User sees random acronym and submits backronym within time limit
@@ -233,6 +239,8 @@ Plans:
   4. User sees real-time updates as other players submit and vote
   5. User sees round winners and scores
   6. User game requires minimum players to start round
+  7. Unit tests cover all game modules
+  8. Integration tests verify multiplayer synchronization
 **Plans**: TBD
 
 Plans:
@@ -241,13 +249,15 @@ Plans:
 ### Phase 12: MUD Door Game (Kyrandia)
 **Goal**: Users can play Kyrandia MUD (Multi-User Dungeon)
 **Depends on**: Phase 11
-**Requirements**: GAME-04
+**Requirements**: GAME-04, TEST-01
 **Success Criteria** (what must be TRUE):
   1. User can launch Kyrandia MUD from main menu
   2. User can explore persistent world with room-based navigation
   3. User can interact with other players in real-time
   4. User can engage in MUD-style combat and social interaction
   5. User game state persists between sessions
+  6. Unit tests cover all MUD modules
+  7. Integration tests verify multiplayer world state
 **Plans**: TBD
 
 Plans:
@@ -284,18 +294,25 @@ Plans:
 - [ ] TBD during planning
 
 ### Phase 15: End-to-End Play Testing
-**Goal**: Automated and manual validation of all BBS functionality end-to-end
+**Goal**: Comprehensive automated testing of all BBS functionality with iterative fixes until 100% pass
 **Depends on**: Phase 14
-**Requirements**: TBD
+**Requirements**: TEST-01, TEST-02, TEST-03
 **Success Criteria** (what must be TRUE):
-  1. All user flows (register, login, navigate, mail, chat, games) tested end-to-end
-  2. Automated test suite validates critical paths
-  3. Edge cases and error paths verified (full nodes, expired sessions, mailbox full, etc.)
-  4. Performance validated under concurrent user load
-**Plans**: TBD
+  1. Unit test coverage ≥80% for all backend modules
+  2. Integration tests for all user flows (register, login, navigate, mail, chat, news)
+  3. Automated UAT for each door game (GTM, LORD, Usurper, Acrophobia, Kyrandia)
+  4. Edge case tests (full nodes, expired sessions, mailbox full, game over states)
+  5. Concurrent user load testing (simulate max_nodes simultaneous users)
+  6. All tests pass — iterate fixes until green
+  7. CI pipeline runs full test suite on every commit
+**Plans**: TBD (iterative — add fix plans as tests reveal issues)
 
 Plans:
-- [ ] TBD during planning
+- [ ] 15-01-PLAN.md -- Core BBS test suite (auth, session, menu, timer)
+- [ ] 15-02-PLAN.md -- Communication test suite (mail, chat, news)
+- [ ] 15-03-PLAN.md -- Door game test suites (all 5 games)
+- [ ] 15-04-PLAN.md -- Load testing and performance validation
+- [ ] 15-XX-PLAN.md -- Fix plans added iteratively as tests reveal issues
 
 ## Progress
 
@@ -311,7 +328,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 5. Email System | 4/4 | Complete | 2026-01-28 |
 | 6. Chat & Real-Time Communication | 5/5 | Complete | 2026-01-28 |
 | 7. News & Bulletins | 3/3 | Complete | 2026-01-28 |
-| 8. First Door Game (Drug Wars) | 0/9 | Planned | - |
+| 8. First Door Game (Drug Wars) | 8/9 | In Progress | - |
 | 9. Second Door Game (LORD) | 0/TBD | Not started | - |
 | 10. Third Door Game (Usurper) | 0/TBD | Not started | - |
 | 11. Multiplayer Door Game (Acrophobia) | 0/TBD | Not started | - |
