@@ -1,4 +1,4 @@
-//! Database layer for Master of Cygnus
+//! Database layer for Master of Andromeda
 
 #![allow(dead_code)]
 

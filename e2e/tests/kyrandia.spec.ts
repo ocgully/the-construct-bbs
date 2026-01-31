@@ -1,7 +1,7 @@
 /**
- * Kyrandia E2E Tests
+ * Morningmist E2E Tests
  *
- * Tests for the Realm of Kyrandia text adventure RPG door game.
+ * Tests for the Realm of Morningmist text adventure RPG door game.
  * Uses Playwright to simulate BBS terminal sessions.
  *
  * Key features tested:
@@ -51,11 +51,11 @@ class BbsTerminal {
     await this.page.waitForTimeout(500);
   }
 
-  async navigateToKyrandia() {
-    // Navigate: G (Games menu) -> K (Kyrandia) or appropriate number
+  async navigateToMorningmist() {
+    // Navigate: G (Games menu) -> K (Morningmist) or appropriate number
     await this.sendKeys('G');
     await this.page.waitForTimeout(200);
-    await this.sendKeys('K'); // Kyrandia
+    await this.sendKeys('K'); // Morningmist
     await this.page.waitForTimeout(300);
   }
 
@@ -89,7 +89,7 @@ class BbsTerminal {
   }
 }
 
-test.describe('Kyrandia - Game Intro', () => {
+test.describe('Morningmist - Game Intro', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -100,12 +100,12 @@ test.describe('Kyrandia - Game Intro', () => {
   });
 
   test.skip('displays intro screen on first entry', async () => {
-    await terminal.navigateToKyrandia();
-    await terminal.expectText(['KYRANDIA', 'Lady of Legends', 'Tashanna']);
+    await terminal.navigateToMorningmist();
+    await terminal.expectText(['MORNINGMIST', 'Lady of Legends', 'Tashanna']);
   });
 
   test.skip('shows intro story text', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.expectText([
       'mystical realm',
       'Arch-Mage',
@@ -115,13 +115,13 @@ test.describe('Kyrandia - Game Intro', () => {
   });
 
   test.skip('advances to exploration on key press', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.expectText(['Village Square', 'Exits:']);
   });
 });
 
-test.describe('Kyrandia - Exploration', () => {
+test.describe('Morningmist - Exploration', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -129,31 +129,31 @@ test.describe('Kyrandia - Exploration', () => {
   });
 
   test.skip('displays current room with description', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter(); // Skip intro
     await terminal.expectText(['Village Square', 'heart of the humble village']);
   });
 
   test.skip('shows available exits', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.expectText(['Exits:', 'north', 'east', 'south', 'west']);
   });
 
   test.skip('shows NPCs in room', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.expectText(['Elder Quinn is here']);
   });
 
   test.skip('displays status bar with HP and mana', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.expectText(['HP:', 'Mana:', 'Gold:']);
   });
 
   test.skip('can move north with n or north command', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('n');
     await terminal.pressEnter();
@@ -161,7 +161,7 @@ test.describe('Kyrandia - Exploration', () => {
   });
 
   test.skip('can navigate using cardinal directions', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('east');
     await terminal.pressEnter();
@@ -169,7 +169,7 @@ test.describe('Kyrandia - Exploration', () => {
   });
 
   test.skip('shows error for invalid direction', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('up');
     await terminal.pressEnter();
@@ -177,7 +177,7 @@ test.describe('Kyrandia - Exploration', () => {
   });
 });
 
-test.describe('Kyrandia - Text Parser Commands', () => {
+test.describe('Morningmist - Text Parser Commands', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -185,7 +185,7 @@ test.describe('Kyrandia - Text Parser Commands', () => {
   });
 
   test.skip('look command shows room description', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('look');
     await terminal.pressEnter();
@@ -193,7 +193,7 @@ test.describe('Kyrandia - Text Parser Commands', () => {
   });
 
   test.skip('look at NPC shows description', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('look at quinn');
     await terminal.pressEnter();
@@ -201,7 +201,7 @@ test.describe('Kyrandia - Text Parser Commands', () => {
   });
 
   test.skip('take command picks up items', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('west');
     await terminal.pressEnter();
@@ -212,7 +212,7 @@ test.describe('Kyrandia - Text Parser Commands', () => {
   });
 
   test.skip('drop command removes items', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('west');
     await terminal.pressEnter();
@@ -224,7 +224,7 @@ test.describe('Kyrandia - Text Parser Commands', () => {
   });
 
   test.skip('use command activates items', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     // Would need a health potion in inventory
     await terminal.sendKeys('use potion');
@@ -233,7 +233,7 @@ test.describe('Kyrandia - Text Parser Commands', () => {
   });
 
   test.skip('talk command initiates NPC dialogue', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('talk to quinn');
     await terminal.pressEnter();
@@ -241,7 +241,7 @@ test.describe('Kyrandia - Text Parser Commands', () => {
   });
 });
 
-test.describe('Kyrandia - Magic System', () => {
+test.describe('Morningmist - Magic System', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -249,7 +249,7 @@ test.describe('Kyrandia - Magic System', () => {
   });
 
   test.skip('can cast light spell with incantation', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('luminos');
     await terminal.pressEnter();
@@ -257,7 +257,7 @@ test.describe('Kyrandia - Magic System', () => {
   });
 
   test.skip('unknown incantation shows error', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('abracadabra');
     await terminal.pressEnter();
@@ -265,14 +265,14 @@ test.describe('Kyrandia - Magic System', () => {
   });
 
   test.skip('can view spellbook with M key', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('M');
     await terminal.expectText(['SPELLBOOK', 'Light', 'luminos']);
   });
 
   test.skip('healing spell restores HP', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     // Would need heal spell learned
     await terminal.sendKeys('vitae restauro');
@@ -281,7 +281,7 @@ test.describe('Kyrandia - Magic System', () => {
   });
 
   test.skip('spell costs mana', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('luminos');
     await terminal.pressEnter();
@@ -290,7 +290,7 @@ test.describe('Kyrandia - Magic System', () => {
   });
 });
 
-test.describe('Kyrandia - Combat', () => {
+test.describe('Morningmist - Combat', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -298,7 +298,7 @@ test.describe('Kyrandia - Combat', () => {
   });
 
   test.skip('random encounters occur in dangerous areas', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     // Navigate to Dark Forest
     await terminal.sendKeys('south');
@@ -311,33 +311,33 @@ test.describe('Kyrandia - Combat', () => {
   });
 
   test.skip('combat screen shows attack options', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // Would need to be in combat
     await terminal.expectText(['[A] Attack', '[C] Cast', '[F] Flee']);
   });
 
   test.skip('can attack with A key', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // In combat
     await terminal.sendKeys('A');
     await terminal.expectText(['attack', 'damage', 'HP:']);
   });
 
   test.skip('can flee with F key', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // In combat
     await terminal.sendKeys('F');
     await terminal.expectText(['flee', 'escape', 'blocks']);
   });
 
   test.skip('victory grants XP and gold', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // After winning combat
     await terminal.expectText(['defeated', 'XP', 'gold']);
   });
 });
 
-test.describe('Kyrandia - Fountain of Scrolls', () => {
+test.describe('Morningmist - Fountain of Scrolls', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -345,14 +345,14 @@ test.describe('Kyrandia - Fountain of Scrolls', () => {
   });
 
   test.skip('fountain shows in Golden Forest', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     // Navigate to fountain (requires level 4+)
     await terminal.expectText(['Fountain of Scrolls', 'pine cones']);
   });
 
   test.skip('fountain requires 3 pine cones', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // At fountain with pine cones
     await terminal.sendKeys('throw pine cone');
     await terminal.pressEnter();
@@ -360,14 +360,14 @@ test.describe('Kyrandia - Fountain of Scrolls', () => {
   });
 
   test.skip('successful fountain use creates scroll', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // At fountain with 3+ pine cones
     await terminal.sendKeys('Y'); // Confirm use
     await terminal.expectText(['Scroll', 'materializes']);
   });
 });
 
-test.describe('Kyrandia - Inventory', () => {
+test.describe('Morningmist - Inventory', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -375,21 +375,21 @@ test.describe('Kyrandia - Inventory', () => {
   });
 
   test.skip('displays inventory with I key', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('I');
     await terminal.expectText(['INVENTORY', 'Capacity:']);
   });
 
   test.skip('shows equipped items', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('I');
     await terminal.expectText(['EQUIPPED:', 'Weapon:', 'Armor:']);
   });
 
   test.skip('can equip weapons', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     // Would need weapon in inventory
     await terminal.sendKeys('equip staff');
@@ -398,14 +398,14 @@ test.describe('Kyrandia - Inventory', () => {
   });
 
   test.skip('inventory has capacity limit', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('I');
     await terminal.expectText(['/10', 'Capacity']);
   });
 });
 
-test.describe('Kyrandia - Stats', () => {
+test.describe('Morningmist - Stats', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -413,28 +413,28 @@ test.describe('Kyrandia - Stats', () => {
   });
 
   test.skip('displays stats with S key', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('S');
     await terminal.expectText(['Level', 'Rank:', 'Apprentice']);
   });
 
   test.skip('shows experience progress', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('S');
     await terminal.expectText(['Experience:', 'next level']);
   });
 
   test.skip('shows combat statistics', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('S');
     await terminal.expectText(['Attack:', 'Defense:', 'Monsters Defeated:']);
   });
 });
 
-test.describe('Kyrandia - NPC Dialogue', () => {
+test.describe('Morningmist - NPC Dialogue', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -442,7 +442,7 @@ test.describe('Kyrandia - NPC Dialogue', () => {
   });
 
   test.skip('NPCs have multiple dialogue lines', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('talk quinn');
     await terminal.pressEnter();
@@ -450,7 +450,7 @@ test.describe('Kyrandia - NPC Dialogue', () => {
   });
 
   test.skip('can advance dialogue with any key', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('talk quinn');
     await terminal.pressEnter();
@@ -460,7 +460,7 @@ test.describe('Kyrandia - NPC Dialogue', () => {
   });
 
   test.skip('merchants show shop options', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('east'); // To shop
     await terminal.pressEnter();
@@ -470,7 +470,7 @@ test.describe('Kyrandia - NPC Dialogue', () => {
   });
 });
 
-test.describe('Kyrandia - Puzzles', () => {
+test.describe('Morningmist - Puzzles', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -478,7 +478,7 @@ test.describe('Kyrandia - Puzzles', () => {
   });
 
   test.skip('crossroads riddle puzzle', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // Navigate to crossroads
     await terminal.sendKeys('mountain');
     await terminal.pressEnter();
@@ -486,7 +486,7 @@ test.describe('Kyrandia - Puzzles', () => {
   });
 
   test.skip('wrong puzzle answer gives hint', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // At puzzle location
     await terminal.sendKeys('wrong answer');
     await terminal.pressEnter();
@@ -494,7 +494,7 @@ test.describe('Kyrandia - Puzzles', () => {
   });
 
   test.skip('altar blessing requires spell', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // At altar of Tashanna
     await terminal.sendKeys('glory be to tashanna');
     await terminal.pressEnter();
@@ -502,7 +502,7 @@ test.describe('Kyrandia - Puzzles', () => {
   });
 });
 
-test.describe('Kyrandia - Romance System', () => {
+test.describe('Morningmist - Romance System', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -510,7 +510,7 @@ test.describe('Kyrandia - Romance System', () => {
   });
 
   test.skip('can flirt with romanceable NPCs', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('north'); // To inn
     await terminal.pressEnter();
@@ -520,7 +520,7 @@ test.describe('Kyrandia - Romance System', () => {
   });
 
   test.skip('same-sex romance is supported', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('south');
     await terminal.pressEnter();
@@ -530,7 +530,7 @@ test.describe('Kyrandia - Romance System', () => {
   });
 
   test.skip('romance has daily flirt limit', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('north');
     await terminal.pressEnter();
@@ -544,13 +544,13 @@ test.describe('Kyrandia - Romance System', () => {
   });
 
   test.skip('romance stages progress with affection', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // After building affection
     await terminal.expectText(['Friend', 'Dating', 'Married']);
   });
 });
 
-test.describe('Kyrandia - Regions', () => {
+test.describe('Morningmist - Regions', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -558,13 +558,13 @@ test.describe('Kyrandia - Regions', () => {
   });
 
   test.skip('Village is accessible at level 1', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.expectText(['The Village']);
   });
 
   test.skip('Dark Forest requires level 2', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('south');
     await terminal.pressEnter();
@@ -574,19 +574,19 @@ test.describe('Kyrandia - Regions', () => {
   });
 
   test.skip('Golden Forest requires level 4 and key', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // Try to enter Golden Forest
     await terminal.expectText(['level 4', 'Golden Key']);
   });
 
   test.skip('Dragon Castle requires level 6', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // Try to enter Dragon Castle
     await terminal.expectText(['level 6', 'Dragon Castle']);
   });
 });
 
-test.describe('Kyrandia - Victory', () => {
+test.describe('Morningmist - Victory', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -594,19 +594,19 @@ test.describe('Kyrandia - Victory', () => {
   });
 
   test.skip('defeating dragon triggers victory', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // After defeating Pyraxis
     await terminal.expectText(['VICTORY', 'ARCH-MAGE OF LEGENDS']);
   });
 
   test.skip('victory screen shows final stats', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // Victory screen
     await terminal.expectText(['FINAL STATS:', 'Level:', 'Gold Earned:', 'Monsters Defeated:']);
   });
 });
 
-test.describe('Kyrandia - Save/Resume', () => {
+test.describe('Morningmist - Save/Resume', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -614,14 +614,14 @@ test.describe('Kyrandia - Save/Resume', () => {
   });
 
   test.skip('displays quit confirmation', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('Q');
     await terminal.expectText(['SAVE & QUIT', 'Are you sure?']);
   });
 
   test.skip('can confirm quit with Y', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('Q');
     await terminal.page.waitForTimeout(100);
@@ -630,7 +630,7 @@ test.describe('Kyrandia - Save/Resume', () => {
   });
 
   test.skip('can cancel quit with N', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('Q');
     await terminal.page.waitForTimeout(100);
@@ -639,19 +639,19 @@ test.describe('Kyrandia - Save/Resume', () => {
   });
 
   test.skip('resumes from saved position', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // After quit and re-enter
     await terminal.expectText(['intro', 'Village Square']);
   });
 
   test.skip('daily turns reset at midnight', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.expectText(['Turns:', 'new day']);
   });
 });
 
-test.describe('Kyrandia - Help System', () => {
+test.describe('Morningmist - Help System', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -659,28 +659,28 @@ test.describe('Kyrandia - Help System', () => {
   });
 
   test.skip('displays help with H key', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('H');
-    await terminal.expectText(['KYRANDIA HELP', 'MOVEMENT:', 'ACTIONS:', 'MAGIC:']);
+    await terminal.expectText(['MORNINGMIST HELP', 'MOVEMENT:', 'ACTIONS:', 'MAGIC:']);
   });
 
   test.skip('help shows command list', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('H');
     await terminal.expectText(['north', 'take', 'drop', 'use', 'equip', 'talk']);
   });
 
   test.skip('help explains incantation system', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('H');
     await terminal.expectText(['incantation', 'cast', 'vitae restauro']);
   });
 });
 
-test.describe('Kyrandia - IGM Support', () => {
+test.describe('Morningmist - IGM Support', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -688,20 +688,20 @@ test.describe('Kyrandia - IGM Support', () => {
   });
 
   test.skip('default IGM modules are available', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     // IGM locations should be accessible
     await terminal.expectText(['Moonlit Glade', 'Wandering Merchant']);
   });
 
   test.skip('IGM locations can be visited', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // Navigate to IGM location
     await terminal.expectText(['module', 'location']);
   });
 });
 
-test.describe('Kyrandia - Daily Limits', () => {
+test.describe('Morningmist - Daily Limits', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -709,13 +709,13 @@ test.describe('Kyrandia - Daily Limits', () => {
   });
 
   test.skip('shows remaining turns', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.expectText(['Turns:']);
   });
 
   test.skip('turns decrease with movement', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('north');
     await terminal.pressEnter();
@@ -724,13 +724,13 @@ test.describe('Kyrandia - Daily Limits', () => {
   });
 
   test.skip('warns when turns run out', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // After using all turns
     await terminal.expectText(['No turns remaining', 'Rest at an inn']);
   });
 });
 
-test.describe('Kyrandia - Multiplayer Features', () => {
+test.describe('Morningmist - Multiplayer Features', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -738,14 +738,14 @@ test.describe('Kyrandia - Multiplayer Features', () => {
   });
 
   test.skip('shows other players in room', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     // If other players present
     await terminal.expectText(['is here', 'players']);
   });
 
   test.skip('can send messages to other players', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     await terminal.pressEnter();
     await terminal.sendKeys('say Hello adventurers!');
     await terminal.pressEnter();
@@ -753,7 +753,7 @@ test.describe('Kyrandia - Multiplayer Features', () => {
   });
 });
 
-test.describe('Kyrandia - Leaderboard', () => {
+test.describe('Morningmist - Leaderboard', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -761,13 +761,13 @@ test.describe('Kyrandia - Leaderboard', () => {
   });
 
   test.skip('displays hall of legends', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // View leaderboard
     await terminal.expectText(['HALL OF LEGENDS', 'Rank', 'Level', 'ARCH-MAGE']);
   });
 
   test.skip('shows completed games', async () => {
-    await terminal.navigateToKyrandia();
+    await terminal.navigateToMorningmist();
     // Leaderboard entries
     await terminal.expectText(['Gold', 'Monsters']);
   });

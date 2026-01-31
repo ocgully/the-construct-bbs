@@ -182,7 +182,7 @@ category = "Strategy/Trading"
 [[menu.games]]
 type = "command"
 hotkey = "8"
-name = "Master of Cygnus"
+name = "Master of Andromeda"
 command = "master_of_cygnus"
 order = 8
 category = "Strategy/Trading"
@@ -256,10 +256,10 @@ category = "Action"
 [[menu.games]]
 type = "command"
 hotkey = "I"
-name = "Kyrandia"
+name = "Morningmist"
 command = "kyrandia"
 order = 22
-category = "Action"
+category = "RPG/Adventure"
 
 # Sandbox/Epic Games
 [[menu.games]]

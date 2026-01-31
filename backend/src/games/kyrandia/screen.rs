@@ -1,4 +1,4 @@
-//! Game screen and flow state machine for Kyrandia
+//! Game screen and flow state machine for Morningmist
 //! Manages screen transitions and input handling
 
 #![allow(dead_code)]

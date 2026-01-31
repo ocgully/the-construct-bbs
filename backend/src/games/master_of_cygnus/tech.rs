@@ -1,4 +1,4 @@
-//! Technology research system for Master of Cygnus
+//! Technology research system for Master of Andromeda
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

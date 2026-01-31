@@ -1,6 +1,6 @@
-//! Kyrandia - Door Game Service
+//! Morningmist - Door Game Service
 //!
-//! A multi-player text adventure RPG inspired by the classic Kyrandia BBS game.
+//! A multi-player text adventure RPG inspired by the classic Morningmist BBS game.
 //! Players explore a fairy tale realm, learn magic, solve puzzles, and
 //! compete to become the Arch-Mage of Legends.
 //!
@@ -27,7 +27,7 @@ pub async fn start_game(db: &KyrandiaDb, user_id: i64, handle: &str) -> Result<(
                     // Check for daily reset
                     let reset = state.check_daily_reset();
                     if reset {
-                        state.last_message = Some("A new day dawns in Kyrandia. Your turns have been restored.".to_string());
+                        state.last_message = Some("A new day dawns in Morningmist. Your turns have been restored.".to_string());
                     }
 
                     let flow = KyrandiaFlow::from_state(state);
@@ -157,7 +157,7 @@ pub fn render_leaderboard_screen(entries: &[LeaderboardEntry]) -> String {
     w.set_fg(Color::LightMagenta);
     w.bold();
     w.writeln("");
-    w.writeln("  KYRANDIA - HALL OF LEGENDS");
+    w.writeln("  MORNINGMIST - HALL OF LEGENDS");
     w.reset_color();
 
     w.writeln("");

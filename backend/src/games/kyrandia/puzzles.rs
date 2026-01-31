@@ -1,4 +1,4 @@
-//! Puzzle system for Kyrandia
+//! Puzzle system for Morningmist
 //! Handles mystical puzzles that block progression
 
 #![allow(dead_code)]

@@ -1,4 +1,4 @@
-//! ANSI rendering for Kyrandia
+//! ANSI rendering for Morningmist
 //! Fantasy forest visual identity with purples, greens, and golds
 
 #![allow(dead_code)]
@@ -20,13 +20,13 @@ fn render_header(w: &mut AnsiWriter) {
     w.set_fg(Color::LightMagenta);
     w.bold();
     w.writeln("");
-    w.writeln("   ██╗  ██╗██╗   ██╗██████╗  █████╗ ███╗   ██╗██████╗ ██╗ █████╗ ");
-    w.writeln("   ██║ ██╔╝╚██╗ ██╔╝██╔══██╗██╔══██╗████╗  ██║██╔══██╗██║██╔══██╗");
-    w.writeln("   █████╔╝  ╚████╔╝ ██████╔╝███████║██╔██╗ ██║██║  ██║██║███████║");
-    w.writeln("   ██╔═██╗   ╚██╔╝  ██╔══██╗██╔══██║██║╚██╗██║██║  ██║██║██╔══██║");
-    w.writeln("   ██║  ██╗   ██║   ██║  ██║██║  ██║██║ ╚████║██████╔╝██║██║  ██║");
-    w.writeln("   ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚═╝╚═╝  ╚═╝");
-    w.writeln("                           KYRANDIA");
+    w.writeln("   ███╗   ███╗ ██████╗ ██████╗ ███╗   ██╗██╗███╗   ██╗ ██████╗ ███╗   ███╗██╗███████╗████████╗");
+    w.writeln("   ████╗ ████║██╔═══██╗██╔══██╗████╗  ██║██║████╗  ██║██╔════╝ ████╗ ████║██║██╔════╝╚══██╔══╝");
+    w.writeln("   ██╔████╔██║██║   ██║██████╔╝██╔██╗ ██║██║██╔██╗ ██║██║  ███╗██╔████╔██║██║███████╗   ██║   ");
+    w.writeln("   ██║╚██╔╝██║██║   ██║██╔══██╗██║╚██╗██║██║██║╚██╗██║██║   ██║██║╚██╔╝██║██║╚════██║   ██║   ");
+    w.writeln("   ██║ ╚═╝ ██║╚██████╔╝██║  ██║██║ ╚████║██║██║ ╚████║╚██████╔╝██║ ╚═╝ ██║██║███████║   ██║   ");
+    w.writeln("   ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝     ╚═╝╚═╝╚══════╝   ╚═╝   ");
+    w.writeln("                                  MORNINGMIST");
     w.reset_color();
     w.set_fg(Color::DarkGray);
     w.writeln("            ~ Realm of the Lady of Legends ~");
@@ -38,7 +38,7 @@ fn render_compact_header(w: &mut AnsiWriter, state: &GameState) {
     w.clear_screen();
     w.set_fg(Color::LightMagenta);
     w.bold();
-    w.write_str("  KYRANDIA");
+    w.write_str("  MORNINGMIST");
     w.reset_color();
     w.set_fg(Color::DarkGray);
     w.write_str(" | ");
@@ -134,7 +134,7 @@ pub fn render_intro(state: &GameState) -> String {
 
     w.writeln("");
     w.set_fg(Color::LightGray);
-    w.writeln("  In the mystical realm of Kyrandia, magic flows like water through ancient");
+    w.writeln("  In the mystical realm of Morningmist, magic flows like water through ancient");
     w.writeln("  forests. The Lady of Legends, Tashanna, watches over all who seek wisdom.");
     w.writeln("");
     w.set_fg(Color::White);
@@ -714,7 +714,7 @@ pub fn render_game_over(state: &GameState, victory: bool) -> String {
         w.writeln("");
         w.set_fg(Color::LightGray);
         w.writeln("  Your journey has come to an end...");
-        w.writeln("  But Kyrandia awaits another brave soul.");
+        w.writeln("  But Morningmist awaits another brave soul.");
     }
 
     // Stats
@@ -752,7 +752,7 @@ pub fn render_confirm_quit() -> String {
     w.writeln("  Your progress will be saved and you can resume later.");
     w.writeln("");
     w.set_fg(Color::LightCyan);
-    w.write_str("  Are you sure you want to leave Kyrandia? [Y/N] ");
+    w.write_str("  Are you sure you want to leave Morningmist? [Y/N] ");
     w.reset_color();
 
     w.flush()
@@ -766,7 +766,7 @@ pub fn render_help() -> String {
     w.set_fg(Color::Yellow);
     w.bold();
     w.writeln("");
-    w.writeln("  === KYRANDIA HELP ===");
+    w.writeln("  === MORNINGMIST HELP ===");
     w.reset_color();
 
     w.writeln("");
@@ -871,7 +871,7 @@ mod tests {
     fn test_render_intro() {
         let state = GameState::new("Test");
         let output = render_intro(&state);
-        assert!(output.contains("KYRANDIA"));
+        assert!(output.contains("MORNINGMIST"));
         assert!(output.contains("Test"));
     }
 

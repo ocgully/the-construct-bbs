@@ -1,4 +1,4 @@
-//! Master of Cygnus - Door Game Service
+//! Master of Andromeda - Door Game Service
 //!
 //! A 4X space strategy game inspired by Master of Orion.
 //! Uses __master_of_cygnus__ sentinel for session routing.

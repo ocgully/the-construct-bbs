@@ -1,4 +1,4 @@
-//! Combat resolution for Master of Cygnus
+//! Combat resolution for Master of Andromeda
 
 use serde::{Deserialize, Serialize};
 use rand::Rng;

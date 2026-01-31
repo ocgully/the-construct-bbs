@@ -1,4 +1,4 @@
-//! Ship design and fleet management for Master of Cygnus
+//! Ship design and fleet management for Master of Andromeda
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

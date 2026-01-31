@@ -965,29 +965,40 @@ mod tests {
 
     #[test]
     fn test_process_attack_monster_armor_reduces_damage() {
-        let mut engine = CombatEngine::new();
-        let mut character = Character::new("Test", CharacterClass::Warrior);
+        // Use multiple iterations to average out random damage variance
+        let mut total_zombie_damage = 0i32;
+        let mut total_bk_damage = 0i32;
+        let iterations = 20;
 
-        // Create two monsters with different armor
-        let mut zombie = Monster::new(1, MonsterType::Zombie, 5, 5); // 2 armor
-        let mut blood_knight = Monster::new(2, MonsterType::BloodKnight, 6, 6); // 35 armor
+        for _ in 0..iterations {
+            let mut engine = CombatEngine::new();
+            let mut character = Character::new("Test", CharacterClass::Warrior);
 
-        let zombie_initial = zombie.health;
-        let bk_initial = blood_knight.health;
+            // Create two monsters with different armor
+            let mut zombie = Monster::new(1, MonsterType::Zombie, 5, 5); // 2 armor
+            let mut blood_knight = Monster::new(2, MonsterType::BloodKnight, 6, 6); // 35 armor
 
-        engine.combat_time_ms = 0;
-        engine.last_attack_ms = 0;
-        let _zombie_result = engine.process_attack(&mut character, &mut zombie, &[]);
+            let zombie_initial = zombie.health;
+            let bk_initial = blood_knight.health;
 
-        engine.combat_time_ms = 2000;
-        engine.last_attack_ms = 0;
-        let _bk_result = engine.process_attack(&mut character, &mut blood_knight, &[]);
+            engine.combat_time_ms = 0;
+            engine.last_attack_ms = 0;
+            let _zombie_result = engine.process_attack(&mut character, &mut zombie, &[]);
 
-        let zombie_damage = zombie_initial - zombie.health;
-        let bk_damage = bk_initial - blood_knight.health;
+            engine.combat_time_ms = 2000;
+            engine.last_attack_ms = 0;
+            let _bk_result = engine.process_attack(&mut character, &mut blood_knight, &[]);
 
-        // Blood Knight with higher armor should take less damage
-        assert!(bk_damage < zombie_damage);
+            total_zombie_damage += zombie_initial - zombie.health;
+            total_bk_damage += bk_initial - blood_knight.health;
+        }
+
+        // Blood Knight with higher armor should take less damage on average
+        assert!(
+            total_bk_damage < total_zombie_damage,
+            "Blood Knight (armor 35) should take less damage than Zombie (armor 2) on average: BK={}, Zombie={}",
+            total_bk_damage, total_zombie_damage
+        );
     }
 
     // ===== Skill Processing Tests =====

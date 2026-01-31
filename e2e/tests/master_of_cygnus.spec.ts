@@ -1,5 +1,5 @@
 /**
- * Master of Cygnus E2E Tests
+ * Master of Andromeda E2E Tests
  *
  * Tests for the 4X space strategy game inspired by Master of Orion.
  * Uses Playwright to simulate BBS terminal sessions.
@@ -47,8 +47,8 @@ class BbsTerminal {
     await this.page.waitForTimeout(500);
   }
 
-  async navigateToMasterOfCygnus() {
-    // Navigate: G (Games menu) -> M (Master of Cygnus)
+  async navigateToMasterOfAndromeda() {
+    // Navigate: G (Games menu) -> M (Master of Andromeda)
     await this.sendKeys('G');
     await this.page.waitForTimeout(200);
     await this.sendKeys('M');
@@ -85,7 +85,7 @@ class BbsTerminal {
   }
 }
 
-test.describe('Master of Cygnus - Game Intro', () => {
+test.describe('Master of Andromeda - Game Intro', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -96,20 +96,20 @@ test.describe('Master of Cygnus - Game Intro', () => {
   });
 
   test.skip('displays intro screen with title', async () => {
-    await terminal.navigateToMasterOfCygnus();
-    await terminal.expectText(['MASTER', 'CYGNUS']);
+    await terminal.navigateToMasterOfAndromeda();
+    await terminal.expectText(['MASTER', 'ANDROMEDA']);
     await terminal.expectText(['The stars are waiting']);
     await terminal.expectText(['Press any key']);
   });
 
   test.skip('advances to lobby on any key', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.pressEnter();
     await terminal.expectText(['GAME LOBBY']);
   });
 });
 
-test.describe('Master of Cygnus - Game Lobby', () => {
+test.describe('Master of Andromeda - Game Lobby', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -117,20 +117,20 @@ test.describe('Master of Cygnus - Game Lobby', () => {
   });
 
   test.skip('shows options to create or join game', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.pressEnter();
     await terminal.expectText(['New Game', 'Join Existing', 'Quit']);
   });
 
   test.skip('can start new game creation', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.pressEnter();
     await terminal.sendKeys('N');
     await terminal.expectText(['CREATE NEW GAME', 'Enter game name']);
   });
 
   test.skip('can enter game name', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.pressEnter();
     await terminal.sendKeys('N');
     await terminal.page.waitForTimeout(200);
@@ -140,7 +140,7 @@ test.describe('Master of Cygnus - Game Lobby', () => {
   });
 
   test.skip('can enter empire name', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.pressEnter();
     await terminal.sendKeys('N');
     await terminal.page.waitForTimeout(200);
@@ -153,20 +153,20 @@ test.describe('Master of Cygnus - Game Lobby', () => {
   });
 
   test.skip('shows joined empires in lobby', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.pressEnter();
     await terminal.expectText(['Joined Empires']);
   });
 
   test.skip('can view open games to join', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.pressEnter();
     await terminal.sendKeys('J');
     await terminal.expectText(['JOIN EXISTING GAME']);
   });
 });
 
-test.describe('Master of Cygnus - Galaxy Map', () => {
+test.describe('Master of Andromeda - Galaxy Map', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -174,30 +174,30 @@ test.describe('Master of Cygnus - Galaxy Map', () => {
   });
 
   test.skip('displays galaxy view with stars', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     // Assume game is already in progress
     await terminal.expectText(['GALAXY VIEW']);
     await terminal.expectText(['Star Name', 'Type', 'Owner']);
   });
 
   test.skip('shows status bar with empire info', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.expectText(['Turn', 'Pop:', 'Colonies:', 'Fleets:']);
   });
 
   test.skip('can view star by ID', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('1'); // View star 1
     await terminal.expectText(['STAR SYSTEM']);
   });
 
   test.skip('shows command menu', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.expectText(['[C] Colony management', '[F] Fleet management', '[R] Research', '[T] End turn']);
   });
 });
 
-test.describe('Master of Cygnus - Star System View', () => {
+test.describe('Master of Andromeda - Star System View', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -205,31 +205,31 @@ test.describe('Master of Cygnus - Star System View', () => {
   });
 
   test.skip('displays star system information', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('1');
     await terminal.expectText(['Planet Type:', 'Max Population:', 'Base Production:']);
   });
 
   test.skip('shows ownership status', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('1');
     await terminal.expectText(['Owner:']);
   });
 
   test.skip('shows colony info if owned', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('1');
     await terminal.expectText(['COLONY STATUS', 'Population:', 'Buildings:']);
   });
 
   test.skip('shows fleets at location', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('1');
     await terminal.expectText(['Fleets present']);
   });
 
   test.skip('can return to galaxy map', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('1');
     await terminal.page.waitForTimeout(200);
     await terminal.sendKeys('Q');
@@ -237,7 +237,7 @@ test.describe('Master of Cygnus - Star System View', () => {
   });
 });
 
-test.describe('Master of Cygnus - Colony Management', () => {
+test.describe('Master of Andromeda - Colony Management', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -245,25 +245,25 @@ test.describe('Master of Cygnus - Colony Management', () => {
   });
 
   test.skip('displays colony management screen', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('C');
     await terminal.expectText(['COLONY:', 'BUILD OPTIONS']);
   });
 
   test.skip('shows current buildings', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('C');
     await terminal.expectText(['Buildings:']);
   });
 
   test.skip('shows production queue', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('C');
     await terminal.expectText(['Production Queue']);
   });
 
   test.skip('can queue factory construction', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('C');
     await terminal.page.waitForTimeout(200);
     await terminal.sendKeys('1'); // Factory
@@ -271,7 +271,7 @@ test.describe('Master of Cygnus - Colony Management', () => {
   });
 
   test.skip('can queue research lab', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('C');
     await terminal.page.waitForTimeout(200);
     await terminal.sendKeys('2'); // Research Lab
@@ -279,7 +279,7 @@ test.describe('Master of Cygnus - Colony Management', () => {
   });
 
   test.skip('can queue ship construction', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('C');
     await terminal.page.waitForTimeout(200);
     await terminal.sendKeys('5'); // Scout
@@ -287,7 +287,7 @@ test.describe('Master of Cygnus - Colony Management', () => {
   });
 });
 
-test.describe('Master of Cygnus - Fleet Management', () => {
+test.describe('Master of Andromeda - Fleet Management', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -295,25 +295,25 @@ test.describe('Master of Cygnus - Fleet Management', () => {
   });
 
   test.skip('displays fleet management screen', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('F');
     await terminal.expectText(['FLEET:']);
   });
 
   test.skip('shows fleet location', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('F');
     await terminal.expectText(['Location:']);
   });
 
   test.skip('shows ships in fleet', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('F');
     await terminal.expectText(['Ships:']);
   });
 
   test.skip('can set destination by entering star ID', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('F');
     await terminal.page.waitForTimeout(200);
     await terminal.sendKeys('5'); // Move to star 5
@@ -321,13 +321,13 @@ test.describe('Master of Cygnus - Fleet Management', () => {
   });
 
   test.skip('shows ETA when fleet in transit', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('F');
     await terminal.expectText(['ETA:']);
   });
 });
 
-test.describe('Master of Cygnus - Research', () => {
+test.describe('Master of Andromeda - Research', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -335,13 +335,13 @@ test.describe('Master of Cygnus - Research', () => {
   });
 
   test.skip('displays research allocation screen', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('R');
     await terminal.expectText(['RESEARCH ALLOCATION']);
   });
 
   test.skip('shows all research fields', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('R');
     await terminal.expectText([
       'Propulsion',
@@ -354,13 +354,13 @@ test.describe('Master of Cygnus - Research', () => {
   });
 
   test.skip('shows current levels and allocation', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('R');
     await terminal.expectText(['Lv', '%']);
   });
 
   test.skip('can set balanced allocation', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('R');
     await terminal.page.waitForTimeout(200);
     await terminal.sendKeys('B');
@@ -368,14 +368,14 @@ test.describe('Master of Cygnus - Research', () => {
   });
 
   test.skip('can increase allocation to a field', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('R');
     await terminal.page.waitForTimeout(200);
     await terminal.sendKeys('1'); // Boost Propulsion
   });
 });
 
-test.describe('Master of Cygnus - Ship Designer', () => {
+test.describe('Master of Andromeda - Ship Designer', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -383,25 +383,25 @@ test.describe('Master of Cygnus - Ship Designer', () => {
   });
 
   test.skip('displays ship designer screen', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('D');
     await terminal.expectText(['SHIP DESIGNER']);
   });
 
   test.skip('shows current designs', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('D');
     await terminal.expectText(['Current Designs', 'ATK:', 'DEF:', 'SPD:']);
   });
 
   test.skip('shows default designs', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('D');
     await terminal.expectText(['Scout', 'Colony Ship', 'Fighter']);
   });
 });
 
-test.describe('Master of Cygnus - Turn Submission', () => {
+test.describe('Master of Andromeda - Turn Submission', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -409,25 +409,25 @@ test.describe('Master of Cygnus - Turn Submission', () => {
   });
 
   test.skip('displays turn summary screen', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('T');
     await terminal.expectText(['END OF TURN', 'SUMMARY']);
   });
 
   test.skip('shows empire statistics', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('T');
     await terminal.expectText(['Colonies:', 'Total Population:', 'Production:', 'Research:']);
   });
 
   test.skip('shows pending orders', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('T');
     await terminal.expectText(['Pending Orders', 'Colony orders:', 'Fleet orders:']);
   });
 
   test.skip('can submit turn', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('T');
     await terminal.page.waitForTimeout(200);
     await terminal.sendKeys('S');
@@ -435,7 +435,7 @@ test.describe('Master of Cygnus - Turn Submission', () => {
   });
 
   test.skip('can cancel and return to game', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('T');
     await terminal.page.waitForTimeout(200);
     await terminal.sendKeys('N');
@@ -443,7 +443,7 @@ test.describe('Master of Cygnus - Turn Submission', () => {
   });
 });
 
-test.describe('Master of Cygnus - Quit and Save', () => {
+test.describe('Master of Andromeda - Quit and Save', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -451,13 +451,13 @@ test.describe('Master of Cygnus - Quit and Save', () => {
   });
 
   test.skip('shows quit confirmation', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('Q');
     await terminal.expectText(['SAVE & QUIT', 'Are you sure?']);
   });
 
   test.skip('cancels quit on N', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('Q');
     await terminal.page.waitForTimeout(200);
     await terminal.sendKeys('N');
@@ -465,7 +465,7 @@ test.describe('Master of Cygnus - Quit and Save', () => {
   });
 
   test.skip('saves and exits on Y', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.sendKeys('Q');
     await terminal.page.waitForTimeout(200);
     await terminal.sendKeys('Y');
@@ -473,7 +473,7 @@ test.describe('Master of Cygnus - Quit and Save', () => {
   });
 });
 
-test.describe('Master of Cygnus - Game Over', () => {
+test.describe('Master of Andromeda - Game Over', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -494,7 +494,7 @@ test.describe('Master of Cygnus - Game Over', () => {
   });
 });
 
-test.describe('Master of Cygnus - Multiplayer Features', () => {
+test.describe('Master of Andromeda - Multiplayer Features', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -502,26 +502,26 @@ test.describe('Master of Cygnus - Multiplayer Features', () => {
   });
 
   test.skip('shows other players in lobby', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.pressEnter();
     await terminal.expectText(['Joined Empires']);
   });
 
   test.skip('can start game with 2+ players', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     await terminal.pressEnter();
     await terminal.sendKeys('S'); // Start game
     await terminal.expectText(['Ready to start', 'GALAXY VIEW']);
   });
 
   test.skip('shows turn deadline', async () => {
-    await terminal.navigateToMasterOfCygnus();
+    await terminal.navigateToMasterOfAndromeda();
     // Game in progress should show deadline
     await terminal.expectText(['Turn deadline']);
   });
 });
 
-test.describe('Master of Cygnus - AI Takeover', () => {
+test.describe('Master of Andromeda - AI Takeover', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -545,7 +545,7 @@ test.describe('Master of Cygnus - AI Takeover', () => {
   });
 });
 
-test.describe('Master of Cygnus - Combat', () => {
+test.describe('Master of Andromeda - Combat', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -566,7 +566,7 @@ test.describe('Master of Cygnus - Combat', () => {
   });
 });
 
-test.describe('Master of Cygnus - Colonization', () => {
+test.describe('Master of Andromeda - Colonization', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {
@@ -588,7 +588,7 @@ test.describe('Master of Cygnus - Colonization', () => {
   });
 });
 
-test.describe('Master of Cygnus - Victory Conditions', () => {
+test.describe('Master of Andromeda - Victory Conditions', () => {
   let terminal: BbsTerminal;
 
   test.beforeEach(async ({ page }) => {

@@ -1,6 +1,6 @@
-//! Realm of Kyrandia - Text Adventure RPG
+//! Realm of Morningmist - Text Adventure RPG
 //!
-//! A multi-player text adventure inspired by the classic Kyrandia BBS game.
+//! A multi-player text adventure inspired by the classic Morningmist BBS game.
 //! Players explore a fairy tale realm, learn magic, solve puzzles, and
 //! battle to become the Arch-Mage of Legends.
 //!

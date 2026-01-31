@@ -1,4 +1,4 @@
-//! IGM (In-Game Module) support for Kyrandia
+//! IGM (In-Game Module) support for Morningmist
 //! Allows extensible content through plug-in modules
 
 #![allow(dead_code)]

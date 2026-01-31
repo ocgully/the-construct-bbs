@@ -1,4 +1,4 @@
-//! World navigation and room interactions for Kyrandia
+//! World navigation and room interactions for Morningmist
 
 #![allow(dead_code)]
 

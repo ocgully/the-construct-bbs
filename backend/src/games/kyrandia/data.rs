@@ -1,4 +1,4 @@
-//! Static game data for Kyrandia
+//! Static game data for Morningmist
 //! Rooms, items, spells, NPCs, and world structure
 
 #![allow(dead_code)]
@@ -312,7 +312,7 @@ pub static ROOMS: &[Room] = &[
     Room {
         key: "great_hall",
         name: "Great Hall",
-        description: "Enormous columns support a vaulted ceiling. Faded tapestries depict the history of Kyrandia's mages. A grand staircase leads up.",
+        description: "Enormous columns support a vaulted ceiling. Faded tapestries depict the history of Morningmist's mages. A grand staircase leads up.",
         region: Region::DragonCastle,
         exits: &[("south", "castle_courtyard"), ("up", "upper_hall")],
         items: &[],
@@ -826,7 +826,7 @@ pub static NPCS: &[Npc] = &[
         description: "A wise old man with a long white beard and kind eyes. He has guided many apprentices on their journey.",
         npc_type: NpcType::Quest,
         dialogue: &[
-            "Welcome, young apprentice. Kyrandia has long awaited one with your potential.",
+            "Welcome, young apprentice. Morningmist has long awaited one with your potential.",
             "The path to becoming Arch-Mage is fraught with danger. But great rewards await the worthy.",
             "Seek the Fountain of Scrolls in the Golden Forest. Pine cones thrown within become spell scrolls.",
         ],

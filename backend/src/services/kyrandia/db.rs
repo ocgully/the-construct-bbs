@@ -1,4 +1,4 @@
-//! Database layer for Kyrandia
+//! Database layer for Morningmist
 //! Handles saves, leaderboards, world state, and multiplayer data
 
 #![allow(dead_code)]

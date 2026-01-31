@@ -1,4 +1,4 @@
-//! Screen flow and input handling for Master of Cygnus
+//! Screen flow and input handling for Master of Andromeda
 
 use super::state::{GameState, GameStatus, TurnOrders, ColonyOrders, FleetOrders};
 use super::tech::TechField;
@@ -55,7 +55,7 @@ pub enum MocAction {
     Quit,
 }
 
-/// Master of Cygnus game flow state machine
+/// Master of Andromeda game flow state machine
 pub struct MocFlow {
     pub game_state: Option<GameState>,
     pub screen: GameScreen,

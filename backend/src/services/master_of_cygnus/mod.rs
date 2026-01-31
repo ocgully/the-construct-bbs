@@ -1,4 +1,4 @@
-//! Master of Cygnus - Door Game Service
+//! Master of Andromeda - Door Game Service
 //!
 //! A 4X space strategy game inspired by Master of Orion.
 //! Multiplayer turn-based with 72-hour timeout and AI takeover.

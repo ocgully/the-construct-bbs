@@ -1,4 +1,4 @@
-//! Text parser for Kyrandia
+//! Text parser for Morningmist
 //! Handles typed spell incantations and puzzle solutions
 
 #![allow(dead_code)]

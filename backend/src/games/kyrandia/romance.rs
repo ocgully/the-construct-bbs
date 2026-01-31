@@ -1,4 +1,4 @@
-//! Romance system for Kyrandia
+//! Romance system for Morningmist
 //! Supports relationships with NPCs and other players (including same-sex)
 
 #![allow(dead_code)]

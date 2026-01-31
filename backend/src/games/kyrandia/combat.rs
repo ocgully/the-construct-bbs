@@ -1,4 +1,4 @@
-//! Combat system for Kyrandia
+//! Combat system for Morningmist
 //! Handles monster encounters and PvP duels
 
 #![allow(dead_code)]

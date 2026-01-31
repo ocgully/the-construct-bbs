@@ -1,4 +1,4 @@
-//! Magic system for Kyrandia
+//! Magic system for Morningmist
 //! Spell casting, the Fountain of Scrolls, and spell effects
 
 #![allow(dead_code)]

@@ -1,4 +1,4 @@
-//! Static game data for Master of Cygnus
+//! Static game data for Master of Andromeda
 
 use serde::{Deserialize, Serialize};
 
@@ -96,16 +96,17 @@ pub fn get_race(key: &str) -> Option<&'static Race> {
 
 /// Star names for galaxy generation
 pub static STAR_NAMES: &[&str] = &[
-    "Alpha Cygni", "Deneb", "Sadr", "Gienah", "Albireo",
-    "Fawaris", "Azelfafage", "Ruchba", "Eta Cygni", "Zeta Cygni",
-    "Theta Cygni", "Iota Cygni", "Kappa Cygni", "Lambda Cygni", "Mu Cygni",
-    "Nu Cygni", "Xi Cygni", "Omicron Cygni", "Pi Cygni", "Rho Cygni",
-    "Sigma Cygni", "Tau Cygni", "Upsilon Cygni", "Phi Cygni", "Chi Cygni",
-    "Psi Cygni", "Omega Cygni", "Altair Prime", "Vega Minor", "Arcturus Beta",
+    "Alpha Andromedae", "Mirach", "Almach", "Adhil", "Alpheratz",
+    "Delta Andromedae", "Epsilon Andromedae", "Zeta Andromedae", "Eta Andromedae", "Iota Andromedae",
+    "Kappa Andromedae", "Lambda Andromedae", "Mu Andromedae", "Nu Andromedae", "Omicron Andromedae",
+    "Pi Andromedae", "Sigma Andromedae", "Tau Andromedae", "Upsilon Andromedae", "Phi Andromedae",
+    "Psi Andromedae", "Omega Andromedae", "Altair Prime", "Vega Minor", "Arcturus Beta",
     "Rigel Station", "Sirius Gate", "Procyon Hub", "Aldebaran", "Antares",
     "Betelgeuse", "Capella", "Pollux", "Regulus", "Spica",
     "Fomalhaut", "Achernar", "Hadar", "Canopus", "Mimosa",
     "Acrux", "Gacrux", "Shaula", "Bellatrix", "Alnilam",
+    "Deneb", "Vega", "Altair", "Polaris", "Castor",
+    "Mizar", "Dubhe", "Merak", "Alioth", "Alkaid",
 ];
 
 /// Building types for colonies

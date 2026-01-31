@@ -1,4 +1,4 @@
-//! ANSI rendering for Master of Cygnus
+//! ANSI rendering for Master of Andromeda
 //!
 //! Uses a distinct sci-fi visual identity: deep space blues, star yellows,
 //! with cyan accents for interface elements.
@@ -26,10 +26,10 @@ fn render_header(w: &mut AnsiWriter) {
     w.writeln("  ██║ ╚═╝ ██║██║  ██║███████║   ██║   ███████╗██║  ██║");
     w.writeln("  ╚═╝     ╚═╝╚═╝  ╚═╝╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝");
     w.set_fg(Color::Yellow);
-    w.writeln("             ╔═╗╦ ╦╔═╗╔╗╔╦ ╦╔═╗");
-    w.writeln("             ║  ╚╦╝║ ╦║║║║ ║╚═╗");
-    w.writeln("             ╚═╝ ╩ ╚═╝╝╚╝╚═╝╚═╝");
-    w.writeln("         MASTER OF CYGNUS");
+    w.writeln("  ╔═╗╔╗╔╔╦╗╦═╗╔═╗╔╦╗╔═╗╔╦╗╔═╗");
+    w.writeln("  ╠═╣║║║ ║║╠╦╝║ ║║║║║╣  ║║╠═╣");
+    w.writeln("  ╩ ╩╝╚╝═╩╝╩╚═╚═╝╩ ╩╚═╝═╩╝╩ ╩");
+    w.writeln("       MASTER OF ANDROMEDA");
     w.reset_color();
 }
 
@@ -119,7 +119,7 @@ fn render_intro(w: &mut AnsiWriter) {
 
     w.writeln("");
     w.set_fg(Color::LightGray);
-    w.writeln("  The Cygnus Constellation. A thousand stars await conquest.");
+    w.writeln("  The Andromeda Galaxy. A thousand stars await conquest.");
     w.writeln("");
     w.writeln("  Lead your civilization across the void. Build colonies on");
     w.writeln("  distant worlds. Research technologies lost to time. Design");
@@ -929,7 +929,7 @@ mod tests {
         let flow = MocFlow::new(1);
         let output = render_screen(&flow);
         assert!(output.contains("MASTER"));
-        assert!(output.contains("CYGNUS"));
+        assert!(output.contains("ANDROMEDA"));
     }
 
     #[test]

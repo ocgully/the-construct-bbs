@@ -1,4 +1,4 @@
-//! Game state for Master of Cygnus
+//! Game state for Master of Andromeda
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

@@ -1,4 +1,4 @@
-//! AI player logic for Master of Cygnus
+//! AI player logic for Master of Andromeda
 //!
 //! Handles AI-controlled empires, including takeover of timed-out players.
 

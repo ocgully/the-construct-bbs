@@ -1,4 +1,4 @@
-//! Player state for Kyrandia
+//! Player state for Morningmist
 //! Persisted in the database as JSON
 
 #![allow(dead_code)]

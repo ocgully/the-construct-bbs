@@ -1,7 +1,7 @@
-//! Master of Cygnus - 4X Space Strategy Game
+//! Master of Andromeda - 4X Space Strategy Game
 //!
 //! A Master of Orion 1 inspired 4X game where players lead space-faring
-//! civilizations to dominate the Cygnus constellation through exploration,
+//! civilizations to dominate the Andromeda galaxy through exploration,
 //! expansion, exploitation, and extermination.
 //!
 //! Features:
