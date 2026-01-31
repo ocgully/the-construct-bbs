@@ -46,3 +46,9 @@ nul
 # === Logs ===
 *.log
 logs/
+
+# === Playwright ===
+playwright-report/
+playwright/.cache/
+test-results/
+blob-report/

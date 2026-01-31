@@ -83,13 +83,22 @@ export async function initTerminal(container: HTMLElement): Promise<Terminal> {
   }, { passive: false, capture: true });
 
   // Load WebGL addon for performance (with fallback)
-  try {
-    const webglAddon = new WebglAddon();
-    terminal.loadAddon(webglAddon);
-    console.log('WebGL renderer enabled');
-  } catch (e) {
-    console.warn('WebGL addon failed to load, using canvas renderer:', e);
+  // Skip WebGL in E2E test mode to allow DOM-based text extraction
+  const isE2ETest = new URLSearchParams(window.location.search).has('e2e');
+  if (!isE2ETest) {
+    try {
+      const webglAddon = new WebglAddon();
+      terminal.loadAddon(webglAddon);
+      console.log('WebGL renderer enabled');
+    } catch (e) {
+      console.warn('WebGL addon failed to load, using canvas renderer:', e);
+    }
+  } else {
+    console.log('E2E test mode: WebGL disabled for DOM text extraction');
   }
+
+  // Expose terminal on window for E2E testing
+  (window as any)._terminal = terminal;
 
   // Initial fit
   fitAddon.fit();

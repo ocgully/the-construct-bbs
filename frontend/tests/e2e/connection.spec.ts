@@ -3,13 +3,17 @@ import { test, expect } from '@playwright/test';
 import { createTerminal } from './helpers/terminal';
 
 test.describe('Connection Ceremony', () => {
-  test('displays connect button on load', async ({ page }) => {
-    await page.goto('/');
-    await expect(page.locator('text=Connect to The Construct')).toBeVisible();
+  test('displays press any key prompt on load', async ({ page }) => {
+    await page.goto('/?e2e');
+    // Wait for terminal to initialize
+    await page.waitForSelector('.xterm-screen', { timeout: 15000 });
+    const terminal = await createTerminal(page);
+    // Should show "Press any key to connect" prompt
+    await terminal.waitForText('Press any key', 10000);
   });
 
   test('shows modem connection and splash screen', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?e2e');
     const terminal = await createTerminal(page);
     await terminal.connect();
 
@@ -18,7 +22,7 @@ test.describe('Connection Ceremony', () => {
   });
 
   test('shows login prompt after ceremony', async ({ page }) => {
-    await page.goto('/');
+    await page.goto('/?e2e');
     const terminal = await createTerminal(page);
     await terminal.connect();
 

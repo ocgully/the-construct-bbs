@@ -178,7 +178,8 @@ Plans:
   6. User game completes after 90-day in-game limit
   7. Unit tests cover all game modules (state, economy, events, quests)
   8. Integration tests verify complete game flows
-**Plans**: 9 plans
+  9. Browser E2E tests cover BBS features and GTM gameplay
+**Plans**: 11 plans
 
 Plans:
 - [x] 08-01-PLAN.md -- Database foundation (game_saves, game_completions tables, CRUD, leaderboard)
@@ -190,6 +191,8 @@ Plans:
 - [x] 08-07-PLAN.md -- Gangs and quests (relations, deliveries, 15-step story quest)
 - [x] 08-08-PLAN.md -- Session integration (service wiring, save/load, menu config)
 - [ ] 08-09-PLAN.md -- Final integration, unit tests, and automated UAT
+- [ ] 08-10-PLAN.md -- Restructure game code to /games/grand_theft_meth/ folder
+- [ ] 08-11-PLAN.md -- Browser E2E tests with Playwright (connection, auth, navigation, mail, chat, news, GTM)
 
 ### Phase 9: Second Door Game (LORD)
 **Goal**: Users can play Legend of the Red Dragon clone with daily turns and PvP
@@ -328,7 +331,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 10
 | 5. Email System | 4/4 | Complete | 2026-01-28 |
 | 6. Chat & Real-Time Communication | 5/5 | Complete | 2026-01-28 |
 | 7. News & Bulletins | 3/3 | Complete | 2026-01-28 |
-| 8. First Door Game (Drug Wars) | 8/9 | In Progress | - |
+| 8. First Door Game (Drug Wars) | 8/11 | In Progress | - |
 | 9. Second Door Game (LORD) | 0/TBD | Not started | - |
 | 10. Third Door Game (Usurper) | 0/TBD | Not started | - |
 | 11. Multiplayer Door Game (Acrophobia) | 0/TBD | Not started | - |

@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
-  testDir: './tests/e2e',
+  testDir: './tests',
   fullyParallel: false, // Sequential for BBS state
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -23,7 +23,7 @@ export default defineConfig({
       ? 'cd /d C:\\Git\\bbs\\backend && C:\\Users\\chris\\.cargo\\bin\\cargo.exe run --release'
       : 'cd ../backend && cargo run --release',
     url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true, // Always reuse for e2e tests
     timeout: 180000, // 3 min for backend to compile/start
   },
 });
