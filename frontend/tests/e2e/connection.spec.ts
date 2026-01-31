@@ -26,6 +26,6 @@ test.describe('Connection Ceremony', () => {
     const terminal = await createTerminal(page);
     await terminal.connect();
 
-    await terminal.waitForText('Handle:', 15000);
+    await terminal.waitForText('Enter your handle:', 15000);
   });
 });

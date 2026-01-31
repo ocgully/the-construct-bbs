@@ -12,24 +12,36 @@ export class TerminalHelper {
     await this.waitForText('Press any key', 10000);
     // Press Enter to trigger connection
     await this.press('Enter');
-    // Wait for modem sound to finish and login prompt
-    await this.page.waitForTimeout(5000);
+    // Wait for modem ceremony to complete and login prompt to appear
+    // The ceremony has typewriter effects and takes ~10-15 seconds
+    await this.waitForText('Enter your handle:', 30000);
+  }
+
+  /** Ensure terminal has focus */
+  async focus() {
+    // Click on terminal to ensure focus
+    await this.page.click('.xterm-screen');
+    await this.page.waitForTimeout(100);
   }
 
   /** Type text into terminal */
   async type(text: string) {
+    await this.focus();
     await this.page.keyboard.type(text);
   }
 
   /** Press a single key */
   async press(key: string) {
+    await this.focus();
     await this.page.keyboard.press(key);
   }
 
   /** Send text followed by Enter */
   async send(text: string) {
-    await this.type(text);
-    await this.press('Enter');
+    await this.focus();
+    await this.page.keyboard.type(text);
+    await this.page.keyboard.press('Enter');
+    await this.page.waitForTimeout(200); // Allow server to process
   }
 
   /** Wait for text to appear in terminal */
