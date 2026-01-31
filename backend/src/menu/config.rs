@@ -11,6 +11,8 @@ pub enum MenuItem {
         min_level: u8,
         #[serde(default)]
         order: i32,
+        #[serde(default)]
+        category: Option<String>,
     },
     Submenu {
         hotkey: String,
@@ -20,6 +22,8 @@ pub enum MenuItem {
         min_level: u8,
         #[serde(default)]
         order: i32,
+        #[serde(default)]
+        category: Option<String>,
     },
     Command {
         hotkey: String,
@@ -29,6 +33,8 @@ pub enum MenuItem {
         min_level: u8,
         #[serde(default)]
         order: i32,
+        #[serde(default)]
+        category: Option<String>,
     },
 }
 
@@ -62,6 +68,14 @@ impl MenuItem {
             MenuItem::Service { min_level, .. } => *min_level,
             MenuItem::Submenu { min_level, .. } => *min_level,
             MenuItem::Command { min_level, .. } => *min_level,
+        }
+    }
+
+    pub fn category(&self) -> Option<&str> {
+        match self {
+            MenuItem::Service { category, .. } => category.as_deref(),
+            MenuItem::Submenu { category, .. } => category.as_deref(),
+            MenuItem::Command { category, .. } => category.as_deref(),
         }
     }
 

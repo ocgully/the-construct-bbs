@@ -36,7 +36,7 @@ use crate::{
         profile::{render_profile_card, render_profile_edit_menu_string},
         registration::{RegistrationFlow, RegistrationResult, render_registration_header},
     },
-    terminal::{AnsiWriter, Color, Pager, Page, more_prompt, clear_more_prompt},
+    terminal::{AnsiWriter, Color, Pager, Page, more_prompt_with_page, clear_more_prompt},
 };
 
 /// Authentication state machine for the session lifecycle.
@@ -197,10 +197,12 @@ impl Session {
         }
     }
 
-    /// Send paginated output with [More] prompts
+    /// Send paginated output with "-- More --" prompts
     ///
-    /// Splits text into pages and sends first page with [More] prompt.
+    /// Splits text into pages and sends first page with "-- More (1/N) --" prompt.
     /// Subsequent pages are sent when user presses any key.
+    /// This provides authentic BBS-style pagination to prevent content
+    /// from scrolling off screen before the user can read it.
     pub async fn send_paginated(&mut self, text: &str) {
         let pages = self.pager.paginate(text);
 
@@ -208,17 +210,19 @@ impl Session {
             return;
         }
 
+        let total_pages = pages.len();
+
         // If only one page, send without pagination
-        if pages.len() == 1 {
+        if total_pages == 1 {
             let _ = self.tx.send(pages[0].to_ansi()).await;
             return;
         }
 
-        // Send first page
+        // Send first page with page indicator
         let first_page = &pages[0];
         let mut output = first_page.to_ansi();
         output.push_str("\r\n");
-        output.push_str(&more_prompt());
+        output.push_str(&more_prompt_with_page(1, total_pages));
         let _ = self.tx.send(output).await;
 
         // Store remaining pages for subsequent keypresses
@@ -229,20 +233,25 @@ impl Session {
     /// Send the next page in a paginated sequence
     /// Called when user presses any key during pagination
     async fn send_next_page(&mut self) {
-        if let Some(pages) = &self.pending_pages {
-            if self.page_index < pages.len() {
-                let page = &pages[self.page_index];
+        let (total_pages, current_page_idx) = match &self.pending_pages {
+            Some(pages) => (pages.len(), self.page_index),
+            None => return,
+        };
 
-                // Clear the [More] prompt
+        if let Some(pages) = &self.pending_pages {
+            if current_page_idx < pages.len() {
+                let page = &pages[current_page_idx];
+
+                // Clear the previous "-- More --" prompt
                 let mut output = clear_more_prompt(80); // Standard terminal width
 
                 // Add the page content
                 output.push_str(&page.to_ansi());
 
-                // If not the last page, add another [More] prompt
+                // If not the last page, add another "-- More (N/M) --" prompt
                 if !page.is_last {
                     output.push_str("\r\n");
-                    output.push_str(&more_prompt());
+                    output.push_str(&more_prompt_with_page(current_page_idx + 1, total_pages));
                 }
 
                 let _ = self.tx.send(output).await;
@@ -254,6 +263,34 @@ impl Session {
                     self.page_index = 0;
                 }
             }
+        }
+    }
+
+    /// Check if session is currently in paging mode
+    /// (waiting for keypress to show next page)
+    #[allow(dead_code)]
+    pub fn is_paging(&self) -> bool {
+        self.pending_pages.is_some()
+    }
+
+    /// Count approximate lines in ANSI text (counting \n occurrences)
+    /// This helps decide whether content needs pagination
+    fn count_lines(text: &str) -> usize {
+        text.matches('\n').count() + 1
+    }
+
+    /// Send content with automatic pagination if it exceeds terminal height.
+    /// For screens with headers/ASCII art that shouldn't scroll off,
+    /// this applies BBS-style "-- More --" pagination.
+    pub async fn send_with_auto_paging(&mut self, content: &str) {
+        // If content is short enough, send directly without pagination
+        let line_count = Self::count_lines(content);
+        let page_size = self.pager.page_size() as usize;
+
+        if line_count <= page_size {
+            let _ = self.tx.send(content.to_string()).await;
+        } else {
+            self.send_paginated(content).await;
         }
     }
 
@@ -1618,7 +1655,8 @@ impl Session {
                             ms.user_level(),
                         )
                     };
-                    let _ = self.tx.send(help).await;
+                    // Use pagination for help screens which can be long
+                    self.send_with_auto_paging(&help).await;
                     // After help, wait for any key then redraw menu
                     // (Next input will trigger Redraw since help isn't a state)
                 }
@@ -1954,11 +1992,10 @@ impl Session {
             match find_user_by_id(&self.state.db_pool, user_id).await {
                 Ok(Some(user)) => {
                     let card = render_profile_card(&user, true);
-                    let _ = self.tx.send(card).await;
-
-                    // Show profile edit menu
+                    // Combine card and menu, then paginate together
                     let menu = render_profile_edit_menu_string();
-                    let _ = self.tx.send(menu).await;
+                    let combined = format!("{}{}", card, menu);
+                    self.send_with_auto_paging(&combined).await;
 
                     self.current_service = Some("__profile__".to_string());
                 }
@@ -2165,9 +2202,10 @@ impl Session {
                     Ok(Some(user)) => {
                         // Show profile card (read-only)
                         let card = render_profile_card(&user, false);
-                        let _ = tx.send(card).await;
                         let footer = crate::services::user_profile::render_profile_footer();
-                        let _ = tx.send(footer).await;
+                        // Combine card and footer for pagination
+                        let combined = format!("{}{}", card, footer);
+                        self.send_with_auto_paging(&combined).await;
                         // Switch to "viewing profile" state -- next keypress returns to lookup prompt
                         self.current_service = Some("__user_lookup_view__".to_string());
                     }
@@ -2597,7 +2635,8 @@ impl Session {
                     .map(|e| (e.handle.clone(), e.final_score, e.days_played, e.story_completed))
                     .collect();
                 let screen = crate::games::grand_theft_meth::render::render_leaderboard_screen(&leaderboard_entries);
-                let _ = self.tx.send(screen).await;
+                // Leaderboards can have many entries - use pagination
+                self.send_with_auto_paging(&screen).await;
             }
         }
     }
@@ -2863,7 +2902,8 @@ impl Session {
                     .map(|e| (e.rank, e.handle.clone(), e.char_name.clone(), e.dragon_kills, e.final_level))
                     .collect();
                 let screen = crate::games::dragon_slayer::render::render_leaderboard_screen(&leaderboard_entries);
-                let _ = self.tx.send(screen).await;
+                // Leaderboards can have many entries - use pagination
+                self.send_with_auto_paging(&screen).await;
             }
         }
     }
@@ -2916,7 +2956,8 @@ impl Session {
         if let Some(flow) = &self.acro_flow {
             if matches!(flow.screen, AcroScreen::Leaderboard) {
                 let screen = render_leaderboard_screen(&self.state.acro_db).await;
-                let _ = self.tx.send(screen).await;
+                // Leaderboards can have many entries - use pagination
+                self.send_with_auto_paging(&screen).await;
             }
         }
 
@@ -3030,7 +3071,8 @@ impl Session {
                     .map(|e| (e.rank, e.handle.clone(), e.final_networth, e.final_land, e.attacks_won))
                     .collect();
                 let screen = crate::games::dystopia::render::render_leaderboard_screen(&leaderboard_entries);
-                let _ = self.tx.send(screen).await;
+                // Leaderboards can have many entries - use pagination
+                self.send_with_auto_paging(&screen).await;
             }
         }
     }
@@ -3123,7 +3165,8 @@ impl Session {
             if matches!(flow.current_screen(), GameScreen::Leaderboard) {
                 let entries = get_game_leaderboard(&self.state.cradle_db).await;
                 let screen = crate::services::cradle::service::render_leaderboard_screen(&entries);
-                let _ = self.tx.send(screen).await;
+                // Leaderboards can have many entries - use pagination
+                self.send_with_auto_paging(&screen).await;
             }
         }
     }
@@ -3769,7 +3812,8 @@ impl Session {
                     state.select_next();
                     if let Some(article) = state.current_article() {
                         let view = render_news_article(article);
-                        let _ = self.tx.send(view).await;
+                        // News articles can be long - use pagination
+                        self.send_with_auto_paging(&view).await;
                     }
                 }
                 "P" => {
@@ -3777,7 +3821,8 @@ impl Session {
                     state.select_prev();
                     if let Some(article) = state.current_article() {
                         let view = render_news_article(article);
-                        let _ = self.tx.send(view).await;
+                        // News articles can be long - use pagination
+                        self.send_with_auto_paging(&view).await;
                     }
                 }
                 _ => {} // Ignore other input
@@ -3809,7 +3854,8 @@ impl Session {
                             state.enter_article();
                             if let Some(article) = state.current_article() {
                                 let view = render_news_article(article);
-                                let _ = self.tx.send(view).await;
+                                // News articles can be long - use pagination
+                                self.send_with_auto_paging(&view).await;
                             }
                         }
                     }

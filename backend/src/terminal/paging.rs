@@ -90,11 +90,32 @@ impl Pager {
 }
 
 /// Generate a [More] prompt with ANSI styling
+/// Uses authentic BBS-style "-- More --" prompt
 pub fn more_prompt() -> String {
     let mut writer = AnsiWriter::new();
     writer.set_color(Color::Yellow, Color::Blue);
     writer.bold();
-    writer.write_str(" [More] ");
+    writer.write_str(" -- More -- ");
+    writer.reset_color();
+    writer.flush()
+}
+
+/// Generate a page indicator prompt showing current page
+/// e.g., "-- More (2/5) --"
+pub fn more_prompt_with_page(current: usize, total: usize) -> String {
+    let mut writer = AnsiWriter::new();
+    writer.set_color(Color::Yellow, Color::Blue);
+    writer.bold();
+    writer.write_str(&format!(" -- More ({}/{}) -- ", current, total));
+    writer.reset_color();
+    writer.flush()
+}
+
+/// Generate "Press any key to continue..." prompt
+pub fn press_any_key_prompt() -> String {
+    let mut writer = AnsiWriter::new();
+    writer.set_fg(Color::LightCyan);
+    writer.write_str("Press any key to continue...");
     writer.reset_color();
     writer.flush()
 }
@@ -162,7 +183,20 @@ mod tests {
     fn test_more_prompt_has_ansi() {
         let prompt = more_prompt();
         assert!(prompt.contains("\x1B["));
-        assert!(prompt.contains("[More]"));
+        assert!(prompt.contains("-- More --"));
+    }
+
+    #[test]
+    fn test_more_prompt_with_page() {
+        let prompt = more_prompt_with_page(2, 5);
+        assert!(prompt.contains("(2/5)"));
+        assert!(prompt.contains("-- More"));
+    }
+
+    #[test]
+    fn test_press_any_key_prompt() {
+        let prompt = press_any_key_prompt();
+        assert!(prompt.contains("Press any key"));
     }
 
     #[test]

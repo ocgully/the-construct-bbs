@@ -176,8 +176,66 @@ pub fn render_main_menu(
     w.flush()
 }
 
+/// Groups items by category and returns them in order
+fn group_by_category<'a>(items: &[&'a MenuItem]) -> Vec<(String, Vec<&'a MenuItem>)> {
+    use std::collections::BTreeMap;
+
+    // Define category order (categories not in this list go last)
+    let category_order: &[&str] = &[
+        "Casual/Daily",
+        "Strategy/Trading",
+        "RPG/Adventure",
+        "Action",
+        "Sandbox/Epic",
+    ];
+
+    let mut grouped: BTreeMap<String, Vec<&'a MenuItem>> = BTreeMap::new();
+
+    for item in items {
+        let cat = item.category().unwrap_or("Other").to_string();
+        grouped.entry(cat).or_default().push(*item);
+    }
+
+    // Sort categories by defined order
+    let mut result: Vec<(String, Vec<&MenuItem>)> = grouped.into_iter().collect();
+    result.sort_by_key(|(cat, _)| {
+        category_order
+            .iter()
+            .position(|&c| c == cat)
+            .unwrap_or(usize::MAX)
+    });
+
+    result
+}
+
+/// Render a category header
+fn render_category_header(w: &mut AnsiWriter, category: &str, col_width: usize) {
+    w.set_fg(Color::Yellow);
+    w.bold();
+    w.write_str(category);
+    w.reset_color();
+    // Pad to column width
+    let padding = col_width.saturating_sub(category.len());
+    w.write_str(&" ".repeat(padding));
+}
+
+/// Render a menu item with hotkey
+fn render_menu_item(w: &mut AnsiWriter, item: &MenuItem, col_width: usize) {
+    w.write_str("  ");
+    w.set_fg(Color::LightGreen);
+    w.write_str(&format!("[{}]", item.hotkey()));
+    w.set_fg(Color::White);
+    let name = format!(" {}", item.name());
+    w.write_str(&name);
+    w.reset_color();
+    // Pad to column width (account for "  [X] " = 6 chars + name)
+    let used = 6 + name.len();
+    let padding = col_width.saturating_sub(used);
+    w.write_str(&" ".repeat(padding));
+}
+
 pub fn render_submenu(
-    _submenu_key: &str,
+    submenu_key: &str,
     submenu_name: &str,
     items: &[&MenuItem],
     _user_level: u8,
@@ -194,15 +252,97 @@ pub fn render_submenu(
 
     w.writeln("");
 
-    // Menu items (single column)
-    for item in items {
-        w.write_str("  ");
-        w.set_fg(Color::LightGreen);
-        w.write_str(&format!("[{}]", item.hotkey()));
-        w.set_fg(Color::White);
-        w.write_str(&format!(" {}", item.name()));
-        w.writeln("");
-        w.reset_color();
+    // Check if this is the games menu with categories
+    let has_categories = submenu_key == "games" && items.iter().any(|i| i.category().is_some());
+
+    if has_categories && items.len() > 10 {
+        // Multi-column categorized layout for games
+        let categories = group_by_category(items);
+        let num_categories = categories.len();
+
+        // Use 2 columns for 4+ categories, otherwise single column
+        let num_cols = if num_categories >= 4 { 2 } else { 1 };
+        let col_width = if num_cols == 2 { 38 } else { 76 };
+
+        if num_cols == 2 {
+            // Split categories into left and right columns
+            let mid = (num_categories + 1) / 2;
+            let left_cats = &categories[..mid];
+            let right_cats = &categories[mid..];
+
+            // Calculate max rows needed for each column
+            let left_rows: usize = left_cats
+                .iter()
+                .map(|(_, items)| 1 + items.len()) // 1 for header + items
+                .sum();
+            let right_rows: usize = right_cats
+                .iter()
+                .map(|(_, items)| 1 + items.len())
+                .sum();
+            let max_rows = left_rows.max(right_rows);
+
+            // Build left column content
+            let mut left_lines: Vec<String> = Vec::new();
+            for (cat, cat_items) in left_cats {
+                let mut header = AnsiWriter::new();
+                render_category_header(&mut header, cat, col_width);
+                left_lines.push(header.flush());
+                for item in cat_items {
+                    let mut item_w = AnsiWriter::new();
+                    render_menu_item(&mut item_w, item, col_width);
+                    left_lines.push(item_w.flush());
+                }
+            }
+
+            // Build right column content
+            let mut right_lines: Vec<String> = Vec::new();
+            for (cat, cat_items) in right_cats {
+                let mut header = AnsiWriter::new();
+                render_category_header(&mut header, cat, col_width);
+                right_lines.push(header.flush());
+                for item in cat_items {
+                    let mut item_w = AnsiWriter::new();
+                    render_menu_item(&mut item_w, item, col_width);
+                    right_lines.push(item_w.flush());
+                }
+            }
+
+            // Render both columns side by side
+            for i in 0..max_rows {
+                let left = left_lines.get(i).map(|s| s.as_str()).unwrap_or("");
+                let right = right_lines.get(i).map(|s| s.as_str()).unwrap_or("");
+
+                w.write_str(left);
+                // Add separator between columns
+                w.set_fg(Color::DarkGray);
+                w.write_str(" | ");
+                w.reset_color();
+                w.write_str(right);
+                w.writeln("");
+            }
+        } else {
+            // Single column for fewer categories
+            for (cat, cat_items) in &categories {
+                render_category_header(&mut w, cat, col_width);
+                w.writeln("");
+                for item in cat_items {
+                    render_menu_item(&mut w, item, col_width);
+                    w.writeln("");
+                }
+                w.writeln("");
+            }
+        }
+    } else {
+        // Standard single column layout for small menus
+        for item in items {
+            w.write_str("  ");
+            w.set_fg(Color::LightGreen);
+            w.write_str(&format!("[{}]", item.hotkey()));
+            w.set_fg(Color::White);
+            w.write_str(&format!(" {}", item.name()));
+            w.writeln("");
+            w.reset_color();
+        }
     }
 
     w.writeln("");
@@ -387,6 +527,7 @@ mod tests {
                 command: "profile".to_string(),
                 min_level: 0,
                 order: 1,
+                category: None,
             },
             MenuItem::Command {
                 hotkey: "Q".to_string(),
@@ -394,6 +535,7 @@ mod tests {
                 command: "quit".to_string(),
                 min_level: 0,
                 order: 2,
+                category: None,
             },
         ];
 
@@ -402,5 +544,198 @@ mod tests {
         assert!(output.contains("Profile"));
         assert!(output.contains("[Q]"));
         assert!(output.contains("Quit"));
+    }
+
+    #[test]
+    fn test_render_submenu_with_categories() {
+        let mut config = MenuConfig::default();
+        config.games = vec![
+            MenuItem::Command {
+                hotkey: "1".to_string(),
+                name: "Sudoku".to_string(),
+                command: "sudoku".to_string(),
+                min_level: 0,
+                order: 1,
+                category: Some("Casual/Daily".to_string()),
+            },
+            MenuItem::Command {
+                hotkey: "2".to_string(),
+                name: "Chess".to_string(),
+                command: "chess".to_string(),
+                min_level: 0,
+                order: 2,
+                category: Some("Casual/Daily".to_string()),
+            },
+            MenuItem::Command {
+                hotkey: "3".to_string(),
+                name: "Star Trader".to_string(),
+                command: "star_trader".to_string(),
+                min_level: 0,
+                order: 3,
+                category: Some("Strategy/Trading".to_string()),
+            },
+            MenuItem::Command {
+                hotkey: "4".to_string(),
+                name: "Dystopia".to_string(),
+                command: "dystopia".to_string(),
+                min_level: 0,
+                order: 4,
+                category: Some("Strategy/Trading".to_string()),
+            },
+            MenuItem::Command {
+                hotkey: "A".to_string(),
+                name: "Dragon Slayer".to_string(),
+                command: "dragon_slayer".to_string(),
+                min_level: 0,
+                order: 10,
+                category: Some("RPG/Adventure".to_string()),
+            },
+            MenuItem::Command {
+                hotkey: "B".to_string(),
+                name: "Usurper".to_string(),
+                command: "usurper".to_string(),
+                min_level: 0,
+                order: 11,
+                category: Some("RPG/Adventure".to_string()),
+            },
+            MenuItem::Command {
+                hotkey: "C".to_string(),
+                name: "Last Dream".to_string(),
+                command: "last_dream".to_string(),
+                min_level: 0,
+                order: 12,
+                category: Some("RPG/Adventure".to_string()),
+            },
+            MenuItem::Command {
+                hotkey: "G".to_string(),
+                name: "Tanks".to_string(),
+                command: "tanks".to_string(),
+                min_level: 0,
+                order: 20,
+                category: Some("Action".to_string()),
+            },
+            MenuItem::Command {
+                hotkey: "H".to_string(),
+                name: "Summit".to_string(),
+                command: "summit".to_string(),
+                min_level: 0,
+                order: 21,
+                category: Some("Action".to_string()),
+            },
+            MenuItem::Command {
+                hotkey: "J".to_string(),
+                name: "Mineteria".to_string(),
+                command: "mineteria".to_string(),
+                min_level: 0,
+                order: 30,
+                category: Some("Sandbox/Epic".to_string()),
+            },
+            MenuItem::Command {
+                hotkey: "K".to_string(),
+                name: "Fortress".to_string(),
+                command: "fortress".to_string(),
+                min_level: 0,
+                order: 31,
+                category: Some("Sandbox/Epic".to_string()),
+            },
+        ];
+
+        let items_vec = config.submenu_items("games", 0);
+        let items: Vec<&MenuItem> = items_vec.iter().copied().collect();
+        let output = render_submenu("games", "Games", &items, 0);
+
+        // Should contain category headers
+        assert!(output.contains("Casual/Daily"));
+        assert!(output.contains("Strategy/Trading"));
+        assert!(output.contains("RPG/Adventure"));
+        assert!(output.contains("Action"));
+        assert!(output.contains("Sandbox/Epic"));
+
+        // Should contain all game names and hotkeys
+        assert!(output.contains("[1]"));
+        assert!(output.contains("Sudoku"));
+        assert!(output.contains("[A]"));
+        assert!(output.contains("Dragon Slayer"));
+        assert!(output.contains("[J]"));
+        assert!(output.contains("Mineteria"));
+
+        // Should contain back option
+        assert!(output.contains("[Q]"));
+        assert!(output.contains("Back to Main Menu"));
+    }
+
+    #[test]
+    fn test_render_submenu_without_categories_uses_single_column() {
+        let mut config = MenuConfig::default();
+        config.games = vec![
+            MenuItem::Command {
+                hotkey: "1".to_string(),
+                name: "Game One".to_string(),
+                command: "game_one".to_string(),
+                min_level: 0,
+                order: 1,
+                category: None,
+            },
+            MenuItem::Command {
+                hotkey: "2".to_string(),
+                name: "Game Two".to_string(),
+                command: "game_two".to_string(),
+                min_level: 0,
+                order: 2,
+                category: None,
+            },
+        ];
+
+        let items_vec = config.submenu_items("games", 0);
+        let items: Vec<&MenuItem> = items_vec.iter().copied().collect();
+        let output = render_submenu("games", "Games", &items, 0);
+
+        // Should contain game names (single column layout)
+        assert!(output.contains("[1]"));
+        assert!(output.contains("Game One"));
+        assert!(output.contains("[2]"));
+        assert!(output.contains("Game Two"));
+        assert!(output.contains("[Q]"));
+        assert!(output.contains("Back to Main Menu"));
+    }
+
+    #[test]
+    fn test_group_by_category() {
+        let items = vec![
+            MenuItem::Command {
+                hotkey: "1".to_string(),
+                name: "Game A".to_string(),
+                command: "a".to_string(),
+                min_level: 0,
+                order: 1,
+                category: Some("Casual/Daily".to_string()),
+            },
+            MenuItem::Command {
+                hotkey: "2".to_string(),
+                name: "Game B".to_string(),
+                command: "b".to_string(),
+                min_level: 0,
+                order: 2,
+                category: Some("Strategy/Trading".to_string()),
+            },
+            MenuItem::Command {
+                hotkey: "3".to_string(),
+                name: "Game C".to_string(),
+                command: "c".to_string(),
+                min_level: 0,
+                order: 3,
+                category: Some("Casual/Daily".to_string()),
+            },
+        ];
+
+        let refs: Vec<&MenuItem> = items.iter().collect();
+        let grouped = group_by_category(&refs);
+
+        // Categories should be ordered: Casual/Daily first, then Strategy/Trading
+        assert_eq!(grouped.len(), 2);
+        assert_eq!(grouped[0].0, "Casual/Daily");
+        assert_eq!(grouped[0].1.len(), 2);
+        assert_eq!(grouped[1].0, "Strategy/Trading");
+        assert_eq!(grouped[1].1.len(), 1);
     }
 }

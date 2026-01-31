@@ -121,13 +121,14 @@ command = "quit"
 order = 100
 
 # Games submenu -- Door Games
-# Daily/Casual Games
+# Casual/Daily Games
 [[menu.games]]
 type = "command"
 hotkey = "1"
 name = "Sudoku"
 command = "sudoku"
 order = 1
+category = "Casual/Daily"
 
 [[menu.games]]
 type = "command"
@@ -135,6 +136,7 @@ hotkey = "2"
 name = "Queens"
 command = "queens"
 order = 2
+category = "Casual/Daily"
 
 [[menu.games]]
 type = "command"
@@ -142,6 +144,7 @@ hotkey = "3"
 name = "Chess"
 command = "chess"
 order = 3
+category = "Casual/Daily"
 
 [[menu.games]]
 type = "command"
@@ -149,14 +152,16 @@ hotkey = "4"
 name = "Acromania"
 command = "acromania"
 order = 4
+category = "Casual/Daily"
 
-# Trading/Strategy Games
+# Strategy/Trading Games
 [[menu.games]]
 type = "command"
 hotkey = "5"
 name = "Grand Theft Meth"
 command = "grand_theft_meth"
 order = 5
+category = "Strategy/Trading"
 
 [[menu.games]]
 type = "command"
@@ -164,6 +169,7 @@ hotkey = "6"
 name = "Star Trader"
 command = "star_trader"
 order = 6
+category = "Strategy/Trading"
 
 [[menu.games]]
 type = "command"
@@ -171,6 +177,7 @@ hotkey = "7"
 name = "Dystopia"
 command = "dystopia"
 order = 7
+category = "Strategy/Trading"
 
 [[menu.games]]
 type = "command"
@@ -178,14 +185,16 @@ hotkey = "8"
 name = "Master of Cygnus"
 command = "master_of_cygnus"
 order = 8
+category = "Strategy/Trading"
 
-# RPG Games
+# RPG/Adventure Games
 [[menu.games]]
 type = "command"
 hotkey = "A"
 name = "Dragon Slayer"
 command = "dragon_slayer"
 order = 10
+category = "RPG/Adventure"
 
 [[menu.games]]
 type = "command"
@@ -193,6 +202,7 @@ hotkey = "B"
 name = "Usurper"
 command = "usurper"
 order = 11
+category = "RPG/Adventure"
 
 [[menu.games]]
 type = "command"
@@ -200,6 +210,7 @@ hotkey = "C"
 name = "Depths of Diablo"
 command = "depths_of_diablo"
 order = 12
+category = "RPG/Adventure"
 
 [[menu.games]]
 type = "command"
@@ -207,6 +218,7 @@ hotkey = "D"
 name = "Last Dream"
 command = "last_dream"
 order = 13
+category = "RPG/Adventure"
 
 [[menu.games]]
 type = "command"
@@ -214,6 +226,7 @@ hotkey = "E"
 name = "Realm of Ralnar"
 command = "realm_of_ralnar"
 order = 14
+category = "RPG/Adventure"
 
 [[menu.games]]
 type = "command"
@@ -221,14 +234,16 @@ hotkey = "F"
 name = "Cradle"
 command = "cradle"
 order = 15
+category = "RPG/Adventure"
 
-# Action/Adventure Games
+# Action Games
 [[menu.games]]
 type = "command"
 hotkey = "G"
 name = "Tanks"
 command = "tanks"
 order = 20
+category = "Action"
 
 [[menu.games]]
 type = "command"
@@ -236,6 +251,7 @@ hotkey = "H"
 name = "Summit"
 command = "summit"
 order = 21
+category = "Action"
 
 [[menu.games]]
 type = "command"
@@ -243,6 +259,7 @@ hotkey = "I"
 name = "Kyrandia"
 command = "kyrandia"
 order = 22
+category = "Action"
 
 # Sandbox/Epic Games
 [[menu.games]]
@@ -251,6 +268,7 @@ hotkey = "J"
 name = "Mineteria"
 command = "mineteria"
 order = 30
+category = "Sandbox/Epic"
 
 [[menu.games]]
 type = "command"
@@ -258,6 +276,7 @@ hotkey = "K"
 name = "Fortress"
 command = "fortress"
 order = 31
+category = "Sandbox/Epic"
 
 [[menu.games]]
 type = "command"
@@ -265,13 +284,15 @@ hotkey = "L"
 name = "Ultimo"
 command = "ultimo"
 order = 32
+category = "Sandbox/Epic"
 
 [[menu.games]]
 type = "command"
 hotkey = "X"
 name = "Xodia"
 command = "xodia"
-order = 40
+order = 33
+category = "Sandbox/Epic"
 
 # Mail submenu -- Phase 5: Email system
 # [[menu.mail]]

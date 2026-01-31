@@ -182,6 +182,7 @@ mod tests {
                     command: "quit".to_string(),
                     min_level: 0,
                     order: 99,
+                    category: None,
                 },
                 MenuItem::Command {
                     hotkey: "P".to_string(),
@@ -189,6 +190,7 @@ mod tests {
                     command: "profile".to_string(),
                     min_level: 0,
                     order: 98,
+                    category: None,
                 },
                 MenuItem::Submenu {
                     hotkey: "G".to_string(),
@@ -196,6 +198,7 @@ mod tests {
                     submenu_key: "games".to_string(),
                     min_level: 0,
                     order: 1,
+                    category: None,
                 },
             ],
             games: vec![
@@ -205,6 +208,7 @@ mod tests {
                     service_name: "test_game".to_string(),
                     min_level: 0,
                     order: 1,
+                    category: None,
                 },
             ],
             ..Default::default()
