@@ -14,6 +14,7 @@ use axum::{
 };
 use tower_http::services::ServeDir;
 use std::sync::Arc;
+use tokio::sync::Mutex;
 use config::Config;
 use connection::{ChatManager, NodeManager};
 use services::ServiceRegistry;
@@ -28,6 +29,22 @@ pub(crate) struct AppState {
     pub(crate) chat_manager: ChatManager,
     /// Grand Theft Meth game database (self-contained)
     pub(crate) gtm_db: Arc<services::grand_theft_meth::GtmDb>,
+    /// Sudoku game database (self-contained)
+    pub(crate) sudoku_db: Arc<services::sudoku::SudokuDb>,
+    /// Memory Garden database (social journaling feature)
+    pub(crate) memory_garden_db: Arc<services::memory_garden::MemoryGardenDb>,
+    /// Dragon Slayer game database (Legend of the Red Dragon style RPG)
+    pub(crate) dragon_slayer_db: Arc<services::dragon_slayer::DragonSlayerDb>,
+    /// Acromania game database (multiplayer acronym party game)
+    pub(crate) acro_db: Arc<services::acromania::AcroDb>,
+    /// Acromania shared lobby for real-time multiplayer
+    pub(crate) acro_lobby: Arc<Mutex<games::acromania::AcroLobby>>,
+    /// Dystopia kingdom management game database
+    pub(crate) dystopia_db: Arc<services::dystopia::DystopiaDb>,
+    /// Cradle infinite progression game database
+    pub(crate) cradle_db: Arc<services::cradle::db::CradleDb>,
+    /// Xodia LLM-powered MUD database
+    pub(crate) xodia_db: Arc<services::xodia::XodiaDb>,
 }
 
 #[tokio::main]
@@ -64,7 +81,67 @@ async fn main() {
             std::path::Path::new("data/grand_theft_meth.db")
         ).await.expect("Failed to initialize GTM database")
     );
-    println!("Game database initialized");
+    println!("Grand Theft Meth database initialized");
+
+    // Initialize Sudoku database
+    let sudoku_db = Arc::new(
+        services::sudoku::SudokuDb::new(
+            std::path::Path::new("data/sudoku.db")
+        ).await.expect("Failed to initialize Sudoku database")
+    );
+    println!("Sudoku database initialized");
+
+    // Initialize Memory Garden database
+    let memory_garden_db = Arc::new(
+        services::memory_garden::MemoryGardenDb::new(
+            std::path::Path::new("data/memory_garden.db")
+        ).await.expect("Failed to initialize Memory Garden database")
+    );
+    println!("Memory Garden database initialized");
+
+    // Initialize Dragon Slayer database
+    let dragon_slayer_db = Arc::new(
+        services::dragon_slayer::DragonSlayerDb::new(
+            std::path::Path::new("data/dragon_slayer.db")
+        ).await.expect("Failed to initialize Dragon Slayer database")
+    );
+    println!("Dragon Slayer database initialized");
+
+    // Initialize Acromania database
+    let acro_db = Arc::new(
+        services::acromania::AcroDb::new(
+            std::path::Path::new("data/acromania.db")
+        ).await.expect("Failed to initialize Acromania database")
+    );
+    println!("Acromania database initialized");
+
+    // Initialize Acromania shared lobby
+    let acro_lobby = Arc::new(Mutex::new(games::acromania::AcroLobby::new()));
+    println!("Acromania lobby initialized");
+
+    // Initialize Dystopia database
+    let dystopia_db = Arc::new(
+        services::dystopia::DystopiaDb::new(
+            std::path::Path::new("data/dystopia.db")
+        ).await.expect("Failed to initialize Dystopia database")
+    );
+    println!("Dystopia database initialized");
+
+    // Initialize Cradle database
+    let cradle_db = Arc::new(
+        services::cradle::db::CradleDb::new(
+            std::path::Path::new("data/cradle.db")
+        ).await.expect("Failed to initialize Cradle database")
+    );
+    println!("Cradle database initialized");
+
+    // Initialize Xodia database
+    let xodia_db = Arc::new(
+        services::xodia::XodiaDb::new(
+            std::path::Path::new("data/xodia.db")
+        ).await.expect("Failed to initialize Xodia database")
+    );
+    println!("Xodia database initialized");
 
     let state = Arc::new(AppState {
         config,
@@ -73,6 +150,14 @@ async fn main() {
         node_manager,
         chat_manager,
         gtm_db,
+        sudoku_db,
+        memory_garden_db,
+        dragon_slayer_db,
+        acro_db,
+        acro_lobby,
+        dystopia_db,
+        cradle_db,
+        xodia_db,
     });
 
     let app = Router::new()

@@ -52,3 +52,6 @@ playwright-report/
 playwright/.cache/
 test-results/
 blob-report/
+
+# === Ralnar Original Source ===
+Bg_rpg/

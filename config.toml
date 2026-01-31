@@ -77,27 +77,34 @@ name = "News"
 command = "news"
 order = 4
 
+[[menu.main]]
+type = "command"
+hotkey = "R"
+name = "Memory Garden"
+command = "memory_garden"
+order = 5
+
 # Phase 4: User Lists (main menu commands)
 [[menu.main]]
 type = "command"
 hotkey = "W"
 name = "Who's Online"
 command = "whos_online"
-order = 5
+order = 6
 
 [[menu.main]]
 type = "command"
 hotkey = "L"
 name = "Last Callers"
 command = "last_callers"
-order = 6
+order = 7
 
 [[menu.main]]
 type = "command"
 hotkey = "U"
 name = "User Lookup"
 command = "user_lookup"
-order = 7
+order = 8
 
 [[menu.main]]
 type = "command"
@@ -114,45 +121,157 @@ command = "quit"
 order = 100
 
 # Games submenu -- Door Games
+# Daily/Casual Games
 [[menu.games]]
 type = "command"
 hotkey = "1"
+name = "Sudoku"
+command = "sudoku"
+order = 1
+
+[[menu.games]]
+type = "command"
+hotkey = "2"
+name = "Queens"
+command = "queens"
+order = 2
+
+[[menu.games]]
+type = "command"
+hotkey = "3"
+name = "Chess"
+command = "chess"
+order = 3
+
+[[menu.games]]
+type = "command"
+hotkey = "4"
+name = "Acromania"
+command = "acromania"
+order = 4
+
+# Trading/Strategy Games
+[[menu.games]]
+type = "command"
+hotkey = "5"
 name = "Grand Theft Meth"
 command = "grand_theft_meth"
-order = 1
-# Door game: commodity trading with random events
+order = 5
 
-# [[menu.games]]
-# type = "service"
-# hotkey = "2"
-# name = "Legend of the Red Dragon"
-# service_name = "lord"
-# order = 2
-# Phase 9: Classic BBS RPG
+[[menu.games]]
+type = "command"
+hotkey = "6"
+name = "Star Trader"
+command = "star_trader"
+order = 6
 
-# [[menu.games]]
-# type = "service"
-# hotkey = "3"
-# name = "Usurper"
-# service_name = "usurper"
-# order = 3
-# Phase 10: Dark fantasy BBS game
+[[menu.games]]
+type = "command"
+hotkey = "7"
+name = "Dystopia"
+command = "dystopia"
+order = 7
 
-# [[menu.games]]
-# type = "service"
-# hotkey = "4"
-# name = "Acrophobia"
-# service_name = "acrophobia"
-# order = 4
-# Phase 11: Acronym word game
+[[menu.games]]
+type = "command"
+hotkey = "8"
+name = "Master of Cygnus"
+command = "master_of_cygnus"
+order = 8
 
-# [[menu.games]]
-# type = "service"
-# hotkey = "5"
-# name = "Kyrandia MUD"
-# service_name = "kyrandia"
-# order = 5
-# Phase 12: Multi-user dungeon
+# RPG Games
+[[menu.games]]
+type = "command"
+hotkey = "A"
+name = "Dragon Slayer"
+command = "dragon_slayer"
+order = 10
+
+[[menu.games]]
+type = "command"
+hotkey = "B"
+name = "Usurper"
+command = "usurper"
+order = 11
+
+[[menu.games]]
+type = "command"
+hotkey = "C"
+name = "Depths of Diablo"
+command = "depths_of_diablo"
+order = 12
+
+[[menu.games]]
+type = "command"
+hotkey = "D"
+name = "Last Dream"
+command = "last_dream"
+order = 13
+
+[[menu.games]]
+type = "command"
+hotkey = "E"
+name = "Realm of Ralnar"
+command = "realm_of_ralnar"
+order = 14
+
+[[menu.games]]
+type = "command"
+hotkey = "F"
+name = "Cradle"
+command = "cradle"
+order = 15
+
+# Action/Adventure Games
+[[menu.games]]
+type = "command"
+hotkey = "G"
+name = "Tanks"
+command = "tanks"
+order = 20
+
+[[menu.games]]
+type = "command"
+hotkey = "H"
+name = "Summit"
+command = "summit"
+order = 21
+
+[[menu.games]]
+type = "command"
+hotkey = "I"
+name = "Kyrandia"
+command = "kyrandia"
+order = 22
+
+# Sandbox/Epic Games
+[[menu.games]]
+type = "command"
+hotkey = "J"
+name = "Mineteria"
+command = "mineteria"
+order = 30
+
+[[menu.games]]
+type = "command"
+hotkey = "K"
+name = "Fortress"
+command = "fortress"
+order = 31
+
+[[menu.games]]
+type = "command"
+hotkey = "L"
+name = "Ultimo"
+command = "ultimo"
+order = 32
+
+[[menu.games]]
+type = "command"
+hotkey = "X"
+name = "Xodia"
+command = "xodia"
+order = 40
 
 # Mail submenu -- Phase 5: Email system
 # [[menu.mail]]

@@ -113,6 +113,20 @@ pub struct Session {
     news_state: Option<NewsState>,
     /// Active Grand Theft Meth game state
     gtm_flow: Option<crate::games::grand_theft_meth::GtmFlow>,
+    /// Active Sudoku game state
+    sudoku_flow: Option<crate::games::sudoku::SudokuFlow>,
+    /// Active Memory Garden state
+    memory_garden_flow: Option<crate::games::memory_garden::GardenFlow>,
+    /// Active Dragon Slayer game state
+    dragon_slayer_flow: Option<crate::games::dragon_slayer::DragonSlayerFlow>,
+    /// Active Acromania game state
+    acro_flow: Option<crate::services::acromania::AcroService>,
+    /// Active Dystopia game state
+    dystopia_flow: Option<crate::games::dystopia::DystopiaFlow>,
+    /// Active Cradle game state
+    cradle_flow: Option<crate::games::cradle::CradleFlow>,
+    /// Active Xodia LLM MUD game state
+    xodia_flow: Option<crate::games::xodia::XodiaFlow>,
 }
 
 /// Map user level string to numeric level for menu filtering
@@ -152,6 +166,13 @@ impl Session {
             chat_cancel: None,
             news_state: None,
             gtm_flow: None,
+            sudoku_flow: None,
+            memory_garden_flow: None,
+            dragon_slayer_flow: None,
+            acro_flow: None,
+            dystopia_flow: None,
+            cradle_flow: None,
+            xodia_flow: None,
         }
     }
 
@@ -1075,6 +1096,62 @@ impl Session {
             }
         }
 
+        // Sudoku game
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::sudoku::SENTINEL {
+                self.handle_sudoku_input(input).await;
+                return;
+            }
+        }
+
+        // Memory Garden
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::memory_garden::SENTINEL {
+                self.handle_memory_garden_input(input).await;
+                return;
+            }
+        }
+
+        // Dragon Slayer game
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::dragon_slayer::SENTINEL {
+                self.handle_dragon_slayer_input(input).await;
+                return;
+            }
+        }
+
+        // Acromania game
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::acromania::SENTINEL {
+                self.handle_acromania_input(input).await;
+                return;
+            }
+        }
+
+        // Dystopia game
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::dystopia::SENTINEL {
+                self.handle_dystopia_input(input).await;
+                return;
+            }
+        }
+
+        // Cradle game
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::cradle::service::SENTINEL {
+                self.handle_cradle_input(input).await;
+                return;
+            }
+        }
+
+        // Xodia LLM MUD game
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::xodia::SENTINEL {
+                self.handle_xodia_input(input).await;
+                return;
+            }
+        }
+
         // News error screen: any input returns to menu
         if let Some(service_name) = &self.current_service {
             if service_name == "__news_error__" {
@@ -1377,6 +1454,155 @@ impl Session {
                             }
                             return;
                         }
+                        "sudoku" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::sudoku::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.sudoku_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.sudoku_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "memory_garden" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::memory_garden::{SENTINEL, start_garden};
+
+                            if let AuthState::Authenticated { user_id, handle, user_level, .. } = &self.auth_state {
+                                let is_sysop = user_level == "Sysop";
+                                match start_garden(&self.state.memory_garden_db, *user_id, handle, is_sysop).await {
+                                    Ok((flow, screen)) => {
+                                        self.memory_garden_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "dragon_slayer" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::dragon_slayer::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.dragon_slayer_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.dragon_slayer_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "acromania" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::acromania::{SENTINEL, start_acromania};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_acromania(*user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.acro_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "dystopia" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::dystopia::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.dystopia_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.dystopia_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "cradle" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::cradle::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.cradle_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.cradle_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "xodia" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::xodia::{SENTINEL, start_game, get_llm_config};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                let llm_config = get_llm_config();
+                                match start_game(&self.state.xodia_db, *user_id, handle, Some(&llm_config)).await {
+                                    Ok((flow, screen)) => {
+                                        self.xodia_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
                         _ => {
                             // Unknown command, redraw
                             self.show_menu().await;
@@ -1464,6 +1690,155 @@ impl Session {
                                 match start_game(&self.state.gtm_db, *user_id, handle).await {
                                     Ok((flow, screen)) => {
                                         self.gtm_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "sudoku" => {
+                            use crate::services::sudoku::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.sudoku_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.sudoku_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "memory_garden" => {
+                            use crate::services::memory_garden::{SENTINEL, start_garden};
+
+                            if let AuthState::Authenticated { user_id, handle, user_level, .. } = &self.auth_state {
+                                let is_sysop = user_level == "Sysop";
+                                match start_garden(&self.state.memory_garden_db, *user_id, handle, is_sysop).await {
+                                    Ok((flow, screen)) => {
+                                        self.memory_garden_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "dragon_slayer" => {
+                            use crate::services::dragon_slayer::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.dragon_slayer_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.dragon_slayer_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "acromania" => {
+                            use crate::services::acromania::{SENTINEL, start_acromania};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_acromania(*user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.acro_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "dystopia" => {
+                            use crate::services::dystopia::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.dystopia_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.dystopia_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "cradle" => {
+                            use crate::services::cradle::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.cradle_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.cradle_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "xodia" => {
+                            use crate::services::xodia::{SENTINEL, start_game, get_llm_config};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                let llm_config = get_llm_config();
+                                match start_game(&self.state.xodia_db, *user_id, handle, Some(&llm_config)).await {
+                                    Ok((flow, screen)) => {
+                                        self.xodia_flow = Some(flow);
                                         self.current_service = Some(SENTINEL.to_string());
                                         let _ = self.tx.send(screen).await;
                                     }
@@ -2223,6 +2598,608 @@ impl Session {
                     .collect();
                 let screen = crate::games::grand_theft_meth::render::render_leaderboard_screen(&leaderboard_entries);
                 let _ = self.tx.send(screen).await;
+            }
+        }
+    }
+
+    /// Handle input for Sudoku game
+    async fn handle_sudoku_input(&mut self, input: &str) {
+        use crate::services::sudoku::{
+            render_screen, save_game_state, record_completion, get_leaderboard,
+            render_stats_screen, render_completion_screen,
+        };
+        use crate::games::sudoku::{SudokuAction, GameScreen};
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.sudoku_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                SudokuAction::Continue => {}
+                SudokuAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                SudokuAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                SudokuAction::SaveGame => {
+                    // Save to game's own database
+                    if let AuthState::Authenticated { user_id, .. } = &self.auth_state {
+                        if let Some(flow) = &self.sudoku_flow {
+                            let _ = save_game_state(&self.state.sudoku_db, *user_id, flow).await;
+                        }
+                    }
+                    // Render new screen
+                    if let Some(flow) = &self.sudoku_flow {
+                        // Handle stats screen specially (needs async data)
+                        if matches!(flow.current_screen(), GameScreen::Stats) {
+                            let stats = if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                self.state.sudoku_db.get_or_create_stats(*user_id, handle).await.ok()
+                            } else {
+                                None
+                            };
+                            let leaderboard = get_leaderboard(&self.state.sudoku_db).await;
+                            let screen = render_stats_screen(
+                                flow,
+                                stats.as_ref().map(|s| s.games_completed).unwrap_or(0),
+                                stats.as_ref().and_then(|s| s.best_time_seconds),
+                                &leaderboard,
+                            );
+                            let _ = self.tx.send(screen).await;
+                        } else {
+                            let screen = render_screen(flow);
+                            let _ = self.tx.send(screen).await;
+                        }
+                    }
+                }
+                SudokuAction::PuzzleComplete { time_seconds: _, errors: _ } => {
+                    // Record completion and update streaks
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &mut self.sudoku_flow {
+                            match record_completion(
+                                &self.state.sudoku_db,
+                                *user_id,
+                                handle,
+                                flow,
+                            ).await {
+                                Ok((current_streak, longest_streak)) => {
+                                    // Update flow with new streak values
+                                    flow.current_streak = current_streak;
+                                    flow.longest_streak = longest_streak;
+
+                                    // Show completion screen
+                                    let screen = render_completion_screen(flow, current_streak, longest_streak);
+                                    let _ = self.tx.send(screen).await;
+                                }
+                                Err(e) => {
+                                    let mut w = AnsiWriter::new();
+                                    w.set_fg(Color::LightRed);
+                                    w.writeln(&format!("Error recording completion: {}", e));
+                                    w.reset_color();
+                                    let _ = self.tx.send(w.flush()).await;
+                                }
+                            }
+                        }
+                    }
+                }
+                SudokuAction::Quit => {
+                    // Save and exit
+                    if let AuthState::Authenticated { user_id, .. } = &self.auth_state {
+                        if let Some(flow) = &self.sudoku_flow {
+                            let _ = save_game_state(&self.state.sudoku_db, *user_id, flow).await;
+                        }
+                    }
+
+                    self.sudoku_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+            }
+        }
+    }
+
+    /// Handle input for Memory Garden
+    async fn handle_memory_garden_input(&mut self, input: &str) {
+        use crate::services::memory_garden::{render_screen, process_action};
+        use crate::games::memory_garden::GardenAction;
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.memory_garden_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                GardenAction::Continue => {
+                    // Re-render current screen
+                    if let Some(flow) = &self.memory_garden_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                GardenAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                GardenAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                GardenAction::Quit => {
+                    // Exit Memory Garden
+                    self.memory_garden_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+                _ => {
+                    // All other actions need to go through process_action
+                    if let Some(flow) = &mut self.memory_garden_flow {
+                        match process_action(&self.state.memory_garden_db, flow, action).await {
+                            Ok(Some(screen)) => {
+                                let _ = self.tx.send(screen).await;
+                            }
+                            Ok(None) => {
+                                // Quit signal
+                                self.memory_garden_flow = None;
+                                self.current_service = None;
+                                if let Some(ms) = &mut self.menu_session {
+                                    ms.reset_to_main();
+                                }
+                                self.show_menu().await;
+                                return;
+                            }
+                            Err(e) => {
+                                // Error - show error and stay
+                                let mut w = AnsiWriter::new();
+                                w.set_fg(Color::LightRed);
+                                w.writeln(&format!("  Error: {}", e));
+                                w.reset_color();
+                                let _ = self.tx.send(w.flush()).await;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Handle input for Dragon Slayer game
+    async fn handle_dragon_slayer_input(&mut self, input: &str) {
+        use crate::services::dragon_slayer::{
+            render_screen, save_game_state, record_game_completion, get_game_leaderboard,
+        };
+        use crate::games::dragon_slayer::{DragonSlayerAction, GameScreen};
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.dragon_slayer_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                DragonSlayerAction::Continue => {}
+                DragonSlayerAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                DragonSlayerAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                DragonSlayerAction::SaveGame => {
+                    // Save to game's own database
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.dragon_slayer_flow {
+                            let _ = save_game_state(&self.state.dragon_slayer_db, *user_id, handle, flow).await;
+                        }
+                    }
+                    // Render new screen
+                    if let Some(flow) = &self.dragon_slayer_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                DragonSlayerAction::GameComplete { dragon_kills: _ } => {
+                    // Record completion (dragon slain)
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.dragon_slayer_flow {
+                            let _ = record_game_completion(
+                                &self.state.dragon_slayer_db,
+                                *user_id,
+                                handle,
+                                flow,
+                            ).await;
+                        }
+                    }
+
+                    // Show victory screen
+                    if let Some(flow) = &self.dragon_slayer_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                DragonSlayerAction::Quit => {
+                    // Save and exit
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.dragon_slayer_flow {
+                            let _ = save_game_state(&self.state.dragon_slayer_db, *user_id, handle, flow).await;
+                        }
+                    }
+
+                    self.dragon_slayer_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+            }
+        }
+
+        // Handle leaderboard screen specially (needs async data)
+        if let Some(flow) = &self.dragon_slayer_flow {
+            if matches!(flow.current_screen(), GameScreen::Leaderboard) {
+                let entries = get_game_leaderboard(&self.state.dragon_slayer_db).await;
+                let leaderboard_entries: Vec<_> = entries.iter()
+                    .map(|e| (e.rank, e.handle.clone(), e.char_name.clone(), e.dragon_kills, e.final_level))
+                    .collect();
+                let screen = crate::games::dragon_slayer::render::render_leaderboard_screen(&leaderboard_entries);
+                let _ = self.tx.send(screen).await;
+            }
+        }
+    }
+
+    /// Handle Acromania game input
+    async fn handle_acromania_input(&mut self, input: &str) {
+        use crate::services::acromania::{AcroAction, AcroScreen, render_leaderboard_screen};
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                // Lock the lobby and get the flow
+                let mut lobby = self.state.acro_lobby.lock().await;
+                let flow = match &mut self.acro_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch, &mut lobby)
+            };
+
+            match action {
+                AcroAction::Continue => {}
+                AcroAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                AcroAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                AcroAction::Quit => {
+                    // Leave any game/lobby
+                    {
+                        let mut lobby = self.state.acro_lobby.lock().await;
+                        if let Some(flow) = &self.acro_flow {
+                            let _ = lobby.leave_game(flow.user_id);
+                        }
+                    }
+
+                    self.acro_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+            }
+        }
+
+        // Handle leaderboard screen specially (needs async data)
+        if let Some(flow) = &self.acro_flow {
+            if matches!(flow.screen, AcroScreen::Leaderboard) {
+                let screen = render_leaderboard_screen(&self.state.acro_db).await;
+                let _ = self.tx.send(screen).await;
+            }
+        }
+
+        // Tick the lobby to handle phase transitions
+        let transitions = {
+            let mut lobby = self.state.acro_lobby.lock().await;
+            lobby.tick_all()
+        };
+
+        // Update player screens if game phase changed
+        if !transitions.is_empty() {
+            let lobby = self.state.acro_lobby.lock().await;
+            if let Some(flow) = &mut self.acro_flow {
+                if let Some(game) = lobby.get_player_game(flow.user_id) {
+                    if let Some(output) = flow.sync_with_game(game) {
+                        let _ = self.tx.send(output).await;
+                    }
+                }
+            }
+        }
+    }
+
+    /// Handle input for Dystopia game
+    async fn handle_dystopia_input(&mut self, input: &str) {
+        use crate::services::dystopia::{
+            render_screen, save_game_state, record_game_completion, get_game_leaderboard,
+        };
+        use crate::games::dystopia::{DystopiaAction, GameScreen};
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.dystopia_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                DystopiaAction::Continue => {}
+                DystopiaAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                DystopiaAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                DystopiaAction::SaveGame => {
+                    // Save to game's own database
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.dystopia_flow {
+                            let _ = save_game_state(&self.state.dystopia_db, *user_id, handle, flow).await;
+                        }
+                    }
+                    // Render new screen
+                    if let Some(flow) = &self.dystopia_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                DystopiaAction::GameOver { final_networth: _ } => {
+                    // Record completion (age ended or province destroyed)
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.dystopia_flow {
+                            let _ = record_game_completion(
+                                &self.state.dystopia_db,
+                                *user_id,
+                                handle,
+                                flow,
+                            ).await;
+                        }
+                    }
+
+                    // Show game over screen
+                    if let Some(flow) = &self.dystopia_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+
+                    // Exit game on next input
+                    self.dystopia_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                }
+                DystopiaAction::Quit => {
+                    // Save and exit
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.dystopia_flow {
+                            let _ = save_game_state(&self.state.dystopia_db, *user_id, handle, flow).await;
+                        }
+                    }
+
+                    self.dystopia_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+            }
+        }
+
+        // Handle leaderboard screen specially (needs async data)
+        if let Some(flow) = &self.dystopia_flow {
+            if matches!(flow.current_screen(), GameScreen::Rankings) {
+                let entries = get_game_leaderboard(&self.state.dystopia_db).await;
+                let leaderboard_entries: Vec<_> = entries.iter()
+                    .map(|e| (e.rank, e.handle.clone(), e.final_networth, e.final_land, e.attacks_won))
+                    .collect();
+                let screen = crate::games::dystopia::render::render_leaderboard_screen(&leaderboard_entries);
+                let _ = self.tx.send(screen).await;
+            }
+        }
+    }
+
+    /// Handle input for Cradle game
+    async fn handle_cradle_input(&mut self, input: &str) {
+        use crate::services::cradle::service::{
+            render_screen, save_game_state, record_game_completion, get_game_leaderboard,
+        };
+        use crate::games::cradle::screen::{CradleAction, GameScreen};
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.cradle_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                CradleAction::Continue => {}
+                CradleAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                CradleAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                CradleAction::SaveGame => {
+                    // Save to game's own database
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.cradle_flow {
+                            let _ = save_game_state(&self.state.cradle_db, *user_id, handle, flow).await;
+                        }
+                    }
+                    // Render new screen
+                    if let Some(flow) = &self.cradle_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                CradleAction::GameOver { final_tier: _, ascension_points: _ } => {
+                    // Record completion (reached Transcendent or ascended)
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.cradle_flow {
+                            let _ = record_game_completion(
+                                &self.state.cradle_db,
+                                *user_id,
+                                handle,
+                                flow,
+                            ).await;
+                        }
+                    }
+
+                    // Show victory screen
+                    if let Some(flow) = &self.cradle_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+
+                    // Exit game on next input
+                    self.cradle_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                }
+                CradleAction::Quit => {
+                    // Save and exit
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.cradle_flow {
+                            let _ = save_game_state(&self.state.cradle_db, *user_id, handle, flow).await;
+                        }
+                    }
+
+                    self.cradle_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+            }
+        }
+
+        // Handle leaderboard screen specially (needs async data)
+        if let Some(flow) = &self.cradle_flow {
+            if matches!(flow.current_screen(), GameScreen::Leaderboard) {
+                let entries = get_game_leaderboard(&self.state.cradle_db).await;
+                let screen = crate::services::cradle::service::render_leaderboard_screen(&entries);
+                let _ = self.tx.send(screen).await;
+            }
+        }
+    }
+
+    /// Handle input for Xodia LLM MUD game
+    async fn handle_xodia_input(&mut self, input: &str) {
+        use crate::services::xodia::{
+            render_screen, save_game_state, handle_action, get_llm_config,
+        };
+        use crate::games::xodia::XodiaAction;
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.xodia_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                XodiaAction::Continue => {}
+                XodiaAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                XodiaAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                XodiaAction::SaveGame => {
+                    // Save to game's own database
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.xodia_flow {
+                            let _ = save_game_state(&self.state.xodia_db, *user_id, handle, flow).await;
+                        }
+                    }
+                    // Render new screen
+                    if let Some(flow) = &self.xodia_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                XodiaAction::NeedsLlm { prompt, system } => {
+                    // Get LLM config and generate response
+                    let config = get_llm_config();
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &mut self.xodia_flow {
+                            let _ = handle_action(
+                                XodiaAction::NeedsLlm { prompt, system },
+                                &self.state.xodia_db,
+                                *user_id,
+                                handle,
+                                flow,
+                                Some(&config),
+                            ).await;
+                            let screen = render_screen(flow);
+                            let _ = self.tx.send(screen).await;
+                        }
+                    }
+                }
+                XodiaAction::Quit => {
+                    // Save and exit
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.xodia_flow {
+                            let _ = save_game_state(&self.state.xodia_db, *user_id, handle, flow).await;
+                        }
+                    }
+
+                    self.xodia_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
             }
         }
     }
