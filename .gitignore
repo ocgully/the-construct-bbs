@@ -55,3 +55,7 @@ blob-report/
 
 # === Ralnar Original Source ===
 Bg_rpg/
+
+# Playwright generated files
+frontend/playwright-report/
+frontend/test-results/
