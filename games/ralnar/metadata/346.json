@@ -1,0 +1,17 @@
+{
+  "attribute_code": 7,
+  "attributes": {
+    "any_pass": false,
+    "cave": true,
+    "damaging": false,
+    "dock": false,
+    "impassable": false,
+    "land": true,
+    "slow": false,
+    "town": false,
+    "water": false
+  },
+  "height": 20,
+  "name": "346",
+  "width": 20
+}

@@ -81,9 +81,9 @@ fn render_status_bar(w: &mut AnsiWriter, state: &ProvinceState) {
 
     // Population and military
     w.set_fg(Color::LightCyan);
-    w.write_str(&format!("  Peasants: {}/{} ", format_number(state.peasants as i64), format_number(state.max_peasants as i64)));
+    w.write_str(&format!("  Peasants: {} (cap {}) ", format_number(state.peasants as i64), format_number(state.max_peasants as i64)));
     w.set_fg(Color::LightRed);
-    w.write_str(&format!("Military: {} ", format_number(state.total_military() as i64)));
+    w.write_str(&format!("Soldiers: {} ", format_number(state.military.soldiers as i64)));
     w.set_fg(Color::LightGray);
     w.writeln(&format!("Networth: {}", format_number(state.networth())));
 
@@ -224,6 +224,9 @@ fn render_throne(w: &mut AnsiWriter, state: &ProvinceState, pending: &Option<Pen
         w.writeln("");
         w.set_fg(Color::LightCyan);
         w.writeln("  How many soldiers should explore for new land?");
+        w.set_fg(Color::LightGray);
+        w.writeln(&format!("  Available soldiers: {}  (Cost: 50 gold per explorer)", state.military.soldiers));
+        w.writeln("  Note: Some soldiers may be lost during exploration.");
         w.set_fg(Color::DarkGray);
         w.write_str("  Number of explorers: ");
         w.reset_color();
@@ -441,10 +444,13 @@ fn render_military(w: &mut AnsiWriter, state: &ProvinceState, pending: &Option<P
 
     w.writeln("");
     w.set_fg(Color::LightGray);
-    w.writeln(&format!("  Offense: {}  Defense: {}  Upkeep: {} gc/tick",
+    w.writeln(&format!("  Total Units: {}  Offense: {}  Defense: {}",
+        format_number(state.total_military() as i64),
         format_number(state.offense_strength() as i64),
-        format_number(state.defense_strength() as i64),
-        format_number(state.military_upkeep())));
+        format_number(state.defense_strength() as i64)));
+    w.writeln(&format!("  Upkeep: {} gc/tick  Peasants available: {}",
+        format_number(state.military_upkeep()),
+        format_number(state.peasants as i64)));
 
     w.writeln("");
     w.set_fg(Color::LightCyan);
@@ -714,12 +720,15 @@ fn render_science(w: &mut AnsiWriter, state: &ProvinceState) {
     ];
 
     for (key, _name, desc, level) in sciences.iter() {
+        let next_level_cost = (level + 1) as i64 * 1000;
         w.set_fg(Color::LightCyan);
         w.write_str(&format!("    [{}] ", key));
         w.set_fg(Color::White);
         w.write_str(&format!("{:<18}", desc));
         w.set_fg(Color::LightGray);
-        w.writeln(&format!("Level {}", level));
+        w.write_str(&format!("Level {:>2}", level));
+        w.set_fg(Color::Yellow);
+        w.writeln(&format!("  -> {} gc", format_number(next_level_cost)));
     }
 
     w.writeln("");

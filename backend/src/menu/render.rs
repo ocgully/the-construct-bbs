@@ -2,6 +2,29 @@ use crate::menu::config::{MenuConfig, MenuItem};
 use crate::menu::state::MenuState;
 use crate::terminal::ansi::{AnsiWriter, Color};
 
+/// Calculate the visible width of a string, excluding ANSI escape codes.
+/// ANSI escape sequences follow the pattern ESC [ ... m (for SGR codes).
+fn visible_width(s: &str) -> usize {
+    let mut width = 0;
+    let mut in_escape = false;
+
+    for c in s.chars() {
+        if in_escape {
+            // End of escape sequence when we hit 'm' (SGR terminator)
+            if c == 'm' {
+                in_escape = false;
+            }
+        } else if c == '\x1B' {
+            // Start of escape sequence
+            in_escape = true;
+        } else {
+            width += 1;
+        }
+    }
+
+    width
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum BorderStyle {
     Double,  // Main menu -- CP437: C9/CD/BB/C8/BC/BA (double-line)
@@ -183,7 +206,7 @@ fn group_by_category<'a>(items: &[&'a MenuItem]) -> Vec<(String, Vec<&'a MenuIte
     // Define category order (categories not in this list go last)
     let category_order: &[&str] = &[
         "Casual/Daily",
-        "Strategy/Trading",
+        "Strategy/Trade",
         "RPG/Adventure",
         "Action",
         "Sandbox/Epic",
@@ -208,30 +231,22 @@ fn group_by_category<'a>(items: &[&'a MenuItem]) -> Vec<(String, Vec<&'a MenuIte
     result
 }
 
-/// Render a category header
-fn render_category_header(w: &mut AnsiWriter, category: &str, col_width: usize) {
+/// Render a category header (padding handled by caller in multi-column mode)
+fn render_category_header(w: &mut AnsiWriter, category: &str, _col_width: usize) {
     w.set_fg(Color::Yellow);
     w.bold();
     w.write_str(category);
     w.reset_color();
-    // Pad to column width
-    let padding = col_width.saturating_sub(category.len());
-    w.write_str(&" ".repeat(padding));
 }
 
-/// Render a menu item with hotkey
-fn render_menu_item(w: &mut AnsiWriter, item: &MenuItem, col_width: usize) {
+/// Render a menu item with hotkey (padding handled by caller in multi-column mode)
+fn render_menu_item(w: &mut AnsiWriter, item: &MenuItem, _col_width: usize) {
     w.write_str("  ");
     w.set_fg(Color::LightGreen);
     w.write_str(&format!("[{}]", item.hotkey()));
     w.set_fg(Color::White);
-    let name = format!(" {}", item.name());
-    w.write_str(&name);
+    w.write_str(&format!(" {}", item.name()));
     w.reset_color();
-    // Pad to column width (account for "  [X] " = 6 chars + name)
-    let used = 6 + name.len();
-    let padding = col_width.saturating_sub(used);
-    w.write_str(&" ".repeat(padding));
 }
 
 pub fn render_submenu(
@@ -260,64 +275,69 @@ pub fn render_submenu(
         let categories = group_by_category(items);
         let num_categories = categories.len();
 
-        // Use 2 columns for 4+ categories, otherwise single column
-        let num_cols = if num_categories >= 4 { 2 } else { 1 };
-        let col_width = if num_cols == 2 { 38 } else { 76 };
+        // Use 3 columns for 3+ categories, otherwise single column
+        let num_cols = if num_categories >= 3 { 3 } else { 1 };
+        // 3 columns: 24 + 3 gap + 24 + 3 gap + 24 = 78 chars
+        let col_width = if num_cols == 3 { 24 } else { 76 };
+        let col_gap = "   "; // 3 space gap between columns
 
-        if num_cols == 2 {
-            // Split categories into left and right columns
-            let mid = (num_categories + 1) / 2;
-            let left_cats = &categories[..mid];
-            let right_cats = &categories[mid..];
+        if num_cols == 3 {
+            // Split categories into three columns
+            let cats_per_col = (num_categories + 2) / 3;
+            let col1_end = cats_per_col.min(num_categories);
+            let col2_end = (cats_per_col * 2).min(num_categories);
 
-            // Calculate max rows needed for each column
-            let left_rows: usize = left_cats
-                .iter()
-                .map(|(_, items)| 1 + items.len()) // 1 for header + items
-                .sum();
-            let right_rows: usize = right_cats
-                .iter()
-                .map(|(_, items)| 1 + items.len())
-                .sum();
-            let max_rows = left_rows.max(right_rows);
+            let col1_cats = &categories[..col1_end];
+            let col2_cats = &categories[col1_end..col2_end];
+            let col3_cats = &categories[col2_end..];
 
-            // Build left column content
-            let mut left_lines: Vec<String> = Vec::new();
-            for (cat, cat_items) in left_cats {
-                let mut header = AnsiWriter::new();
-                render_category_header(&mut header, cat, col_width);
-                left_lines.push(header.flush());
-                for item in cat_items {
-                    let mut item_w = AnsiWriter::new();
-                    render_menu_item(&mut item_w, item, col_width);
-                    left_lines.push(item_w.flush());
+            // Build column content helper
+            fn build_column_lines(
+                cats: &[(String, Vec<&MenuItem>)],
+                col_width: usize,
+            ) -> Vec<String> {
+                let mut lines = Vec::new();
+                for (cat, cat_items) in cats {
+                    let mut header = AnsiWriter::new();
+                    render_category_header(&mut header, cat, col_width);
+                    lines.push(header.flush());
+                    for item in cat_items {
+                        let mut item_w = AnsiWriter::new();
+                        render_menu_item(&mut item_w, item, col_width);
+                        lines.push(item_w.flush());
+                    }
                 }
+                lines
             }
 
-            // Build right column content
-            let mut right_lines: Vec<String> = Vec::new();
-            for (cat, cat_items) in right_cats {
-                let mut header = AnsiWriter::new();
-                render_category_header(&mut header, cat, col_width);
-                right_lines.push(header.flush());
-                for item in cat_items {
-                    let mut item_w = AnsiWriter::new();
-                    render_menu_item(&mut item_w, item, col_width);
-                    right_lines.push(item_w.flush());
-                }
-            }
+            let col1_lines = build_column_lines(col1_cats, col_width);
+            let col2_lines = build_column_lines(col2_cats, col_width);
+            let col3_lines = build_column_lines(col3_cats, col_width);
 
-            // Render both columns side by side
+            let max_rows = col1_lines.len().max(col2_lines.len()).max(col3_lines.len());
+
+            // Render all three columns side by side with gaps
             for i in 0..max_rows {
-                let left = left_lines.get(i).map(|s| s.as_str()).unwrap_or("");
-                let right = right_lines.get(i).map(|s| s.as_str()).unwrap_or("");
+                let c1 = col1_lines.get(i).map(|s| s.as_str()).unwrap_or("");
+                let c2 = col2_lines.get(i).map(|s| s.as_str()).unwrap_or("");
+                let c3 = col3_lines.get(i).map(|s| s.as_str()).unwrap_or("");
 
-                w.write_str(left);
-                // Add separator between columns
-                w.set_fg(Color::DarkGray);
-                w.write_str(" | ");
-                w.reset_color();
-                w.write_str(right);
+                // Write column 1 and pad to col_width based on visible characters
+                w.write_str(c1);
+                let c1_visible = visible_width(c1);
+                w.write_str(&" ".repeat(col_width.saturating_sub(c1_visible)));
+
+                w.write_str(col_gap);
+
+                // Write column 2 and pad to col_width based on visible characters
+                w.write_str(c2);
+                let c2_visible = visible_width(c2);
+                w.write_str(&" ".repeat(col_width.saturating_sub(c2_visible)));
+
+                w.write_str(col_gap);
+
+                // Write column 3 (no padding needed for last column)
+                w.write_str(c3);
                 w.writeln("");
             }
         } else {
@@ -473,6 +493,35 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_visible_width_plain_text() {
+        assert_eq!(visible_width("hello"), 5);
+        assert_eq!(visible_width(""), 0);
+        assert_eq!(visible_width("  [A] Game Name"), 15);
+    }
+
+    #[test]
+    fn test_visible_width_with_ansi_codes() {
+        // ANSI color code followed by text followed by reset
+        assert_eq!(visible_width("\x1B[33mHello\x1B[0m"), 5);
+        // Multiple ANSI codes
+        assert_eq!(visible_width("\x1B[1m\x1B[33mBold Yellow\x1B[0m"), 11);
+        // Just ANSI codes, no text
+        assert_eq!(visible_width("\x1B[33m\x1B[0m"), 0);
+    }
+
+    #[test]
+    fn test_visible_width_with_ansi_writer() {
+        let mut w = AnsiWriter::new();
+        w.set_fg(Color::Yellow);
+        w.bold();
+        w.write_str("Action");
+        w.reset_color();
+        let output = w.flush();
+        // "Action" is 6 visible chars, rest are ANSI codes
+        assert_eq!(visible_width(&output), 6);
+    }
+
+    #[test]
     fn test_render_main_menu_contains_title() {
         let config = MenuConfig::default();
         let output = render_main_menu(&config, 0, "TestUser", "User", Some(1), 16);
@@ -572,7 +621,7 @@ mod tests {
                 command: "star_trader".to_string(),
                 min_level: 0,
                 order: 3,
-                category: Some("Strategy/Trading".to_string()),
+                category: Some("Strategy/Trade".to_string()),
             },
             MenuItem::Command {
                 hotkey: "4".to_string(),
@@ -580,7 +629,7 @@ mod tests {
                 command: "dystopia".to_string(),
                 min_level: 0,
                 order: 4,
-                category: Some("Strategy/Trading".to_string()),
+                category: Some("Strategy/Trade".to_string()),
             },
             MenuItem::Command {
                 hotkey: "A".to_string(),
@@ -646,7 +695,7 @@ mod tests {
 
         // Should contain category headers
         assert!(output.contains("Casual/Daily"));
-        assert!(output.contains("Strategy/Trading"));
+        assert!(output.contains("Strategy/Trade"));
         assert!(output.contains("RPG/Adventure"));
         assert!(output.contains("Action"));
         assert!(output.contains("Sandbox/Epic"));
@@ -716,7 +765,7 @@ mod tests {
                 command: "b".to_string(),
                 min_level: 0,
                 order: 2,
-                category: Some("Strategy/Trading".to_string()),
+                category: Some("Strategy/Trade".to_string()),
             },
             MenuItem::Command {
                 hotkey: "3".to_string(),
@@ -731,11 +780,11 @@ mod tests {
         let refs: Vec<&MenuItem> = items.iter().collect();
         let grouped = group_by_category(&refs);
 
-        // Categories should be ordered: Casual/Daily first, then Strategy/Trading
+        // Categories should be ordered: Casual/Daily first, then Strategy/Trade
         assert_eq!(grouped.len(), 2);
         assert_eq!(grouped[0].0, "Casual/Daily");
         assert_eq!(grouped[0].1.len(), 2);
-        assert_eq!(grouped[1].0, "Strategy/Trading");
+        assert_eq!(grouped[1].0, "Strategy/Trade");
         assert_eq!(grouped[1].1.len(), 1);
     }
 }

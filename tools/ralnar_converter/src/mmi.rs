@@ -214,70 +214,73 @@ impl MmiTile {
 
     /// Parse MMI data from a vector of integers
     fn parse_mmi_data(data: &[i32], name: String) -> Result<Self, MmiError> {
-        if data.len() < 4 {
+        if data.len() < 5 {
             return Err(MmiError::Parse {
                 line: 0,
                 message: "file too short".to_string(),
             });
         }
 
-        // Validate header (first value should be 160)
-        // But we'll be lenient and accept any file
-        let _header = data[0];
-        let xdim = data[1] as u32;
-        let _reserved1 = data[2];
-        let _reserved2 = data[3];
+        // Header format (QBasic GET array):
+        // Line 1: width * 8 (e.g., 160 for 20px wide)
+        // Line 2: height (e.g., 20)
+        // Lines 3-202: packed pixel data (200 integers = 400 pixels)
+        // Line 203 (or last): tile attribute code
 
-        // Use standard tile dimensions if xdim is reasonable
-        let width = if xdim == 20 { TILE_WIDTH } else { xdim };
-        let height = TILE_HEIGHT;
+        let width_raw = data[0];
+        let height = data[1] as u32;
+
+        // Width is stored as width * 8 in QBasic GET format
+        let width = if width_raw == 160 {
+            TILE_WIDTH
+        } else {
+            (width_raw / 8).max(1) as u32
+        };
+
         let expected_pixels = (width * height) as usize;
 
-        // Parse pixel data starting from line 5 (index 4)
-        // The MMI format encodes color and attribute together
-        // Based on analysis: values seem to be encoded as combined pixel+attribute
+        // Parse packed pixel data starting from line 3 (index 2)
+        // Each integer contains 2 pixels: low byte = first pixel, high byte = second pixel
         let mut pixels = Vec::with_capacity(expected_pixels);
         let mut pixel_attributes = Vec::with_capacity(expected_pixels);
 
-        // Track the most common non-zero attribute for the tile's primary attribute
-        let mut attribute_counts = [0u32; 10];
+        // Process packed pixel pairs - start at index 2, not 4!
+        let pixel_data = &data[2..];
+        let needed_ints = (expected_pixels + 1) / 2; // 200 integers for 400 pixels
 
-        for &value in data.iter().skip(4) {
+        for (i, &value) in pixel_data.iter().enumerate() {
             if pixels.len() >= expected_pixels {
                 break;
             }
 
-            // Decode the combined value
-            // The encoding seems to be: low byte = color, high bits = attribute
-            // But observing values like 514, 2562, 30583, we need to decode properly
+            // Check if this is the attribute line (last line, typically small value 1-9)
+            if i >= needed_ints {
+                break;
+            }
 
-            // Values observed: 0, 2, 512, 514, 631, 2562, 2570, 2679, 29440, 29556, 29811, 30466, 30583
-            // 512 = 0x200, 514 = 0x202, 631 = 0x277
-            // It seems the color is in the lower bits
+            // Extract two pixels from packed 16-bit value
+            // Low byte = first pixel, high byte = second pixel
+            let pixel1 = (value & 0xFF) as i16;
+            let pixel2 = ((value >> 8) & 0xFF) as i16;
 
-            if value == 0 {
-                // 0 typically means transparent or empty
-                pixels.push(-1);
-                pixel_attributes.push(0);
-            } else {
-                // Extract color: lower 8 bits seem to be the color index
-                let color = (value & 0xFF) as i16;
-
-                // Extract attribute: bits 9-12 seem to encode the attribute
-                // Shift right by 9 bits and mask to get attribute code
-                let attr = ((value >> 9) & 0xF) as u8;
-
-                // If color is 0xFF or similar high values that don't make sense,
-                // treat the whole value differently
-                if color >= 0 && color <= 255 {
-                    pixels.push(color);
+            // First pixel
+            if pixels.len() < expected_pixels {
+                if pixel1 == 0 && value == 0 {
+                    pixels.push(-1); // Transparent
                 } else {
-                    pixels.push(-1);
+                    pixels.push(pixel1);
                 }
+                pixel_attributes.push(1); // Default attribute
+            }
 
-                let attr_code = if attr > 0 && attr <= 9 { attr } else { 1 };
-                pixel_attributes.push(attr_code);
-                attribute_counts[attr_code as usize] += 1;
+            // Second pixel
+            if pixels.len() < expected_pixels {
+                if pixel2 == 0 && value == 0 {
+                    pixels.push(-1); // Transparent
+                } else {
+                    pixels.push(pixel2);
+                }
+                pixel_attributes.push(1);
             }
         }
 
@@ -287,14 +290,18 @@ impl MmiTile {
             pixel_attributes.push(0);
         }
 
-        // Determine primary attribute from most common non-zero
-        let primary_attr = attribute_counts
-            .iter()
-            .enumerate()
-            .skip(1)
-            .max_by_key(|(_, &count)| count)
-            .map(|(idx, _)| idx as u8)
-            .unwrap_or(1);
+        // Get tile attribute from last data value (after pixel data)
+        let attr_index = 2 + needed_ints;
+        let primary_attr = if attr_index < data.len() {
+            let attr_val = data[attr_index];
+            if attr_val >= 1 && attr_val <= 9 {
+                attr_val as u8
+            } else {
+                1
+            }
+        } else {
+            1
+        };
 
         Ok(MmiTile {
             pixels,
@@ -308,8 +315,8 @@ impl MmiTile {
 
     /// Get the pixel value at (x, y) coordinates
     pub fn get_pixel(&self, x: u32, y: u32) -> i16 {
-        // Column-major order like PIC files
-        let index = (x * self.height + y) as usize;
+        // Row-major order: pixel[x, y] = data[y * width + x]
+        let index = (y * self.width + x) as usize;
         if index < self.pixels.len() {
             self.pixels[index]
         } else {

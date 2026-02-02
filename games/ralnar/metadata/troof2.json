@@ -1,0 +1,17 @@
+{
+  "attribute_code": 8,
+  "attributes": {
+    "any_pass": false,
+    "cave": false,
+    "damaging": false,
+    "dock": true,
+    "impassable": false,
+    "land": false,
+    "slow": false,
+    "town": false,
+    "water": false
+  },
+  "height": 20,
+  "name": "TROOF2",
+  "width": 20
+}

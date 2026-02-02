@@ -117,3 +117,12 @@ backend/src/games/
 - CP437 box-drawing characters converted to UTF-8 automatically
 - 16-color CGA palette via `Color` enum
 - Synchronized rendering with `begin_sync()`/`end_sync()` to prevent flicker
+
+## Automated Agent Safety
+
+When using `--dangerously-skip-permissions` for automated agents:
+- MUST run inside Firecracker VM or equivalent isolated environment
+- Agent only has access to the worktree directory
+- Network access restricted to necessary endpoints only
+- No access to credentials, SSH keys, or sensitive host files
+- This protects against prompt injection and malicious code execution

@@ -1,6 +1,6 @@
 # THE REALM OF RALNAR
 ## Complete Game Specification & Porting Guide
-### Original: QBasic (Mode 13h) → Target: Rust + SDL2/wgpu
+### Original: QBasic (Mode 13h) → Target: Web-Based (WASM + Canvas/WebGL)
 
 ---
 
@@ -8,7 +8,8 @@
 
 **Original Creators:** Brian and Christopher Gulliver (1996)
 **Original Platform:** MS-DOS, QBasic 4.5, VGA Mode 13h (320x200, 256 colors)
-**Target Platform:** Rust with SDL2 or wgpu for graphics rendering
+**Target Platform:** Web-based (WASM + HTML5 Canvas/WebGL), playable via BBS DOOR or standalone
+**Deployment Model:** External DOOR game - the screen acts as a portal to the game renderer
 **Genre:** JRPG (Final Fantasy 1 style)
 **Status:** Incomplete original - needs combat system, story completion, additional content
 
@@ -33,18 +34,63 @@ This game must be rendered using proper 2D graphics (SDL2, wgpu, or similar), NO
 | **Maps** | Tile-based rendering with 20x20 pixel tiles |
 | **UI** | Graphical menus, text rendered as bitmap fonts |
 
-### Asset Pipeline - CONVERT TO PNG:
+### Asset Pipeline - CONVERT TO PNG (Multi-Scale):
 
-All original graphics files MUST be converted to PNG format for the Rust port:
+All original graphics files MUST be converted to PNG format at **multiple scales**:
 
 ```
-ORIGINAL FORMAT          →    TARGET FORMAT
-─────────────────────────────────────────────
-.PIC (20x20 tiles)       →    PNG with transparency
-.MMI (icon sets)         →    PNG sprite sheets + JSON metadata
-.MON (monster sprites)   →    PNG with transparency
+ORIGINAL FORMAT          →    TARGET FORMATS
+─────────────────────────────────────────────────────────────────────
+.PIC (20x20 tiles)       →    PNG @1x-@5x with transparency (-1 = transparent)
+.MMI (20x20 tiles)       →    PNG @1x-@5x with transparency + attribute metadata
+.MON (monster sprites)   →    PNG @1x-@5x with transparency (0xFF = transparent)
 VGA palette              →    Embedded in PNGs as true color (RGBA)
 ```
+
+**Format Details:**
+
+| Format | Structure | Transparency |
+|--------|-----------|--------------|
+| .PIC | Text file, 400 lines, one palette index per line (20x20 column-major) | `-1` = transparent |
+| .MMI | QBasic GET array: 203 integers (header + packed pixels) + 1 attribute | Collapsed composite |
+| .MON | Binary: 8-byte header + raw pixels | `0xFF` = transparent |
+
+**PIC vs MMI Relationship:**
+
+PICs are the **source layer graphics** - individual 20x20 sprites with transparency support (-1). The icon editor creates these as building blocks.
+
+MMIs are **composite tiles** - created by the map editor by layering multiple PICs on top of each other (rudimentary layer system), then collapsing/flattening into a single raster image stored in QBasic GET array format. This allows artists to combine:
+- Base terrain (e.g., grass)
+- Overlay objects (e.g., tree trunk)
+- Top decorations (e.g., tree canopy)
+
+Into a single 20x20 tile with an associated attribute byte (passability, triggers, etc.).
+
+**For the port:** Both PICs and MMIs should be converted to PNG. PICs preserve their original transparency; MMIs are already flattened composites. The attribute data from MMIs should be extracted to a separate metadata file.
+
+**Export Directory Structure:**
+```
+assets/
+├── tiles/
+│   ├── 1x/           # Original 20x20 (320x200 virtual)
+│   │   ├── tree.png
+│   │   ├── medow.png
+│   │   └── ...
+│   ├── 2x/           # 40x40 (640x400 virtual)
+│   ├── 3x/           # 60x60 (960x600 virtual)
+│   ├── 4x/           # 80x80 (1280x800 virtual)
+│   └── 5x/           # 100x100 (1600x1000 virtual)
+├── monsters/
+│   └── [same 1x-5x structure]
+├── sprites/
+│   └── [same 1x-5x structure]
+└── metadata/
+    ├── tiles.json    # Tile attributes from MMI files (passability, etc.)
+    ├── sprites.json  # Animation frames, offsets
+    └── monsters.json # Stats, behaviors
+```
+
+**Scaling Method:** Use nearest-neighbor interpolation to preserve pixel art crispness.
 
 ### Why NOT ASCII:
 
@@ -81,6 +127,11 @@ use minifb::{Window, WindowOptions};
 - ✅ Scale the 320x200 display to fit modern screens
 - ✅ Support keyboard input for game controls
 - ✅ Render text using bitmap fonts (can convert from original or use pixel fonts)
+- ✅ Implement scanline effect (same approach as the BBS games)
+
+### Scanline Effect:
+
+Apply scanlines as a post-process: darken every other horizontal line by ~30% after scaling. This replicates the CRT monitor look. Use the same scanline approach currently implemented in the BBS game rendering.
 
 ---
 
@@ -342,7 +393,7 @@ Each map cell has:
   - Attribute byte (passability, events, etc.)
 ```
 
-## 1.5 NMF File Format (New Map Format)
+## 1.5 NMF File Format (New Map Format - Original Binary)
 
 **Purpose:** Binary map format (more efficient)
 **Structure:**
@@ -357,7 +408,97 @@ Bytes 10+:  Tile data (16-bit LE per cell)
             High byte: Attributes
 ```
 
-## 1.6 MON File Format (Monster Sprites)
+## 1.6 Target Map Format (JSON - For Port)
+
+**The original MMM/NMF formats should be converted to a maintainable JSON format.**
+
+The original formats have issues:
+- MMM/NMF reference tiles by numeric index into MMIFILES.TXT
+- Indices are fragile (reordering the tile list breaks all maps)
+- No metadata like spawn points, NPCs, events embedded in data
+- Hard to edit without the original QBasic tools
+
+**Target JSON Format:**
+
+```json
+{
+  "name": "town4",
+  "version": 1,
+  "dimensions": { "width": 30, "height": 30 },
+  "properties": {
+    "type": "town",
+    "encounters_enabled": false,
+    "music": "town_theme",
+    "world_wrap": false
+  },
+  "spawn": { "x": 15, "y": 25, "direction": "up" },
+  "tileset": [
+    "medow",
+    "water1",
+    "tree",
+    "house2",
+    "cobble",
+    "bridge"
+  ],
+  "tiles": [
+    [0, 0, 0, 2, 0, 0],
+    [0, 4, 4, 4, 4, 0],
+    [1, 1, 5, 5, 1, 1],
+    "..."
+  ],
+  "attributes": [
+    [0, 0, 0, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0],
+    [2, 2, 0, 0, 2, 2],
+    "..."
+  ],
+  "npcs": [
+    {
+      "id": "innkeeper",
+      "sprite": "knight",
+      "position": { "x": 10, "y": 5 },
+      "dialogue": "innkeeper_dialogue",
+      "movement": "stationary"
+    }
+  ],
+  "events": [
+    {
+      "type": "warp",
+      "position": { "x": 5, "y": 0 },
+      "target": { "map": "world", "x": 45, "y": 120 }
+    },
+    {
+      "type": "chest",
+      "position": { "x": 12, "y": 8 },
+      "contents": { "item": "potion", "quantity": 2 },
+      "flag": "town4_chest_1"
+    }
+  ]
+}
+```
+
+**Key Improvements:**
+- **Per-map tileset array** - Only tiles actually used by this map
+- **Indexed tile references** - `tiles` array uses indices into the local tileset (compact)
+- Tileset maintained by map editor: add on first use, remove when no longer referenced
+- NPCs and events embedded in map data
+- Human-readable and version-controllable
+- Attributes separated from tile indices (cleaner)
+
+**Note on Overlays:** The original MMI files are already composited (flattened) tiles - the layering happened at creation time in the icon editor. Decomposing these back into layers isn't practical. For new content, an optional `overlay` layer could be added, but existing maps will be single-layer.
+
+**Global vs Local Tilesets:**
+- The master tile list (from MMIFILES.TXT) is the global registry of all available tiles
+- Each map's `tileset` array is a subset - only what that map uses
+- This keeps map files compact while allowing tile names for maintainability
+
+**Conversion Tool:** `mmm2json` / `nmf2json` should:
+1. Read original format
+2. Map tile indices to tile names (via MMIFILES.TXT lookup)
+3. Extract embedded attributes to collision layer
+4. Output clean JSON
+
+## 1.7 MON File Format (Monster Sprites)
 
 **Purpose:** Enemy battle sprites (larger than tiles, variable sizes)
 **Format:** Binary, similar to QBasic GET/PUT array format
@@ -5404,59 +5545,123 @@ env_logger = "0.10"
 members = ["tools"]
 ```
 
-## 8.3 Deployment Options
+## 8.3 Deployment Model: External DOOR Game (Web-Based)
 
-The game can be deployed in multiple ways, all using GRAPHICAL rendering:
+This game is deployed as an **External DOOR game** - unlike traditional BBS door games that render to the terminal, Realm of Ralnar uses the terminal window as a **portal** to a graphical game renderer. The game is web-based (WASM + Canvas/WebGL) and can be played:
 
-### Option 1: Standalone Desktop Application (Recommended)
-```rust
-// SDL2-based standalone application
-fn main() {
-    let sdl_context = sdl2::init().unwrap();
-    let video_subsystem = sdl_context.video().unwrap();
-    
-    let window = video_subsystem
-        .window("The Realm of Ralnar", 960, 600)  // 3x scale
-        .position_centered()
-        .build()
-        .unwrap();
-    
-    let mut canvas = window.into_canvas().build().unwrap();
-    // ... game loop with graphical rendering
+1. **Through the BBS** - as a DOOR that opens a browser-based game view
+2. **Standalone** - directly via a web page without the BBS
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  BBS Terminal Window (xterm.js)                                 │
+│  ┌───────────────────────────────────────────────────────────┐  │
+│  │                                                           │  │
+│  │   ╔═══════════════════════════════════════════════════╗   │  │
+│  │   ║                                                   ║   │  │
+│  │   ║      REALM OF RALNAR GAME CANVAS                  ║   │  │
+│  │   ║      (320x200 virtual, scaled to fit)             ║   │  │
+│  │   ║                                                   ║   │  │
+│  │   ║   The screen acts as a PORTAL to the game -       ║   │  │
+│  │   ║   NOT constrained by BBS ASCII rendering rules    ║   │  │
+│  │   ║                                                   ║   │  │
+│  │   ╚═══════════════════════════════════════════════════╝   │  │
+│  │                                                           │  │
+│  └───────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Deployment Option 1: BBS DOOR Mode
+
+When launched from the BBS, the game:
+- Receives user session from BBS backend
+- Saves progress to **backend database** (linked to BBS user account)
+- Can display within an iframe/embedded canvas in the terminal view
+- Inherits BBS session timeout and node limits
+
+```typescript
+// BBS DOOR integration
+interface BBSDoorConfig {
+    userId: string;           // BBS user ID
+    sessionToken: string;     // Auth token from BBS
+    saveEndpoint: string;     // Backend API for saves: POST /api/ralnar/save
+    loadEndpoint: string;     // Backend API for loads: GET /api/ralnar/save/:userId
+}
+
+// Game checks for BBS context on startup
+const bbsContext = window.bbsDoorConfig;
+if (bbsContext) {
+    // Running as BBS DOOR - use backend storage
+    saveManager = new BackendSaveManager(bbsContext);
+} else {
+    // Standalone mode - use localStorage
+    saveManager = new LocalStorageSaveManager();
 }
 ```
 
-### Option 2: Web Browser (WASM + WebGL)
-```rust
-// Compile to WASM, render via WebGL/Canvas
-// Use wasm-bindgen + web-sys for browser integration
-#[cfg(target_arch = "wasm32")]
-fn main() {
-    // Initialize WebGL context
-    // Render to HTML5 canvas element
-}
-```
+### Deployment Option 2: Standalone Web Page
 
-### Option 3: Embedded Web Server (for remote play)
-```rust
-// Serve game via websockets with video streaming
-// Client renders in browser, server runs game logic
-struct GameServer {
-    connections: Vec<WebSocket>,
-    game_state: GameState,
-}
+When accessed directly (not through BBS):
+- No login required (or optional account system)
+- Saves progress to **browser localStorage**
+- Full-screen or windowed canvas
+- Can be hosted on any static web server
 
-impl GameServer {
-    fn send_frame(&mut self, framebuffer: &[u8]) {
-        // Encode frame as PNG or video stream
-        // Send to connected clients
+```typescript
+// Standalone save manager
+class LocalStorageSaveManager implements SaveManager {
+    private readonly SAVE_KEY = 'ralnar_save';
+
+    async save(data: SaveGame): Promise<void> {
+        localStorage.setItem(this.SAVE_KEY, JSON.stringify(data));
+    }
+
+    async load(): Promise<SaveGame | null> {
+        const data = localStorage.getItem(this.SAVE_KEY);
+        return data ? JSON.parse(data) : null;
     }
 }
 ```
 
-**NOTE:** All deployment options render the game GRAPHICALLY. There is no ASCII/terminal mode.
+### Technical Implementation
 
-## 8.4 Save System
+```rust
+// Compile to WASM, render via Canvas/WebGL
+// Use wasm-bindgen + web-sys for browser integration
+
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen(start)]
+pub fn main() {
+    // Detect deployment mode
+    let mode = detect_deployment_mode();
+
+    // Initialize WebGL/Canvas context
+    let canvas = get_canvas_element("ralnar-canvas");
+    let renderer = WebGLRenderer::new(canvas);
+
+    // Initialize save manager based on mode
+    let save_manager: Box<dyn SaveManager> = match mode {
+        DeploymentMode::BBS(config) => Box::new(BackendSaveManager::new(config)),
+        DeploymentMode::Standalone => Box::new(LocalStorageSaveManager::new()),
+    };
+
+    // Start game loop
+    Game::new(renderer, save_manager).run();
+}
+```
+
+**NOTE:** This is a GRAPHICAL game rendered to a Canvas element. It does NOT use terminal/ASCII rendering.
+
+## 8.4 Save System (Dual Storage)
+
+Save data is identical regardless of storage backend. The deployment mode determines WHERE it's stored:
+
+| Mode | Storage | Persistence |
+|------|---------|-------------|
+| BBS DOOR | Backend database (SQLite/PostgreSQL) | Linked to BBS user account |
+| Standalone | Browser localStorage | Per-browser, per-device |
 
 ```rust
 #[derive(Serialize, Deserialize)]
@@ -5464,28 +5669,86 @@ struct SaveGame {
     version: u32,
     timestamp: u64,
     playtime_seconds: u64,
-    
+
     // Player state
     party: Vec<CharacterState>,
     inventory: Inventory,
     gold: u32,
-    
+
     // World state
     current_map: String,
     position: (u32, u32),
     direction: Direction,
-    
+
     // Progress
     story_flags: HashMap<String, bool>,
     quests: HashMap<String, QuestState>,
     shrines_destroyed: [bool; 5],
     chests_opened: HashSet<String>,
     npcs_talked: HashMap<String, u32>,
-    
+
     // World changes
     world_phase: u8,  // 0-6 based on shrines
 }
+
+// Save manager trait - implemented differently per deployment mode
+trait SaveManager {
+    async fn save(&self, data: &SaveGame) -> Result<(), SaveError>;
+    async fn load(&self) -> Result<Option<SaveGame>, SaveError>;
+    async fn list_saves(&self) -> Result<Vec<SaveSlot>, SaveError>;
+    async fn delete(&self, slot: u32) -> Result<(), SaveError>;
+}
 ```
+
+## 8.5 Display Scaling & Scanlines
+
+The game renders at a **virtual resolution of 320x200** regardless of actual display size. Scaling and scanlines are handled as follows:
+
+### Scale Factors
+
+| Scale | Resolution | Use Case |
+|-------|------------|----------|
+| 1x | 320×200 | Asset source, tiny displays |
+| 2x | 640×400 | Small window |
+| 3x | 960×600 | Default windowed |
+| 4x | 1280×800 | Large window |
+| 5x | 1600×1000 | Fullscreen on 1080p+ |
+
+### Scanline Effect (CRT Emulation)
+
+**Critical:** Scanlines are calculated based on the **virtual 320×200 resolution**, NOT the actual scaled resolution. This maintains consistent CRT appearance at any scale.
+
+```typescript
+// Scanline shader - operates on virtual scanlines, not physical pixels
+class ScanlineEffect {
+    private virtualHeight = 200;  // ALWAYS 200, regardless of scale
+
+    apply(canvas: HTMLCanvasElement, scale: number) {
+        const ctx = canvas.getContext('2d');
+        const actualHeight = canvas.height;
+
+        // Each virtual scanline spans `scale` physical pixels
+        // Darken every OTHER virtual scanline (not every other pixel row)
+        for (let virtualY = 0; virtualY < this.virtualHeight; virtualY++) {
+            if (virtualY % 2 === 1) {  // Odd virtual scanlines get darkened
+                const physicalY = virtualY * scale;
+                const scanlineHeight = scale;  // Height of one virtual scanline in pixels
+
+                // Darken this band by ~30%
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.fillRect(0, physicalY, canvas.width, scanlineHeight);
+            }
+        }
+    }
+}
+
+// Example at different scales:
+// 1x (320×200): darken every other pixel row (rows 1, 3, 5...)
+// 3x (960×600): darken pixel rows 3-5, 9-11, 15-17... (3-pixel bands)
+// 5x (1600×1000): darken pixel rows 5-9, 15-19, 25-29... (5-pixel bands)
+```
+
+**Result:** At any scale, you see exactly 100 light bands and 100 dark bands, matching the original CRT look of a 200-line display.
 
 ---
 
@@ -5664,9 +5927,18 @@ Tile size is 20x20 pixels (400 pixels per file).
 
 ```
 PIC: text, one integer per line, 20x20 grid = 400 lines (+1 trailing)
-MMI: text, header + pixel data, includes tile attributes  
-MMM: "name"\nwidth\nheight\n[tile,attr pairs]
+     Value -1 = transparent, 0-255 = VGA palette index
+     Reading order: column-major (x first, then y)
+
+MMI: QBasic GET array format (composited tile from layered PICs)
+     Line 1: width*8 (160 for 20px)
+     Line 2: height (20)
+     Lines 3-203: packed pixel data (2 pixels per 16-bit integer)
+     Line 204: tile attribute byte
+
+MMM: "name"\nwidth\nheight\nenemies_flag\n[tile_idx,attr pairs]
 NMF: binary, LE16 width, LE16 height, header, LE16 tile data
+
 MON: binary, 8-byte header, raw pixel data, 0xFF = transparent
      Header: LE16 version (1), LE16 frames, LE16 width*8, LE16 height
 ```
@@ -5674,3 +5946,5 @@ MON: binary, 8-byte header, raw pixel data, 0xFF = transparent
 ---
 
 *End of Specification*
+
+**See also:** `docs/ralnar_asset_conversion_prompt.md` - Claude agent prompt for asset conversion pipeline

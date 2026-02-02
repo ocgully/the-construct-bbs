@@ -196,6 +196,30 @@ impl MonSprite {
                 return Self::parse_with_dimensions(data, name, version, frame_count, alt_width, height);
             }
 
+            // Try to infer dimensions from file size
+            // File size = 8 + width * height * frames
+            let pixel_data_size = data.len() - HEADER_SIZE;
+            if pixel_data_size > 0 && frame_count > 0 {
+                let pixels_per_frame_inferred = pixel_data_size / frame_count as usize;
+                // Try common square dimensions
+                for dim in [40u16, 60, 80, 100, 50, 64, 32, 48] {
+                    if (dim as usize) * (dim as usize) == pixels_per_frame_inferred {
+                        return Self::parse_with_dimensions(data, name, version, frame_count, dim, dim);
+                    }
+                }
+                // Try common rectangular dimensions
+                for (w, h) in [(60u16, 80u16), (80, 60), (40, 60), (60, 40), (100, 100)] {
+                    if (w as usize) * (h as usize) == pixels_per_frame_inferred {
+                        return Self::parse_with_dimensions(data, name, version, frame_count, w, h);
+                    }
+                }
+                // Fall back to square root approximation
+                let side = (pixels_per_frame_inferred as f64).sqrt() as u16;
+                if side > 0 && (side as usize) * (side as usize) <= pixel_data_size {
+                    return Self::parse_with_dimensions(data, name, version, frame_count, side, side);
+                }
+            }
+
             return Err(MonError::InsufficientPixelData {
                 expected: total_pixels,
                 actual: data.len() - HEADER_SIZE,

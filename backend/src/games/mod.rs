@@ -31,6 +31,7 @@ pub mod memory_garden;
 pub mod mineteria;
 pub mod queens;
 pub mod realm_of_ralnar;
+pub mod realm_of_ralnar_vga;
 pub mod star_trader;
 pub mod sudoku;
 pub mod summit;

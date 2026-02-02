@@ -11,28 +11,10 @@
 //! - **NMF**: Binary map files (new map format)
 //! - **MON**: Monster sprites with animation frames
 //!
-//! # Usage
+//! # Multi-Scale Output
 //!
-//! ```no_run
-//! use ralnar_converter::{pic::PicTile, mmi::MmiTile, mmm::MmmMap, nmf::NmfMap, mon::MonSprite};
-//!
-//! // Convert a PIC file to PNG
-//! let tile = PicTile::from_file("tile.pic").unwrap();
-//! tile.save_png("tile.png").unwrap();
-//!
-//! // Convert an MMI file to PNG + JSON
-//! let mmi = MmiTile::from_file("tile.mmi").unwrap();
-//! mmi.save_png("tile.png").unwrap();
-//! mmi.save_metadata("tile.json").unwrap();
-//!
-//! // Convert a map file
-//! let map = MmmMap::from_file("world.mmm").unwrap();
-//! map.save_json("world.json").unwrap();
-//!
-//! // Convert a monster sprite
-//! let sprite = MonSprite::from_file("spider.mon").unwrap();
-//! sprite.save_png("spider.png").unwrap();
-//! ```
+//! All image converters support outputting at multiple scales (1x-5x) using
+//! nearest-neighbor interpolation to preserve pixel art crispness.
 
 pub mod mmi;
 pub mod mmm;
@@ -40,6 +22,8 @@ pub mod mon;
 pub mod nmf;
 pub mod palette;
 pub mod pic;
+pub mod scaling;
+pub mod tileset;
 
 pub use mmi::{MmiError, MmiMetadata, MmiTile, TileAttributes};
 pub use mmm::{MapTile, MmmError, MmmMap, MmmMapCompact};
@@ -47,3 +31,5 @@ pub use mon::{MonError, MonFrame, MonMetadata, MonSprite};
 pub use nmf::{NmfError, NmfMap};
 pub use palette::{palette_to_rgb, palette_to_rgba, vga6_to_rgb8, VGA_PALETTE};
 pub use pic::{PicError, PicTile, TILE_HEIGHT, TILE_PIXELS, TILE_WIDTH};
+pub use scaling::{save_scaled_images, scale_image, SCALE_FACTORS};
+pub use tileset::load_tile_registry;

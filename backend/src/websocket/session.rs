@@ -127,6 +127,34 @@ pub struct Session {
     cradle_flow: Option<crate::games::cradle::CradleFlow>,
     /// Active Xodia LLM MUD game state
     xodia_flow: Option<crate::games::xodia::XodiaFlow>,
+    /// Active Queens puzzle game state
+    queens_flow: Option<crate::games::queens::QueensFlow>,
+    /// Active Chess game state
+    chess_flow: Option<crate::games::chess::ChessFlow>,
+    /// Active Star Trader game state
+    star_trader_flow: Option<crate::games::star_trader::StarTraderFlow>,
+    /// Active Master of Cygnus game state
+    moc_flow: Option<crate::games::master_of_cygnus::MocFlow>,
+    /// Active Usurper game state
+    usurper_flow: Option<crate::games::usurper::UsurperFlow>,
+    /// Active Depths of Diablo game state
+    diablo_flow: Option<crate::games::depths_of_diablo::DiabloFlow>,
+    /// Active Last Dream game state
+    last_dream_flow: Option<crate::games::last_dream::LastDreamFlow>,
+    /// Active Realm of Ralnar game state
+    ralnar_flow: Option<crate::games::realm_of_ralnar::RalnarFlow>,
+    /// Active Kyrandia game state
+    kyrandia_flow: Option<crate::games::kyrandia::KyrandiaFlow>,
+    /// Active Tanks game state
+    tanks_flow: Option<crate::services::tanks::service::TanksService>,
+    /// Active Summit game state
+    summit_flow: Option<crate::games::summit::SummitFlow>,
+    /// Active Mineteria game state
+    mineteria_flow: Option<crate::games::mineteria::MineteriaFlow>,
+    /// Active Fortress game state
+    fortress_flow: Option<crate::games::fortress::FortressFlow>,
+    /// Active Ultimo game state
+    ultimo_flow: Option<crate::games::ultimo::UltimoFlow>,
 }
 
 /// Map user level string to numeric level for menu filtering
@@ -173,6 +201,20 @@ impl Session {
             dystopia_flow: None,
             cradle_flow: None,
             xodia_flow: None,
+            queens_flow: None,
+            chess_flow: None,
+            star_trader_flow: None,
+            moc_flow: None,
+            usurper_flow: None,
+            diablo_flow: None,
+            last_dream_flow: None,
+            ralnar_flow: None,
+            kyrandia_flow: None,
+            tanks_flow: None,
+            summit_flow: None,
+            mineteria_flow: None,
+            fortress_flow: None,
+            ultimo_flow: None,
         }
     }
 
@@ -1189,6 +1231,118 @@ impl Session {
             }
         }
 
+        // Realm of Ralnar JRPG
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::realm_of_ralnar::service::SENTINEL {
+                self.handle_ralnar_input(input).await;
+                return;
+            }
+        }
+
+        // Queens daily puzzle
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::queens::service::SENTINEL {
+                self.handle_queens_input(input).await;
+                return;
+            }
+        }
+
+        // Chess multiplayer
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::chess::service::SENTINEL {
+                self.handle_chess_input(input).await;
+                return;
+            }
+        }
+
+        // Star Trader space trading
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::star_trader::service::SENTINEL {
+                self.handle_star_trader_input(input).await;
+                return;
+            }
+        }
+
+        // Master of Cygnus 4X strategy
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::master_of_cygnus::service::SENTINEL {
+                self.handle_moc_input(input).await;
+                return;
+            }
+        }
+
+        // Usurper RPG
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::usurper::service::SENTINEL {
+                self.handle_usurper_input(input).await;
+                return;
+            }
+        }
+
+        // Depths of Diablo roguelite
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::depths_of_diablo::service::SENTINEL {
+                self.handle_diablo_input(input).await;
+                return;
+            }
+        }
+
+        // Last Dream JRPG
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::last_dream::service::SENTINEL {
+                self.handle_last_dream_input(input).await;
+                return;
+            }
+        }
+
+        // Kyrandia text adventure
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::kyrandia::service::SENTINEL {
+                self.handle_kyrandia_input(input).await;
+                return;
+            }
+        }
+
+        // Tanks artillery game
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::tanks::service::SENTINEL {
+                self.handle_tanks_input(input).await;
+                return;
+            }
+        }
+
+        // Summit climbing game
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::summit::service::SENTINEL {
+                self.handle_summit_input(input).await;
+                return;
+            }
+        }
+
+        // Mineteria sandbox game
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::mineteria::service::SENTINEL {
+                self.handle_mineteria_input(input).await;
+                return;
+            }
+        }
+
+        // Fortress colony simulation
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::fortress::service::SENTINEL {
+                self.handle_fortress_input(input).await;
+                return;
+            }
+        }
+
+        // Ultimo MMO RPG
+        if let Some(service_name) = &self.current_service {
+            if service_name == crate::services::ultimo::service::SENTINEL {
+                self.handle_ultimo_input(input).await;
+                return;
+            }
+        }
+
         // News error screen: any input returns to menu
         if let Some(service_name) = &self.current_service {
             if service_name == "__news_error__" {
@@ -1640,6 +1794,300 @@ impl Session {
                             }
                             return;
                         }
+                        "queens" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::queens::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.queens_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.queens_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "chess" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::chess::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.chess_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.chess_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "star_trader" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::star_trader::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.star_trader_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.star_trader_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "master_of_cygnus" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::master_of_cygnus::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.moc_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.moc_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "usurper" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::usurper::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.usurper_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.usurper_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "depths_of_diablo" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::depths_of_diablo::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.diablo_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.diablo_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "last_dream" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::last_dream::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.last_dream_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.last_dream_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "realm_of_ralnar" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::realm_of_ralnar::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.ralnar_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.ralnar_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "kyrandia" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::kyrandia::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.kyrandia_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.kyrandia_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "tanks" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::tanks::service::{SENTINEL, start_tanks};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_tanks(*user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.tanks_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "summit" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::summit::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.summit_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.summit_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "mineteria" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::mineteria::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.mineteria_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.mineteria_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "fortress" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::fortress::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.fortress_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.fortress_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "ultimo" => {
+                            let _ = self.tx.send(format!("{}", ch)).await;
+                            use crate::services::ultimo::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.ultimo_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.ultimo_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        self.output_buffer.set_fg(Color::LightRed);
+                                        self.output_buffer.writeln(&format!("  Error: {}", e));
+                                        self.output_buffer.reset_color();
+                                        self.flush_output().await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
                         _ => {
                             // Unknown command, redraw
                             self.show_menu().await;
@@ -1877,6 +2325,300 @@ impl Session {
                                 match start_game(&self.state.xodia_db, *user_id, handle, Some(&llm_config)).await {
                                     Ok((flow, screen)) => {
                                         self.xodia_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "queens" => {
+                            use crate::services::queens::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.queens_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.queens_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "chess" => {
+                            use crate::services::chess::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.chess_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.chess_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "star_trader" => {
+                            use crate::services::star_trader::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.star_trader_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.star_trader_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "master_of_cygnus" => {
+                            use crate::services::master_of_cygnus::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.moc_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.moc_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "usurper" => {
+                            use crate::services::usurper::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.usurper_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.usurper_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "depths_of_diablo" => {
+                            use crate::services::depths_of_diablo::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.diablo_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.diablo_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "last_dream" => {
+                            use crate::services::last_dream::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.last_dream_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.last_dream_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "realm_of_ralnar" => {
+                            use crate::services::realm_of_ralnar::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.ralnar_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.ralnar_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "kyrandia" => {
+                            use crate::services::kyrandia::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.kyrandia_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.kyrandia_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "tanks" => {
+                            use crate::services::tanks::service::{SENTINEL, start_tanks};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_tanks(*user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.tanks_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "summit" => {
+                            use crate::services::summit::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.summit_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.summit_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "mineteria" => {
+                            use crate::services::mineteria::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.mineteria_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.mineteria_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "fortress" => {
+                            use crate::services::fortress::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.fortress_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.fortress_flow = Some(flow);
+                                        self.current_service = Some(SENTINEL.to_string());
+                                        let _ = self.tx.send(screen).await;
+                                    }
+                                    Err(e) => {
+                                        let mut w = AnsiWriter::new();
+                                        w.set_fg(Color::LightRed);
+                                        w.writeln(&format!("  Error: {}", e));
+                                        w.reset_color();
+                                        let _ = self.tx.send(w.flush()).await;
+                                    }
+                                }
+                            }
+                            return;
+                        }
+                        "ultimo" => {
+                            use crate::services::ultimo::service::{SENTINEL, start_game};
+
+                            if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                                match start_game(&self.state.ultimo_db, *user_id, handle).await {
+                                    Ok((flow, screen)) => {
+                                        self.ultimo_flow = Some(flow);
                                         self.current_service = Some(SENTINEL.to_string());
                                         let _ = self.tx.send(screen).await;
                                     }
@@ -2908,6 +3650,93 @@ impl Session {
         }
     }
 
+    /// Handle Realm of Ralnar JRPG input
+    async fn handle_ralnar_input(&mut self, input: &str) {
+        use crate::services::realm_of_ralnar::service::{
+            render_screen, save_game_state, record_game_completion,
+        };
+        use crate::games::realm_of_ralnar::RalnarAction;
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.ralnar_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                RalnarAction::Continue => {}
+                RalnarAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                RalnarAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                RalnarAction::SaveGame => {
+                    // Save to game's own database
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.ralnar_flow {
+                            let _ = save_game_state(&self.state.ralnar_db, *user_id, handle, flow).await;
+                        }
+                    }
+                    // Render new screen
+                    if let Some(flow) = &self.ralnar_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                RalnarAction::GameComplete => {
+                    // Record completion
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.ralnar_flow {
+                            let _ = record_game_completion(
+                                &self.state.ralnar_db,
+                                *user_id,
+                                handle,
+                                flow,
+                                "victory",
+                            ).await;
+                        }
+                    }
+
+                    // Show victory screen
+                    if let Some(flow) = &self.ralnar_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                RalnarAction::Quit => {
+                    // Save and exit
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.ralnar_flow {
+                            let _ = save_game_state(&self.state.ralnar_db, *user_id, handle, flow).await;
+                        }
+                    }
+
+                    self.ralnar_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+                RalnarAction::LoadMap { .. } | RalnarAction::StartBattle { .. } |
+                RalnarAction::EndBattle { .. } | RalnarAction::PlaySound { .. } |
+                RalnarAction::ShowCutscene { .. } => {
+                    // These are handled internally by the flow - just re-render
+                    if let Some(flow) = &self.ralnar_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+            }
+        }
+    }
+
     /// Handle Acromania game input
     async fn handle_acromania_input(&mut self, input: &str) {
         use crate::services::acromania::{AcroAction, AcroScreen, render_leaderboard_screen};
@@ -3236,6 +4065,918 @@ impl Session {
                     }
 
                     self.xodia_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+            }
+        }
+    }
+
+    /// Handle Queens daily puzzle input
+    async fn handle_queens_input(&mut self, input: &str) {
+        use crate::services::queens::service::{
+            render_screen, save_game_state, record_game_completion,
+        };
+        use crate::games::queens::screen::QueensAction;
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.queens_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                QueensAction::Continue => {}
+                QueensAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                QueensAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                QueensAction::SaveGame => {
+                    // Save to game's own database
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.queens_flow {
+                            let _ = save_game_state(&self.state.queens_db, *user_id, handle, flow).await;
+                        }
+                    }
+                    // Render new screen
+                    if let Some(flow) = &self.queens_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                QueensAction::RecordCompletion { time_seconds, hints_used } => {
+                    // Record completion
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &mut self.queens_flow {
+                            let _ = record_game_completion(
+                                &self.state.queens_db,
+                                *user_id,
+                                handle,
+                                flow,
+                                time_seconds,
+                                hints_used,
+                            ).await;
+                        }
+                    }
+                    // Show victory screen
+                    if let Some(flow) = &self.queens_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                QueensAction::Quit => {
+                    // Save and exit
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.queens_flow {
+                            let _ = save_game_state(&self.state.queens_db, *user_id, handle, flow).await;
+                        }
+                    }
+
+                    self.queens_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+            }
+        }
+    }
+
+    /// Handle Chess multiplayer input
+    async fn handle_chess_input(&mut self, input: &str) {
+        use crate::services::chess::service::{render_screen, handle_action};
+        use crate::games::chess::ChessAction;
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.chess_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                ChessAction::Continue => {}
+                ChessAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                ChessAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                ChessAction::Quit => {
+                    self.chess_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+                _ => {
+                    // Handle all other actions via service
+                    if let Some(flow) = &mut self.chess_flow {
+                        if let Ok(Some(output)) = handle_action(&self.state.chess_db, flow, action).await {
+                            let _ = self.tx.send(output).await;
+                        } else {
+                            // Re-render screen
+                            let screen = render_screen(flow);
+                            let _ = self.tx.send(screen).await;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Handle Star Trader space trading input
+    async fn handle_star_trader_input(&mut self, input: &str) {
+        use crate::services::star_trader::service::{
+            render_screen, save_game_state, record_game_completion,
+        };
+        use crate::games::star_trader::screen::StarTraderAction;
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.star_trader_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                StarTraderAction::Continue => {}
+                StarTraderAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                StarTraderAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                StarTraderAction::SaveGame => {
+                    // Save to game's own database
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.star_trader_flow {
+                            let _ = save_game_state(&self.state.star_trader_db, *user_id, handle, flow).await;
+                        }
+                    }
+                    // Render new screen
+                    if let Some(flow) = &self.star_trader_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                StarTraderAction::GameOver { final_score: _ } => {
+                    // Record completion
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.star_trader_flow {
+                            let _ = record_game_completion(
+                                &self.state.star_trader_db,
+                                *user_id,
+                                handle,
+                                flow,
+                            ).await;
+                        }
+                    }
+                    // Show final screen
+                    if let Some(flow) = &self.star_trader_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                StarTraderAction::Quit => {
+                    // Save and exit
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.star_trader_flow {
+                            let _ = save_game_state(&self.state.star_trader_db, *user_id, handle, flow).await;
+                        }
+                    }
+
+                    self.star_trader_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+            }
+        }
+    }
+
+    /// Handle Master of Cygnus 4X strategy input
+    async fn handle_moc_input(&mut self, input: &str) {
+        use crate::services::master_of_cygnus::service::{
+            render_current_screen, save_game_state,
+        };
+        use crate::games::master_of_cygnus::screen::MocAction;
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.moc_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                MocAction::Continue => {}
+                MocAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                MocAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                MocAction::SaveGame | MocAction::SubmitTurn => {
+                    // Save to game's own database
+                    if let AuthState::Authenticated { user_id, .. } = &self.auth_state {
+                        if let Some(flow) = &self.moc_flow {
+                            let _ = save_game_state(&self.state.moc_db, *user_id, flow).await;
+                        }
+                    }
+                    // Render new screen
+                    if let Some(flow) = &self.moc_flow {
+                        let screen = render_current_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                MocAction::GameOver { winner_name: _ } => {
+                    // Show final screen
+                    if let Some(flow) = &self.moc_flow {
+                        let screen = render_current_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                MocAction::Quit => {
+                    // Save and exit
+                    if let AuthState::Authenticated { user_id, .. } = &self.auth_state {
+                        if let Some(flow) = &self.moc_flow {
+                            let _ = save_game_state(&self.state.moc_db, *user_id, flow).await;
+                        }
+                    }
+
+                    self.moc_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+            }
+        }
+    }
+
+    /// Handle Usurper RPG input
+    async fn handle_usurper_input(&mut self, input: &str) {
+        use crate::services::usurper::service::{
+            render_screen, save_game_state, record_game_completion,
+        };
+        use crate::games::usurper::screen::UsurperAction;
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.usurper_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                UsurperAction::Continue => {}
+                UsurperAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                UsurperAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                UsurperAction::SaveGame => {
+                    // Save to game's own database
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.usurper_flow {
+                            let _ = save_game_state(&self.state.usurper_db, *user_id, handle, flow).await;
+                        }
+                    }
+                    // Render new screen
+                    if let Some(flow) = &self.usurper_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                UsurperAction::GameOver { final_level: _, supreme_defeated: _ } => {
+                    // Record completion
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.usurper_flow {
+                            let _ = record_game_completion(
+                                &self.state.usurper_db,
+                                *user_id,
+                                handle,
+                                flow,
+                            ).await;
+                        }
+                    }
+                    // Show final screen
+                    if let Some(flow) = &self.usurper_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                UsurperAction::Quit => {
+                    // Save and exit
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.usurper_flow {
+                            let _ = save_game_state(&self.state.usurper_db, *user_id, handle, flow).await;
+                        }
+                    }
+
+                    self.usurper_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+            }
+        }
+    }
+
+    /// Handle Depths of Diablo roguelite input
+    async fn handle_diablo_input(&mut self, input: &str) {
+        use crate::services::depths_of_diablo::service::{
+            render_screen, save_game_state, record_game_completion,
+        };
+        use crate::games::depths_of_diablo::screen::DiabloAction;
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.diablo_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                DiabloAction::Continue => {}
+                DiabloAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                DiabloAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                DiabloAction::Tick => {
+                    // Handle real-time tick - re-render if something changed
+                    if let Some(flow) = &self.diablo_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                DiabloAction::SaveGame => {
+                    // Save to game's own database
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.diablo_flow {
+                            let _ = save_game_state(&self.state.diablo_db, *user_id, handle, flow).await;
+                        }
+                    }
+                    // Render new screen
+                    if let Some(flow) = &self.diablo_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                DiabloAction::GameEnd { success: _, floor_reached: _, soul_essence: _ } => {
+                    // Record completion
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.diablo_flow {
+                            let _ = record_game_completion(
+                                &self.state.diablo_db,
+                                *user_id,
+                                handle,
+                                flow,
+                            ).await;
+                        }
+                    }
+                    // Show final screen
+                    if let Some(flow) = &self.diablo_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                DiabloAction::Quit => {
+                    // Save and exit
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.diablo_flow {
+                            let _ = save_game_state(&self.state.diablo_db, *user_id, handle, flow).await;
+                        }
+                    }
+
+                    self.diablo_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+            }
+        }
+    }
+
+    /// Handle Last Dream JRPG input
+    async fn handle_last_dream_input(&mut self, input: &str) {
+        use crate::services::last_dream::service::{
+            render_screen, save_game_state, record_game_completion,
+        };
+        use crate::games::last_dream::screen::LastDreamAction;
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.last_dream_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                LastDreamAction::Continue => {}
+                LastDreamAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                LastDreamAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                LastDreamAction::SaveGame => {
+                    // Save to game's own database
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.last_dream_flow {
+                            let _ = save_game_state(&self.state.last_dream_db, *user_id, handle, flow).await;
+                        }
+                    }
+                    // Render new screen
+                    if let Some(flow) = &self.last_dream_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                LastDreamAction::GameComplete { play_time: _ } => {
+                    // Record completion
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.last_dream_flow {
+                            let _ = record_game_completion(
+                                &self.state.last_dream_db,
+                                *user_id,
+                                handle,
+                                flow,
+                            ).await;
+                        }
+                    }
+                    // Show final screen
+                    if let Some(flow) = &self.last_dream_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                LastDreamAction::Quit => {
+                    // Save and exit
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.last_dream_flow {
+                            let _ = save_game_state(&self.state.last_dream_db, *user_id, handle, flow).await;
+                        }
+                    }
+
+                    self.last_dream_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+            }
+        }
+    }
+
+    /// Handle Kyrandia text adventure input
+    async fn handle_kyrandia_input(&mut self, input: &str) {
+        use crate::services::kyrandia::service::{
+            render_screen, save_game_state, record_game_completion,
+        };
+        use crate::games::kyrandia::screen::KyrandiaAction;
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.kyrandia_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                KyrandiaAction::Continue => {}
+                KyrandiaAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                KyrandiaAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                KyrandiaAction::SaveGame => {
+                    // Save to game's own database
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.kyrandia_flow {
+                            let _ = save_game_state(&self.state.kyrandia_db, *user_id, handle, flow).await;
+                        }
+                    }
+                    // Render new screen
+                    if let Some(flow) = &self.kyrandia_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                KyrandiaAction::GameOver { became_archmage: _, level: _ } => {
+                    // Record completion
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.kyrandia_flow {
+                            let _ = record_game_completion(
+                                &self.state.kyrandia_db,
+                                *user_id,
+                                handle,
+                                flow,
+                            ).await;
+                        }
+                    }
+                    // Show final screen
+                    if let Some(flow) = &self.kyrandia_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                KyrandiaAction::Quit => {
+                    // Save and exit
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.kyrandia_flow {
+                            let _ = save_game_state(&self.state.kyrandia_db, *user_id, handle, flow).await;
+                        }
+                    }
+
+                    self.kyrandia_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+            }
+        }
+    }
+
+    /// Handle Tanks artillery game input
+    async fn handle_tanks_input(&mut self, input: &str) {
+        use crate::services::tanks::service::render_screen;
+        use crate::games::tanks::TanksAction;
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.tanks_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                let mut lobby = self.state.tanks_lobby.lock().await;
+                flow.flow.handle_char(ch, &mut lobby)
+            };
+
+            match action {
+                TanksAction::Continue => {}
+                TanksAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                TanksAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                TanksAction::Broadcast(s) => {
+                    // Broadcast to other players in the game
+                    let _ = self.tx.send(s).await;
+                }
+                TanksAction::Quit => {
+                    // Leave any game
+                    {
+                        let mut lobby = self.state.tanks_lobby.lock().await;
+                        if let Some(flow) = &self.tanks_flow {
+                            let _ = lobby.leave_game(flow.flow.user_id);
+                        }
+                    }
+
+                    self.tanks_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+            }
+        }
+
+        // Re-render current screen
+        if let Some(flow) = &self.tanks_flow {
+            let lobby = self.state.tanks_lobby.lock().await;
+            let screen = render_screen(flow, &lobby);
+            let _ = self.tx.send(screen).await;
+        }
+    }
+
+    /// Handle Summit climbing game input
+    async fn handle_summit_input(&mut self, input: &str) {
+        use crate::services::summit::service::{
+            render_screen, save_player_stats,
+        };
+        use crate::games::summit::screen::SummitAction;
+        use crate::games::summit::lobby::SummitLobby;
+
+        // Create a temporary lobby for input handling
+        // Note: Summit needs a shared lobby for true multiplayer, but for now
+        // we use a local one for single-player functionality
+        let mut lobby = SummitLobby::new();
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.summit_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch, &mut lobby)
+            };
+
+            match action {
+                SummitAction::Continue => {}
+                SummitAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                SummitAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                SummitAction::Broadcast(s) => {
+                    // Broadcast to other players
+                    let _ = self.tx.send(s).await;
+                }
+                SummitAction::SaveStats => {
+                    // Save player stats
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.summit_flow {
+                            let _ = save_player_stats(&self.state.summit_db, *user_id, handle, flow.get_stats()).await;
+                        }
+                    }
+                    // Render new screen
+                    if let Some(flow) = &self.summit_flow {
+                        let screen = render_screen(flow, &lobby);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                SummitAction::Quit => {
+                    // Save and exit
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.summit_flow {
+                            let _ = save_player_stats(&self.state.summit_db, *user_id, handle, flow.get_stats()).await;
+                        }
+                    }
+
+                    self.summit_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+            }
+        }
+    }
+
+    /// Handle Mineteria sandbox game input
+    async fn handle_mineteria_input(&mut self, input: &str) {
+        use crate::services::mineteria::service::{
+            save_game_state, record_game_completion,
+        };
+        use crate::games::mineteria::screen::GameAction;
+        use crate::games::mineteria::render::render_screen;
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.mineteria_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                GameAction::Continue => {}
+                GameAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                GameAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                GameAction::SaveGame => {
+                    // Save to game's own database
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.mineteria_flow {
+                            let _ = save_game_state(&self.state.mineteria_db, *user_id, handle, flow).await;
+                        }
+                    }
+                    // Render new screen
+                    if let Some(flow) = &self.mineteria_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                GameAction::GameOver { score: _ } => {
+                    // Record completion
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.mineteria_flow {
+                            let _ = record_game_completion(
+                                &self.state.mineteria_db,
+                                *user_id,
+                                handle,
+                                flow,
+                            ).await;
+                        }
+                    }
+                    // Show final screen
+                    if let Some(flow) = &self.mineteria_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                GameAction::Quit => {
+                    // Save and exit
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.mineteria_flow {
+                            let _ = save_game_state(&self.state.mineteria_db, *user_id, handle, flow).await;
+                        }
+                    }
+
+                    self.mineteria_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+            }
+        }
+    }
+
+    /// Handle Fortress colony simulation input
+    async fn handle_fortress_input(&mut self, input: &str) {
+        use crate::services::fortress::service::{
+            render_screen, save_game_state, record_game_completion,
+        };
+        use crate::games::fortress::screen::FortressAction;
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.fortress_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                FortressAction::Continue => {}
+                FortressAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                FortressAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                FortressAction::SaveGame => {
+                    // Save to game's own database
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.fortress_flow {
+                            let _ = save_game_state(&self.state.fortress_db, *user_id, handle, flow).await;
+                        }
+                    }
+                    // Render new screen
+                    if let Some(flow) = &self.fortress_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                FortressAction::GameOver { final_score: _ } => {
+                    // Record completion
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.fortress_flow {
+                            let _ = record_game_completion(
+                                &self.state.fortress_db,
+                                *user_id,
+                                handle,
+                                flow,
+                            ).await;
+                        }
+                    }
+                    // Show final screen
+                    if let Some(flow) = &self.fortress_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                FortressAction::Quit => {
+                    // Save and exit
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.fortress_flow {
+                            let _ = save_game_state(&self.state.fortress_db, *user_id, handle, flow).await;
+                        }
+                    }
+
+                    self.fortress_flow = None;
+                    self.current_service = None;
+                    if let Some(ms) = &mut self.menu_session {
+                        ms.reset_to_main();
+                    }
+                    self.show_menu().await;
+                    return;
+                }
+            }
+        }
+    }
+
+    /// Handle Ultimo MMO RPG input
+    async fn handle_ultimo_input(&mut self, input: &str) {
+        use crate::services::ultimo::service::{save_game_state};
+        use crate::games::ultimo::screen::UltimoAction;
+        use crate::games::ultimo::render::render_screen;
+
+        // Process each character
+        for ch in input.chars() {
+            let action = {
+                let flow = match &mut self.ultimo_flow {
+                    Some(f) => f,
+                    None => return,
+                };
+                flow.handle_char(ch)
+            };
+
+            match action {
+                UltimoAction::Continue => {}
+                UltimoAction::Echo(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                UltimoAction::Render(s) => {
+                    let _ = self.tx.send(s).await;
+                }
+                UltimoAction::SaveGame => {
+                    // Save to game's own database
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.ultimo_flow {
+                            let _ = save_game_state(&self.state.ultimo_db, *user_id, handle, flow).await;
+                        }
+                    }
+                    // Render new screen
+                    if let Some(flow) = &self.ultimo_flow {
+                        let screen = render_screen(flow);
+                        let _ = self.tx.send(screen).await;
+                    }
+                }
+                UltimoAction::Quit => {
+                    // Save and exit
+                    if let AuthState::Authenticated { user_id, handle, .. } = &self.auth_state {
+                        if let Some(flow) = &self.ultimo_flow {
+                            let _ = save_game_state(&self.state.ultimo_db, *user_id, handle, flow).await;
+                        }
+                    }
+
+                    self.ultimo_flow = None;
                     self.current_service = None;
                     if let Some(ms) = &mut self.menu_session {
                         ms.reset_to_main();

@@ -143,7 +143,9 @@ impl PicTile {
     /// Get the pixel value at (x, y) coordinates
     /// Returns -1 for transparent, 0-255 for palette index
     pub fn get_pixel(&self, x: u32, y: u32) -> i16 {
-        // Data is stored column-major: pixel[x, y] = data[x * 20 + y]
+        // Data is stored in column-major order:
+        // File reads sequentially as: (0,0), (0,1), (0,2)...(0,19), (1,0), (1,1)...
+        // So pixel[x, y] = data[x * height + y]
         let index = (x * TILE_HEIGHT + y) as usize;
         self.pixels[index]
     }
@@ -184,12 +186,13 @@ mod tests {
     fn create_test_pic_content() -> String {
         // Create a simple 20x20 test pattern
         // All transparent except for a few colored pixels
+        // Column-major: index = x * height + y
         let mut lines = Vec::new();
         for i in 0..TILE_PIXELS {
             if i == 0 {
-                lines.push("2".to_string()); // Green at (0, 0)
+                lines.push("2".to_string()); // Green at (0, 0): index 0*20+0 = 0
             } else if i == 21 {
-                lines.push("4".to_string()); // Red at (1, 1)
+                lines.push("4".to_string()); // Red at (1, 1): index 1*20+1 = 21
             } else {
                 lines.push("-1".to_string()); // Transparent
             }

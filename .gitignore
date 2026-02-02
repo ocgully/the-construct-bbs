@@ -11,6 +11,7 @@
 
 # === Rust / Cargo ===
 backend/target/
+tools/**/target/
 **/*.rs.bk
 Cargo.lock
 

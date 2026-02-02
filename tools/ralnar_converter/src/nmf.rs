@@ -1,10 +1,15 @@
 //! NMF (New Map Format) binary file converter
 //!
 //! NMF files are binary map files from the original Realm of Ralnar game.
-//! Format (based on analysis of MAPCONV.BAS):
-//! - All values are little-endian 16-bit integers
-//! - First: Map dimensions and metadata
-//! - Then: Tile data (tile index + attribute pairs)
+//! Format (based on reverse engineering):
+//! - Bytes 0-1: Width (u16 little-endian)
+//! - Bytes 2-3: Height (u16 little-endian)
+//! - Bytes 4-11: Icon list (4 u16 entries) - preloaded tile indices
+//! - Bytes 12+: Tile data as (tile_index u16, attribute u16) pairs
+//!
+//! Tile index interpretation:
+//! - The tile indices are 0-based references into MMIFILES.TXT
+//! - Both MMM and NMF use 1-based tile indices that we convert to 0-based
 
 use crate::mmm::{MapTile, MmmMap, MmmMapCompact};
 use std::fs;
@@ -22,6 +27,9 @@ pub enum NmfError {
 
     #[error("Invalid dimensions: {width}x{height}")]
     InvalidDimensions { width: u16, height: u16 },
+
+    #[error("Invalid tile count: expected {expected}, got {actual}")]
+    InvalidTileCount { expected: usize, actual: usize },
 
     #[error("JSON error: {0}")]
     Json(#[from] serde_json::Error),
@@ -56,67 +64,42 @@ impl NmfMap {
 
     /// Parse NMF data from binary content
     fn parse_binary(data: &[u8], name: String) -> Result<Self, NmfError> {
-        // Need at least header: name (string), width (2), height (2)
-        // The format appears to have the name first, then dimensions
-
-        if data.len() < 8 {
+        // NMF format: width(2) + height(2) + icon_list(8) + tile_data
+        // Minimum: 12 bytes header
+        if data.len() < 12 {
             return Err(NmfError::FileTooShort {
-                expected: 8,
+                expected: 12,
                 actual: data.len(),
             });
         }
 
-        // Try to find where the binary data starts
-        // NMF files may have a text name prefix followed by binary data
-        // Or they could be fully binary
-
-        // Look for the pattern: the file seems to start with the map name
-        // followed by binary dimension data
-
-        // Find where numeric data might start
-        let mut offset = 0;
-
-        // Skip any text prefix (map name)
-        // Look for where we get reasonable dimension values
-        while offset + 4 <= data.len() {
-            let width = read_le16(data, offset);
-            let height = read_le16(data, offset + 2);
-
-            // Check if these look like valid dimensions (1-500 range)
-            if width > 0 && width <= 500 && height > 0 && height <= 500 {
-                // This might be the start of dimensions
-                break;
-            }
-            offset += 1;
-        }
-
-        // If we couldn't find valid dimensions, try starting from beginning
-        if offset + 4 > data.len() {
-            offset = 0;
-        }
-
-        let width = read_le16(data, offset);
-        let height = read_le16(data, offset + 2);
+        // Read dimensions from bytes 0-3
+        let width = read_le16(data, 0);
+        let height = read_le16(data, 2);
 
         if width == 0 || height == 0 || width > 1000 || height > 1000 {
             return Err(NmfError::InvalidDimensions { width, height });
         }
 
+        // Bytes 4-11: Icon list (4 u16 entries) - skip for now (preload hint)
+
         let expected_tiles = (width as usize) * (height as usize);
         let mut tiles = Vec::with_capacity(expected_tiles);
 
-        // Skip past dimensions to tile data
-        let mut data_offset = offset + 4;
-
-        // Each tile is: tile_index (u16) + attribute (u16)
-        // But the actual format might pack them differently
-
-        // Based on MAPCONV.BAS analysis, the format alternates:
-        // tile_index, attribute, tile_index, attribute...
+        // Tile data starts at byte 12
+        // Each tile is 4 bytes: tile_index (u16) + attribute (u16)
+        let mut data_offset = 12;
 
         while tiles.len() < expected_tiles && data_offset + 4 <= data.len() {
-            let tile_index = read_le16(data, data_offset);
+            let raw_tile_index = read_le16(data, data_offset);
             let attribute = read_le16(data, data_offset + 2);
+
+            // NMF uses 1-based tile indices like MMM - convert to 0-based
+            let tile_index = if raw_tile_index > 0 {
+                raw_tile_index - 1
+            } else {
+                0
+            };
 
             tiles.push(MapTile {
                 tile_index,
@@ -126,11 +109,11 @@ impl NmfMap {
             data_offset += 4;
         }
 
-        // Pad with empty tiles if needed
-        while tiles.len() < expected_tiles {
-            tiles.push(MapTile {
-                tile_index: 0,
-                attribute: 1,
+        // Fail if tile count doesn't match expected
+        if tiles.len() != expected_tiles {
+            return Err(NmfError::InvalidTileCount {
+                expected: expected_tiles,
+                actual: tiles.len(),
             });
         }
 
@@ -164,11 +147,23 @@ impl NmfMap {
         self.inner.get_tile(x, y)
     }
 
-    /// Save as JSON file
+    /// Save as JSON file (raw format - use save_map_json for optimized format)
     pub fn save_json<P: AsRef<Path>>(&self, path: P) -> Result<(), NmfError> {
         let json = serde_json::to_string_pretty(&self.inner)?;
         fs::write(path, json)?;
         Ok(())
+    }
+
+    /// Save as spec-compliant JSON with compact row formatting and sparse attribute overrides
+    pub fn save_map_json<P: AsRef<Path>>(
+        &self,
+        path: P,
+        tile_registry: &[String],
+        tile_attributes: &std::collections::HashMap<String, u8>,
+    ) -> Result<(), NmfError> {
+        self.inner
+            .save_map_json(path, tile_registry, tile_attributes)
+            .map_err(|e| NmfError::Io(std::io::Error::new(std::io::ErrorKind::Other, e.to_string())))
     }
 
     /// Get compact format for export
@@ -192,11 +187,18 @@ mod tests {
     fn create_test_nmf_data(width: u16, height: u16, tiles: &[(u16, u16)]) -> Vec<u8> {
         let mut data = Vec::new();
 
-        // Write dimensions as little-endian
+        // Write dimensions as little-endian (bytes 0-3)
         data.extend_from_slice(&width.to_le_bytes());
         data.extend_from_slice(&height.to_le_bytes());
 
-        // Write tile data
+        // Write icon list bytes 4-11 (placeholder)
+        data.extend_from_slice(&0u16.to_le_bytes()); // bytes 4-5
+        data.extend_from_slice(&0u16.to_le_bytes()); // bytes 6-7
+        data.extend_from_slice(&0u16.to_le_bytes()); // bytes 8-9
+        data.extend_from_slice(&0u16.to_le_bytes()); // bytes 10-11
+
+        // Write tile data (bytes 12+)
+        // Each tile is 4 bytes: tile_index (u16) + attribute (u16)
         for (tile_idx, attr) in tiles {
             data.extend_from_slice(&tile_idx.to_le_bytes());
             data.extend_from_slice(&attr.to_le_bytes());
@@ -207,7 +209,8 @@ mod tests {
 
     #[test]
     fn test_parse_simple_nmf() {
-        let tiles = vec![(1, 1), (2, 2), (3, 3), (4, 4)];
+        // Tiles are (1-based tile index, attribute) - like MMM format
+        let tiles: Vec<(u16, u16)> = vec![(1, 1), (2, 2), (3, 3), (4, 4)];
         let data = create_test_nmf_data(2, 2, &tiles);
 
         let map = NmfMap::from_bytes(&data, "test").unwrap();
@@ -216,22 +219,25 @@ mod tests {
         assert_eq!(map.height, 2);
         assert_eq!(map.tiles.len(), 4);
 
-        assert_eq!(map.tiles[0].tile_index, 1);
+        // 1-based input becomes 0-based: 1 -> 0
+        assert_eq!(map.tiles[0].tile_index, 0);
         assert_eq!(map.tiles[0].attribute, 1);
     }
 
     #[test]
     fn test_get_tile() {
-        let tiles = vec![(10, 1), (20, 2), (30, 3), (40, 4)];
+        // Tiles are (1-based tile index, attribute) - like MMM format
+        let tiles: Vec<(u16, u16)> = vec![(10, 1), (20, 2), (30, 3), (40, 4)];
         let data = create_test_nmf_data(2, 2, &tiles);
 
         let map = NmfMap::from_bytes(&data, "test").unwrap();
 
+        // 1-based input becomes 0-based: 10 -> 9, 20 -> 19
         let tile = map.get_tile(0, 0).unwrap();
-        assert_eq!(tile.tile_index, 10);
+        assert_eq!(tile.tile_index, 9);
 
         let tile = map.get_tile(1, 0).unwrap();
-        assert_eq!(tile.tile_index, 20);
+        assert_eq!(tile.tile_index, 19);
     }
 
     #[test]
@@ -243,21 +249,23 @@ mod tests {
 
     #[test]
     fn test_invalid_dimensions() {
-        // Create data with 0x0 dimensions
-        let data = vec![0, 0, 0, 0, 0, 0, 0, 0];
+        // Create data with 0x0 dimensions (need 12 bytes minimum: 4 dim + 8 icon list)
+        let data = vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         let result = NmfMap::from_bytes(&data, "test");
         assert!(matches!(result, Err(NmfError::InvalidDimensions { .. })));
     }
 
     #[test]
     fn test_to_compact() {
-        let tiles = vec![(1, 5), (2, 6)];
+        // Tiles are (1-based tile index, attribute) - like MMM format
+        let tiles: Vec<(u16, u16)> = vec![(1, 5), (2, 6)];
         let data = create_test_nmf_data(2, 1, &tiles);
 
         let map = NmfMap::from_bytes(&data, "test").unwrap();
         let compact = map.to_compact();
 
-        assert_eq!(compact.tile_indices, vec![1, 2]);
+        // 1-based input becomes 0-based: 1 -> 0, 2 -> 1
+        assert_eq!(compact.tile_indices, vec![0, 1]);
         assert_eq!(compact.attributes, vec![5, 6]);
     }
 }

@@ -1,0 +1,17 @@
+{
+  "attribute_code": 3,
+  "attributes": {
+    "any_pass": false,
+    "cave": false,
+    "damaging": false,
+    "dock": false,
+    "impassable": false,
+    "land": true,
+    "slow": true,
+    "town": false,
+    "water": false
+  },
+  "height": 20,
+  "name": "TWALL2",
+  "width": 20
+}

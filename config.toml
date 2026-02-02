@@ -124,7 +124,7 @@ order = 100
 # Casual/Daily Games
 [[menu.games]]
 type = "command"
-hotkey = "1"
+hotkey = "S"
 name = "Sudoku"
 command = "sudoku"
 order = 1
@@ -132,7 +132,7 @@ category = "Casual/Daily"
 
 [[menu.games]]
 type = "command"
-hotkey = "2"
+hotkey = "Q"
 name = "Queens"
 command = "queens"
 order = 2
@@ -140,7 +140,7 @@ category = "Casual/Daily"
 
 [[menu.games]]
 type = "command"
-hotkey = "3"
+hotkey = "H"
 name = "Chess"
 command = "chess"
 order = 3
@@ -148,7 +148,7 @@ category = "Casual/Daily"
 
 [[menu.games]]
 type = "command"
-hotkey = "4"
+hotkey = "A"
 name = "Acromania"
 command = "acromania"
 order = 4
@@ -157,40 +157,40 @@ category = "Casual/Daily"
 # Strategy/Trading Games
 [[menu.games]]
 type = "command"
-hotkey = "5"
+hotkey = "G"
 name = "Grand Theft Meth"
 command = "grand_theft_meth"
 order = 5
-category = "Strategy/Trading"
+category = "Strategy/Trade"
 
 [[menu.games]]
 type = "command"
-hotkey = "6"
+hotkey = "E"
 name = "Star Trader"
 command = "star_trader"
 order = 6
-category = "Strategy/Trading"
+category = "Strategy/Trade"
 
 [[menu.games]]
 type = "command"
-hotkey = "7"
+hotkey = "Y"
 name = "Dystopia"
 command = "dystopia"
 order = 7
-category = "Strategy/Trading"
+category = "Strategy/Trade"
 
 [[menu.games]]
 type = "command"
-hotkey = "8"
+hotkey = "M"
 name = "Master of Andromeda"
 command = "master_of_cygnus"
 order = 8
-category = "Strategy/Trading"
+category = "Strategy/Trade"
 
 # RPG/Adventure Games
 [[menu.games]]
 type = "command"
-hotkey = "A"
+hotkey = "D"
 name = "Dragon Slayer"
 command = "dragon_slayer"
 order = 10
@@ -198,7 +198,7 @@ category = "RPG/Adventure"
 
 [[menu.games]]
 type = "command"
-hotkey = "B"
+hotkey = "U"
 name = "Usurper"
 command = "usurper"
 order = 11
@@ -206,7 +206,7 @@ category = "RPG/Adventure"
 
 [[menu.games]]
 type = "command"
-hotkey = "C"
+hotkey = "P"
 name = "Depths of Diablo"
 command = "depths_of_diablo"
 order = 12
@@ -214,7 +214,7 @@ category = "RPG/Adventure"
 
 [[menu.games]]
 type = "command"
-hotkey = "D"
+hotkey = "L"
 name = "Last Dream"
 command = "last_dream"
 order = 13
@@ -222,7 +222,7 @@ category = "RPG/Adventure"
 
 [[menu.games]]
 type = "command"
-hotkey = "E"
+hotkey = "R"
 name = "Realm of Ralnar"
 command = "realm_of_ralnar"
 order = 14
@@ -230,41 +230,41 @@ category = "RPG/Adventure"
 
 [[menu.games]]
 type = "command"
-hotkey = "F"
+hotkey = "C"
 name = "Cradle"
 command = "cradle"
 order = 15
 category = "RPG/Adventure"
-
-# Action Games
-[[menu.games]]
-type = "command"
-hotkey = "G"
-name = "Tanks"
-command = "tanks"
-order = 20
-category = "Action"
-
-[[menu.games]]
-type = "command"
-hotkey = "H"
-name = "Summit"
-command = "summit"
-order = 21
-category = "Action"
 
 [[menu.games]]
 type = "command"
 hotkey = "I"
 name = "Morningmist"
 command = "kyrandia"
-order = 22
+order = 16
 category = "RPG/Adventure"
+
+# Action Games
+[[menu.games]]
+type = "command"
+hotkey = "T"
+name = "Tanks:Blitzkrieg"
+command = "tanks"
+order = 20
+category = "Action"
+
+[[menu.games]]
+type = "command"
+hotkey = "V"
+name = "Summit"
+command = "summit"
+order = 21
+category = "Action"
 
 # Sandbox/Epic Games
 [[menu.games]]
 type = "command"
-hotkey = "J"
+hotkey = "N"
 name = "Mineteria"
 command = "mineteria"
 order = 30
@@ -272,7 +272,7 @@ category = "Sandbox/Epic"
 
 [[menu.games]]
 type = "command"
-hotkey = "K"
+hotkey = "F"
 name = "Fortress"
 command = "fortress"
 order = 31
@@ -280,7 +280,7 @@ category = "Sandbox/Epic"
 
 [[menu.games]]
 type = "command"
-hotkey = "L"
+hotkey = "O"
 name = "Ultimo"
 command = "ultimo"
 order = 32

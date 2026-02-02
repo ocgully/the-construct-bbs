@@ -629,10 +629,11 @@ impl DragonSlayerFlow {
     fn handle_inn(&mut self, input: &str) -> DragonSlayerAction {
         match input {
             "R" | "1" => {
-                // Rest
+                // Rest for the night - ends today's session
                 self.state.rest_at_inn();
                 self.state.last_message = Some("You rest for the night. Tomorrow awaits!".to_string());
-                DragonSlayerAction::SaveGame
+                // Save and exit - player comes back tomorrow
+                DragonSlayerAction::Quit
             }
             "G" | "2" => {
                 // Gossip (hints)
@@ -773,9 +774,16 @@ impl DragonSlayerFlow {
     }
 
     fn handle_game_over(&mut self, _input: &str) -> DragonSlayerAction {
-        // Player can try again tomorrow
-        self.screen = GameScreen::Town;
-        DragonSlayerAction::SaveGame
+        // Player must wait until tomorrow to play again
+        // Check if a new day has started which would revive them
+        if self.state.check_new_day() && !self.state.is_dead {
+            // New day started and player was revived
+            self.screen = GameScreen::Intro;
+            DragonSlayerAction::SaveGame
+        } else {
+            // Still dead - save and exit the game, come back tomorrow
+            DragonSlayerAction::Quit
+        }
     }
 
     fn handle_confirm_quit(&mut self, input: &str) -> DragonSlayerAction {

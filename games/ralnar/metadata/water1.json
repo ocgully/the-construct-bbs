@@ -1,0 +1,17 @@
+{
+  "attribute_code": 2,
+  "attributes": {
+    "any_pass": false,
+    "cave": false,
+    "damaging": false,
+    "dock": false,
+    "impassable": false,
+    "land": false,
+    "slow": false,
+    "town": false,
+    "water": true
+  },
+  "height": 20,
+  "name": "WATER1",
+  "width": 20
+}

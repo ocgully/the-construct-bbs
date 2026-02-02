@@ -1,0 +1,17 @@
+{
+  "attribute_code": 1,
+  "attributes": {
+    "any_pass": false,
+    "cave": false,
+    "damaging": false,
+    "dock": false,
+    "impassable": false,
+    "land": true,
+    "slow": false,
+    "town": false,
+    "water": false
+  },
+  "height": 20,
+  "name": "CASTLEF1",
+  "width": 20
+}

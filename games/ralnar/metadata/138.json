@@ -1,0 +1,17 @@
+{
+  "name": "138",
+  "width": 20,
+  "height": 20,
+  "attributes": {
+    "land": true,
+    "water": false,
+    "slow": false,
+    "damaging": false,
+    "impassable": false,
+    "town": false,
+    "cave": false,
+    "dock": false,
+    "any_pass": false
+  },
+  "attribute_code": 1
+}
